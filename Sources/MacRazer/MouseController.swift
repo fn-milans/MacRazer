@@ -64,6 +64,9 @@ final class MouseController: ObservableObject, @unchecked Sendable {
     @Published private(set) var dpiStagesError: String?
     @Published private(set) var isUpdatingDpiStages = false
     @Published private(set) var sleepTimeout: Int?
+    /// Smart-Reel (`RazerCommands.setScrollSmartReel`), on mice in `wheelControlPIDs`; nil
+    /// until read, and on every other mouse.
+    @Published private(set) var smartReel: Bool?
     @Published private(set) var sleepTimeoutError: String?
     @Published private(set) var isUpdatingSleepTimeout = false
     @Published private(set) var timeEstimate: String?
@@ -774,7 +777,11 @@ final class MouseController: ObservableObject, @unchecked Sendable {
             catch HIDDevice.HIDError.timeout { linkDead = true; return nil }
             catch { return nil }
         }()
+        let hasWheelControls = RazerCommands.wheelControlPIDs.contains(dev.productID) && !dev.isBluetooth
+        let smartReel = hasWheelControls ? read(RazerCommands.getScrollSmartReel()) { $0.arguments[1] != 0 } : nil
         publish {
+            // A skipped read keeps the last value, so the switch doesn't blink out of the window.
+            if let smartReel { self.update(\.smartReel, smartReel) } else if !hasWheelControls { self.update(\.smartReel, nil) }
             if let d { self.update(\.dpi, d) }
             if let p { self.update(\.pollRate, p) }
             if let b { self.update(\.brightness, b) }
@@ -1001,6 +1008,17 @@ final class MouseController: ObservableObject, @unchecked Sendable {
                 _ = try dev.sendWithRetry(RazerCommands.setWheelMode(next))
             } catch {
                 self.publish { self.lastWriteFailure = Date() }
+            }
+        }
+    }
+
+    func setSmartReel(_ on: Bool) {
+        userCommand { [weak self] in
+            guard let self else { return }
+            let ok = (try? self.ensureDevice().sendWithRetry(RazerCommands.setScrollSmartReel(on))) != nil
+            self.publish {
+                guard ok else { self.lastWriteFailure = Date(); return }
+                self.smartReel = on
             }
         }
     }

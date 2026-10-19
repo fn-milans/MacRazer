@@ -260,7 +260,17 @@ enum RazerCommands {
     /// razer_chroma_misc_get_scroll_acceleration() -> get_razer_report(0x02, 0x96, 0x02).
     static func getScrollAcceleration() -> RazerReport { scrollRead(0x96) }
     /// razer_chroma_misc_get_scroll_smart_reel() -> get_razer_report(0x02, 0x97, 0x02).
+    /// The setting is args[1]; args[0] echoes the store.
     static func getScrollSmartReel() -> RazerReport { scrollRead(0x97) }
+
+    /// razer_chroma_misc_set_scroll_smart_reel(VARSTORE, on) -> get_razer_report(0x02, 0x17, 0x02).
+    /// When on, the wheel drops into free spin by itself on a fast flick.
+    static func setScrollSmartReel(_ on: Bool) -> RazerReport {
+        var r = RazerReport(commandClass: 0x02, commandId: 0x17, dataSize: 0x02)
+        r.arguments[0] = Razer.varstore
+        r.arguments[1] = on ? 0x01 : 0x00
+        return r
+    }
 
     /// razer_chroma_misc_set_scroll_mode(mode) -> get_razer_report(0x02, 0x14, 0x02);
     /// args [store, mode]. OpenRazer writes VARSTORE; `store` is a parameter so the V4 Pro
@@ -280,6 +290,10 @@ enum RazerCommands {
     // report-5 notice (`05 39 <mode>`) its own button does. Three values: the mouse's own
     // button went 0x01 -> 0x02 in one recording and 0x02 -> 0x00 in another, and Milan felt
     // 0x00 and 0x02 as two different ratchet modes, so 0x01 is the free-spin one *(inferred)*.
+
+    /// Mice whose wheel modes and Smart-Reel MacRazer controls: the Basilisk V4 Pro (cable
+    /// and dongle), measured on the mouse.
+    static let wheelControlPIDs: Set<Int> = [0x00E2, 0x00E3]
 
     /// Wheel mode get: 0x02/0xB0, args [VARSTORE] -> [VARSTORE, mode].
     static func getWheelMode() -> RazerReport { scrollRead(0xB0) }

@@ -44,7 +44,10 @@ struct RemapView: View {
                     recordingDpiCycleShortcut = true
                 }
             }
-            if let controller { HardwareButtonsSection(controller: controller) }
+            if let controller {
+                HardwareButtonsSection(controller: controller)
+                SmartReelSection(controller: controller)
+            }
             if remapper.isBasiliskV3XHyperSpeed { basiliskButtonLimits }
             footer
         }
@@ -274,6 +277,30 @@ private struct HardwareButtonsSection: View {
                     Text(error).font(.system(size: 10)).foregroundStyle(Color.batteryMid)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
+        }
+    }
+}
+
+/// Smart-Reel on the wheels MacRazer knows (`RazerCommands.wheelControlPIDs`). Shown once
+/// the mouse has reported the setting.
+private struct SmartReelSection: View {
+    @ObservedObject var controller: MouseController
+
+    var body: some View {
+        if let on = controller.smartReel {
+            VStack(alignment: .leading, spacing: 6) {
+                Toggle(isOn: Binding(get: { on }, set: { controller.setSmartReel($0) })) {
+                    Text("Smart-Reel").font(.system(size: 12, weight: .medium))
+                }
+                .toggleStyle(.switch)
+                .controlSize(.small)
+                Text("A fast flick of the wheel spins it freely, then it clicks again as it slows down. Saved on the mouse.")
+                    .font(.system(size: 10)).foregroundStyle(.tertiary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)

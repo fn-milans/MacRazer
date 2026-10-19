@@ -112,4 +112,12 @@ final class HardwareButtonsTests: XCTestCase {
         XCTAssertEqual(RazerCommands.nextWheelMode(current: 0x02), 0x00)
         XCTAssertEqual(RazerCommands.nextWheelMode(current: 0x07), 0x00)
     }
+
+    func testSmartReelSetMatchesOpenRazer() {
+        // razer_chroma_misc_set_scroll_smart_reel; accepted by the V4 Pro (read back 01 01).
+        let on = RazerCommands.setScrollSmartReel(true)
+        XCTAssertEqual([on.commandClass, on.commandId, on.dataSize], [0x02, 0x17, 0x02])
+        XCTAssertEqual(Array(on.arguments.prefix(2)), [0x01, 0x01])
+        XCTAssertEqual(RazerCommands.setScrollSmartReel(false).arguments[1], 0x00)
+    }
 }
