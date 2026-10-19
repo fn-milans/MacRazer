@@ -114,6 +114,19 @@ enum RazerDevices {
         // vendor spec — the reporter exercised DPI at 6400, so the top of the range is the
         // one field here not demonstrated on a device.
         .init(pid: 0x00B9, name: "Razer Basilisk V3 X HyperSpeed", fullySupported: true, hasBattery: true, hasLighting: true, maxDPI: 18000, transactionId: 0x1f, matrixTransactionId: 0x1f, brightnessLed: Razer.scrollLed, connection: .wirelessDongle, silhouette: .cobra, dischargeCurveModelKey: nil),
+        // Basilisk V4 Pro: rechargeable, cable or HyperSpeed dongle (BT untested). Probed on
+        // hardware with this app on both PIDs (firmware v1.1): 0x1f answers every command and
+        // is the only usable id over the dongle (0x3f/0xff/0x80 time out there). Battery and
+        // charging, DPI read/write, the 5-stage table, and brightness on LOGO and SCROLL all
+        // answered; ZERO and BACKLIGHT refuse brightness with 0x03. Not working yet: polling,
+        // because the app sends the legacy 0x00/0x85, which this mouse refuses (0x05); the
+        // extended 0x00/0xC0 read answers 1000 Hz on both links, but its set is untested and
+        // not wired up. Lighting effects target ZERO_LED and were not run. Hence not
+        // fullySupported.
+        // The vendor spec is 50000 DPI, but every DPI write is clamped to 45000 (OpenRazer's
+        // driver ceiling), so the slider stops there until 50000 is tried on the mouse.
+        .init(pid: 0x00E2, name: "Razer Basilisk V4 Pro (Wired)", fullySupported: false, hasBattery: true, hasLighting: true, maxDPI: 45000, transactionId: 0x1f, matrixTransactionId: 0x1f, brightnessLed: Razer.logoLed, connection: .wired, silhouette: .cobra, dischargeCurveModelKey: nil),
+        .init(pid: 0x00E3, name: "Razer Basilisk V4 Pro (Wireless)", fullySupported: false, hasBattery: true, hasLighting: true, maxDPI: 45000, transactionId: 0x1f, matrixTransactionId: 0x1f, brightnessLed: Razer.logoLed, connection: .wirelessDongle, silhouette: .cobra, dischargeCurveModelKey: nil),
         // Basilisk X HyperSpeed: the older AA-cell sibling — no lighting at all, and
         // razermouse_driver.c gives it 0xFF for every command it supports. Not verified
         // on hardware by us.

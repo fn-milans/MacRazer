@@ -102,6 +102,23 @@ final class RazerDevicesTests: XCTestCase {
         XCTAssertEqual(setLed(nil), Razer.logoLed)
     }
 
+    /// Basilisk V4 Pro, from the hardware probe on both links: 0x1f is the only id the dongle
+    /// answers, both PIDs report battery, and brightness answers on LOGO (and SCROLL).
+    func testBasiliskV4Pro() {
+        for pid in [0x00E2, 0x00E3] {
+            for cls: UInt8 in [0x00, 0x04, 0x07, 0x0F] {
+                XCTAssertEqual(RazerDevices.transactionId(pid: pid, commandClass: cls, commandId: 0x80), 0x1f)
+            }
+            XCTAssertTrue(RazerDevices.hasBattery(pid: pid))
+            XCTAssertTrue(RazerDevices.hasLighting(pid: pid))
+            XCTAssertEqual(RazerDevices.brightnessLed(pid: pid), Razer.logoLed)
+            XCTAssertEqual(RazerDevices.maxDPI(pid: pid), 45000, "the app's DPI writes clamp at 45000")
+            XCTAssertFalse(RazerDevices.fullySupported(pid: pid), "polling and lighting effects don't work yet")
+        }
+        XCTAssertEqual(RazerDevices.connection(pid: 0x00E2), .wired)
+        XCTAssertEqual(RazerDevices.connection(pid: 0x00E3), .wirelessDongle)
+    }
+
     func testConnectionKind() {
         XCTAssertEqual(RazerDevices.connection(pid: 0x00DB), .wirelessDongle)
         XCTAssertEqual(RazerDevices.connection(pid: 0x00DA), .wired)

@@ -50,6 +50,10 @@ expect rough edges until 1.0.
  it reads the answers, using a fake mouse instead of hardware.
 
 ### Added
+- **Razer Basilisk V4 Pro, on the cable and the HyperSpeed dongle.** Battery, charging, DPI,
+  DPI stages and brightness are tested on the mouse. Polling rate and lighting effects don't
+  work on it yet, so it shows as limited support, and the DPI slider stops at 45000 for now.
+
 - **Runs on Intel Macs.** The app is now a universal build, native on both Apple Silicon and
  Intel. It still needs macOS 14 or later.
 

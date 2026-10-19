@@ -59,6 +59,7 @@ says so.
 | Razer Cobra HyperSpeed (wired + wireless) | Everything, continuously — the development mouse | maintainer |
 | Razer Atheris | Battery, DPI, polling | maintainer |
 | Razer Basilisk V3 X HyperSpeed | Battery, DPI, DPI stages, polling, lighting, brightness | [@joelday](https://github.com/joelday) |
+| Razer Basilisk V4 Pro (wired + wireless) | Battery, DPI, DPI stages, brightness. Polling rate and lighting effects don't work yet | [@fn-milans](https://github.com/fn-milans) |
 | Razer Viper Ultimate (Wireless) | Battery, DPI, polling, brightness | [@raphaelchenouard](https://github.com/raphaelchenouard) |
 | Razer Orochi 2013 | DPI only | [@raphaelchenouard](https://github.com/raphaelchenouard) |
 | Razer Basilisk V3 | Nothing; reported working by a user | — |
