@@ -105,9 +105,11 @@ final class HardwareButtonsTests: XCTestCase {
         XCTAssertEqual(Array(set.arguments.prefix(2)), [0x01, 0x02])
     }
 
-    func testWheelModeToggle() {
-        XCTAssertEqual(RazerCommands.nextWheelMode(current: 0x02, lastOther: 0x02), 0x00)
-        XCTAssertEqual(RazerCommands.nextWheelMode(current: 0x00, lastOther: nil), 0x02)
-        XCTAssertEqual(RazerCommands.nextWheelMode(current: 0x00, lastOther: 0x01), 0x01)
+    func testWheelModeCyclesThroughAllThree() {
+        // The mouse's own order: 01 -> 02 (probe pass 1), 02 -> 00 (09:52 press).
+        XCTAssertEqual(RazerCommands.nextWheelMode(current: 0x00), 0x01)
+        XCTAssertEqual(RazerCommands.nextWheelMode(current: 0x01), 0x02)
+        XCTAssertEqual(RazerCommands.nextWheelMode(current: 0x02), 0x00)
+        XCTAssertEqual(RazerCommands.nextWheelMode(current: 0x07), 0x00)
     }
 }

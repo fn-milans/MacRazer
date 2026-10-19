@@ -989,19 +989,15 @@ final class MouseController: ObservableObject, @unchecked Sendable {
         }
     }
 
-    /// io-queue only. The last non-zero wheel mode seen, for `nextWheelMode`.
-    private var lastOtherWheelMode: UInt8?
-
-    /// The wheel-mode button's job while the mouse is in driver mode: switch the wheel's
-    /// feel, read from the mouse first so a change made any other way is respected.
+    /// The wheel-mode button's job while the mouse is in driver mode: the wheel's next mode,
+    /// read from the mouse first so a change made any other way is respected.
     func toggleWheelMode() {
         userCommand { [weak self] in
             guard let self else { return }
             do {
                 let dev = try self.ensureDevice()
                 let current = try dev.sendWithRetry(RazerCommands.getWheelMode()).arguments[1]
-                if current != 0 { self.lastOtherWheelMode = current }
-                let next = RazerCommands.nextWheelMode(current: current, lastOther: self.lastOtherWheelMode)
+                let next = RazerCommands.nextWheelMode(current: current)
                 _ = try dev.sendWithRetry(RazerCommands.setWheelMode(next))
             } catch {
                 self.publish { self.lastWriteFailure = Date() }

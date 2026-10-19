@@ -277,10 +277,9 @@ enum RazerCommands {
     // before and after one press of its wheel-mode button changed exactly one answer, 0x02/0xB0.
     // Writing 0x02/0x30 (the get id minus 0x80, OpenRazer's usual get/set pairing) with
     // Milan's OK switched the wheel, read back the new value, and made the mouse send the same
-    // report-5 notice (`05 39 <mode>`) its own button does. Seen values: 0x02 (how it shipped)
-    // and 0x00 (one button press later). Which feel is which isn't pinned down, and pass 1
-    // of the probe also saw 0x01, so `nextWheelMode` treats any non-zero value as the other
-    // side of the toggle rather than naming them.
+    // report-5 notice (`05 39 <mode>`) its own button does. Three values: the mouse's own
+    // button went 0x01 -> 0x02 in one recording and 0x02 -> 0x00 in another, and Milan felt
+    // 0x00 and 0x02 as two different ratchet modes, so 0x01 is the free-spin one *(inferred)*.
 
     /// Wheel mode get: 0x02/0xB0, args [VARSTORE] -> [VARSTORE, mode].
     static func getWheelMode() -> RazerReport { scrollRead(0xB0) }
@@ -293,11 +292,14 @@ enum RazerCommands {
         return r
     }
 
-    /// What one press of the wheel-mode button changes `current` to: 0x00 and the other mode
-    /// swap. `lastOther` is the non-zero mode to go back to, so a mouse that was on 0x01
-    /// returns to 0x01 rather than 0x02.
-    static func nextWheelMode(current: UInt8, lastOther: UInt8?) -> UInt8 {
-        current == 0 ? (lastOther ?? 0x02) : 0x00
+    /// The number of wheel modes `setWheelMode` takes (0x00...0x02).
+    static let wheelModeCount: UInt8 = 3
+
+    /// What one press of the wheel-mode button changes `current` to: the next mode, in the
+    /// order the mouse's own button steps through them (0x00 -> 0x01 -> 0x02 -> 0x00). A value
+    /// outside the known range starts again at 0x00.
+    static func nextWheelMode(current: UInt8) -> UInt8 {
+        current < wheelModeCount - 1 ? current + 1 : 0x00
     }
 
     private static func scrollRead(_ commandId: UInt8) -> RazerReport {
