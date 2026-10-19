@@ -52,4 +52,9 @@ final class ButtonProbeTests: XCTestCase {
         XCTAssertEqual(ButtonProbe.trimmed([0x04, 0x51, 0x00, 0x00]), [0x04, 0x51])
         XCTAssertEqual(ButtonProbe.trimmed([0x00, 0x00]), [0x00])
     }
+
+    func testBitsPadsToEightPlaces() {
+        XCTAssertEqual(ButtonProbe.bits(0x20), "00100000")
+        XCTAssertEqual(ButtonProbe.bits(0xFF), "11111111")
+    }
 }

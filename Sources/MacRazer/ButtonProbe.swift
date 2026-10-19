@@ -121,10 +121,11 @@ final class ButtonProbe: @unchecked Sendable {
                 guard let context else { return }
                 Unmanaged<Listener>.fromOpaque(context).takeUnretainedValue().probe.received(value, on: context)
             }, context)
-            // Raw reports from everything but the pointer interface, where they are mostly
-            // movement. Razer's "report 4" (special buttons in driver mode) arrives on the
-            // keyboard interface as a vendor array the value callback may not name.
-            if !isPointer, size > 0 {
+            // Raw reports from every interface. Razer's "report 4" (special buttons in driver
+            // mode) arrives on the keyboard interface as a vendor array the value callback may
+            // not name. The pointer interface is mostly movement, so `received(report:)` only
+            // prints its button byte, where OpenRazer finds wheel tilt as undeclared bits.
+            if size > 0 {
                 IOHIDDeviceRegisterInputReportCallback(device, listener.buffer, size, { context, _, _, _, reportID, report, length in
                     guard let context else { return }
                     let bytes = Array(UnsafeBufferPointer(start: report, count: length))
@@ -160,15 +161,33 @@ final class ButtonProbe: @unchecked Sendable {
 
     private func received(report: [UInt8], id: UInt32, on context: UnsafeMutableRawPointer) {
         let listener = Unmanaged<Listener>.fromOpaque(context).takeUnretainedValue()
+        if listener.isPointer {
+            guard let buttons = Self.pointerButtonByte(report),
+                  buttons != listener.lastReport.first else { return }
+            listener.lastReport = [buttons]
+            log("\(listener.label) report \(String(format: "0x%02x", id)) button byte: \(Self.bits(buttons))")
+            return
+        }
         guard report != listener.lastReport else { return }
         listener.lastReport = report
         log("\(listener.label) report \(String(format: "0x%02x", id)): \(Self.hex(Self.trimmed(report)))")
     }
 
+    /// The pointer report's button byte. IOKit hands raw reports over without their report id
+    /// when the interface has none, so this is byte 0 there. (OpenRazer reads tilt from bits
+    /// 5 and 6 of this byte on the Basilisk V3.)
+    static func pointerButtonByte(_ report: [UInt8]) -> UInt8? { report.first }
+
+    /// A byte as eight bits, bit 7 first, so a tilt bit reads as a position.
+    static func bits(_ byte: UInt8) -> String {
+        let binary = String(byte, radix: 2)
+        return String(repeating: "0", count: 8 - binary.count) + binary
+    }
+
     func stop() {
         for listener in listeners {
             IOHIDDeviceRegisterInputValueCallback(listener.device, nil, nil)
-            if !listener.isPointer, listener.size > 0 {
+            if listener.size > 0 {
                 IOHIDDeviceRegisterInputReportCallback(listener.device, listener.buffer, listener.size, nil, nil)
             }
             IOHIDDeviceUnscheduleFromRunLoop(listener.device, CFRunLoopGetMain(), CFRunLoopMode.defaultMode.rawValue)
