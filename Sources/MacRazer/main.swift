@@ -646,8 +646,61 @@ case "rgb":
         exit(2)
     }
 
+case "buttonprobe":
+    // What the mouse reports when each control is pressed, for learning a new model's
+    // buttons from the mouse itself. See `ButtonProbe`. Usage:
+    //   buttonprobe [seconds] [--driver-mode] [--no-settings]
+    let options = args.dropFirst()
+    let seconds = options.compactMap { Double($0) }.first ?? 90
+    let driverMode = options.contains("--driver-mode")
+    let readSettings = !options.contains("--no-settings")
+    guard let dev = openDevice() else { exit(1) }
+    defer { dev.close() }
+    let probe = ButtonProbe()
+
+    var restoreMode: UInt8?
+    if driverMode {
+        let before = (try? dev.send(RazerCommands.getDeviceMode()))?.arguments[0]
+        do {
+            _ = try dev.send(RazerCommands.setDeviceMode(RazerCommands.deviceModeDriver))
+            // Back to what it was; anything unreadable or unknown goes back to normal.
+            restoreMode = before == RazerCommands.deviceModeDriver ? RazerCommands.deviceModeDriver
+                                                                   : RazerCommands.deviceModeNormal
+            probe.log("driver mode on (was \(before.map { String(format: "0x%02x", $0) } ?? "unreadable")); it is put back when the run ends")
+        } catch {
+            probe.log("driver mode refused: \(error). Carrying on in the mouse's own mode.")
+        }
+    }
+    func restore() {
+        guard let mode = restoreMode else { return }
+        restoreMode = nil
+        do {
+            _ = try dev.send(RazerCommands.setDeviceMode(mode))
+            probe.log(String(format: "device mode put back to 0x%02x", mode))
+        } catch {
+            probe.log("✗ couldn't put the device mode back (\(error)). Unplug and replug the mouse to reset it.")
+        }
+    }
+
+    guard probe.start(vendorId: Razer.vendorId) > 0 else {
+        status("✗ No interface could be opened for listening. Grant Input Monitoring to this terminal.")
+        restore()
+        exit(2)
+    }
+    if readSettings { probe.watch(ButtonProbe.watchList()) }
+    signal(SIGINT) { _ in buttonProbeInterrupted = 1 }
+    probe.log("ready: press each control in turn, leaving a few seconds between them. Ctrl-C ends early.")
+    let deadline = Date().addingTimeInterval(seconds)
+    while Date() < deadline, buttonProbeInterrupted == 0 {
+        if readSettings { probe.poll(dev) }
+        _ = CFRunLoopRunInMode(.defaultMode, 0.5, false)
+    }
+    probe.stop()
+    restore()
+    probe.log("done")
+
 default:
     print("Unknown command: \(command)")
-    print("Available: info, discover, devicetest, battery, dpi [x] [y], poll [hz], stages [d1,d2,…] [active], rgb <static rrggbb|spectrum|wave|off>, brightness [pct], login-item [on|off]")
+    print("Available: info, discover, devicetest, battery, dpi [x] [y], poll [hz], stages [d1,d2,…] [active], rgb <static rrggbb|spectrum|wave|off>, brightness [pct], buttonprobe [seconds] [--driver-mode] [--no-settings], login-item [on|off]")
     exit(64)
 }

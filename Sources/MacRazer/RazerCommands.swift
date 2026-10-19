@@ -202,6 +202,48 @@ enum RazerCommands {
     /// Supported polling rates for this device (basic command set).
     static let supportedPollingRates = [125, 500, 1000]
 
+    /// razer_chroma_misc_get_polling_rate2() -> get_razer_report(0x00, 0xC0, 0x01). The
+    /// command 8 kHz-capable mice (DeathAdder V4 Pro, Viper V3 Pro) use instead of 0x85.
+    static func getPollingRate2() -> RazerReport {
+        RazerReport(commandClass: 0x00, commandId: 0xC0, dataSize: 0x01)
+    }
+
+    // --- Device mode (OpenRazer razer_chroma_standard_*_device_mode) ---
+    // 0x00 normal; 0x03 driver mode, where OpenRazer reads the DPI, profile and sniper
+    // buttons from the host instead of the mouse acting on them. 0x02 is a factory mode
+    // OpenRazer refuses to set, and so does this.
+
+    static let deviceModeNormal: UInt8 = 0x00
+    static let deviceModeDriver: UInt8 = 0x03
+
+    /// razer_chroma_standard_get_device_mode() -> get_razer_report(0x00, 0x84, 0x02).
+    static func getDeviceMode() -> RazerReport {
+        RazerReport(commandClass: 0x00, commandId: 0x84, dataSize: 0x02)
+    }
+
+    /// razer_chroma_standard_set_device_mode(mode, 0) -> get_razer_report(0x00, 0x04, 0x02).
+    static func setDeviceMode(_ mode: UInt8) -> RazerReport {
+        var r = RazerReport(commandClass: 0x00, commandId: 0x04, dataSize: 0x02)
+        r.arguments[0] = mode == deviceModeDriver ? deviceModeDriver : deviceModeNormal
+        return r
+    }
+
+    // --- Scroll wheel (Basilisk V3 family in OpenRazer; arg[0] VARSTORE, value in arg[1]) ---
+
+    /// razer_chroma_misc_get_scroll_mode() -> get_razer_report(0x02, 0x94, 0x02).
+    /// 0 tactile, 1 free-spin.
+    static func getScrollMode() -> RazerReport { scrollRead(0x94) }
+    /// razer_chroma_misc_get_scroll_acceleration() -> get_razer_report(0x02, 0x96, 0x02).
+    static func getScrollAcceleration() -> RazerReport { scrollRead(0x96) }
+    /// razer_chroma_misc_get_scroll_smart_reel() -> get_razer_report(0x02, 0x97, 0x02).
+    static func getScrollSmartReel() -> RazerReport { scrollRead(0x97) }
+
+    private static func scrollRead(_ commandId: UInt8) -> RazerReport {
+        var r = RazerReport(commandClass: 0x02, commandId: commandId, dataSize: 0x02)
+        r.arguments[0] = Razer.varstore
+        return r
+    }
+
     // --- Lighting (extended matrix effect command, class 0x0F / id 0x02) ---
     //
     // Cobra Pro / HyperSpeed drive ALL lighting as one group via led_id ZERO_LED (0x00).
