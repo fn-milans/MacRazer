@@ -50,6 +50,33 @@ expect rough edges until 1.0.
  it reads the answers, using a fake mouse instead of hardware.
 
 ### Added
+- **Razer Basilisk V4 Pro, on the cable, the HyperSpeed dongle and Bluetooth.** Battery,
+  charging, DPI up to 50000, DPI stages with Single and Stages modes, polling up to 8000 Hz,
+  lighting per zone (logo, wheel, underglow) with static, breathing, spectrum and reactive,
+  brightness, the sleep timer, the low-battery level, and the wheel mode, Smart-Reel and its sensitivity, and scroll acceleration. Over
+  Bluetooth everything but polling and the wheel settings.
+
+- **Basilisk V4 Pro profiles are kept in the mouse's onboard memory.** The mouse has 5
+  slots. Each profile gets its own the first time you apply it, and applying a profile switches
+  the mouse to that slot, with its DPI, DPI stages, lighting, wheel settings and button remaps.
+  It keeps those with MacRazer closed. Deleting a profile frees its slot; slot 1 always stays.
+  Manage Profiles shows which slot each profile is in. The button beside the left click
+  cycles through them, as from the factory, and Configure Buttons can put Cycle Up Profile or
+  Cycle Down Profile on any button. MacRazer follows a switch made on the mouse.
+
+- **Basilisk V4 Pro remaps are saved in the mouse, like Synapse does it.** Configure Buttons
+  writes each remap into the mouse and reads it back to check it. Remaps keep working with
+  MacRazer closed, over the dongle, the cable or Bluetooth, and on other computers. When the
+  mouse connects, MacRazer reads its remaps back, so another Mac shows the same ones. That covers
+  key combos, mouse buttons and media keys, on Scroll Click, Scroll Up, Scroll Down, Scroll
+  Left, Scroll Right, DPI, Left Side and the side buttons. The HyperShift layer is saved in
+  the mouse too, for every one of those buttons: hold the side trigger to use it. Double
+  Click still needs MacRazer running, and only Scroll Click and the side buttons offer it. MacRazer only
+  changes buttons it remapped itself, and clearing a remap puts back the button's factory
+  function. Scroll Mode keeps cycling the wheel's modes, as in Synapse, and the side trigger is
+  the mouse's HyperShift key, as Synapse sets it. The buttons are listed in the
+  order they sit on the mouse.
+
 - **Runs on Intel Macs.** The app is now a universal build, native on both Apple Silicon and
  Intel. It still needs macOS 14 or later.
 

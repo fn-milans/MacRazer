@@ -8,10 +8,18 @@ import Foundation
 /// effect (it decodes as a plain string and falls back to `.off`), so treat them as frozen.
 enum LightingEffect: String, CaseIterable, Identifiable {
     case staticColor = "Static"
+    case breathing = "Breathing"
     case spectrum = "Spectrum"
+    case reactive = "Reactive"
     case wave = "Wave"
     case off = "Off"
     var id: Self { self }
+
+    /// The effects with a colour of their own.
+    var usesColor: Bool { [.staticColor, .breathing, .reactive].contains(self) }
+
+    /// What mice without lighting zones offer (`ZonedLighting.effects` for the others).
+    static let classic: [LightingEffect] = [.staticColor, .spectrum, .wave, .off]
 }
 
 /// A named, switchable snapshot of everything the popover lets you configure: DPI, polling rate,
@@ -36,6 +44,13 @@ struct MouseProfile: Codable, Identifiable, Equatable {
     /// profiles saved before this existed keep decoding (they apply without touching the
     /// stage table, exactly as they always did).
     var dpiStages: [Int]?
+    /// The onboard slot (`OnboardSlots`) this profile is kept in, on mice that have them.
+    /// Given on first apply; nil for profiles not kept in the mouse.
+    var onboardSlot: Int?
+    /// Each zone's lighting, keyed by `LightingZone.storageKey`, on mice whose zones are set
+    /// one by one (`ZonedLighting`). Nil for every other profile, which applies `effect`,
+    /// `color` and `brightness` to the whole mouse.
+    var zones: [String: ZoneLighting]?
 
     init(name: String, dpi: Int, pollRate: Int, brightness: Int, effect: String, color: RGB,
          buttonMappings: [Int: RemapAction], dpiStages: [Int]? = nil) {

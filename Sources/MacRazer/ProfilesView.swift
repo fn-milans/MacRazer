@@ -42,7 +42,7 @@ struct ProfilesView: View {
             set: { if !$0 { pendingDeleteID = nil } }
         ), titleVisibility: .visible) {
             Button("Delete", role: .destructive) {
-                if let id = pendingDeleteID { controller.deleteProfile(id) }
+                if let id = pendingDeleteID { controller.deleteProfile(id, remapper: remapper) }
                 pendingDeleteID = nil
             }
             Button("Cancel", role: .cancel) { pendingDeleteID = nil }
@@ -55,7 +55,9 @@ struct ProfilesView: View {
             if let onBack { BackButton(action: onBack, escapes: renamingID == nil) }
             VStack(alignment: .leading, spacing: 2) {
                 Text("Profiles").font(.system(size: 16, weight: .semibold))
-                Text("Saved DPI, lighting and button setups you can switch between.")
+                Text(controller.supportsOnboardSlots
+                     ? "Saved DPI, lighting and button setups you can switch between. Up to 5 are kept in the mouse, so they work with MacRazer quit."
+                     : "Saved DPI, lighting and button setups you can switch between.")
                     .font(.system(size: 11)).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -72,6 +74,12 @@ struct ProfilesView: View {
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+    }
+
+    /// Says which onboard slot holds the profile, on mice that keep profiles themselves.
+    private func summary(for profile: MouseProfile) -> String {
+        guard controller.supportsOnboardSlots, let slot = profile.onboardSlot else { return profile.summary }
+        return profile.summary + " · In mouse, slot \(slot)"
     }
 
     private func row(for profile: MouseProfile) -> some View {
@@ -99,7 +107,7 @@ struct ProfilesView: View {
                 } else {
                     Text(profile.name).font(.system(size: 12.5, weight: .medium)).lineLimit(1)
                 }
-                Text(profile.summary).font(.system(size: 10.5)).foregroundStyle(.secondary)
+                Text(summary(for: profile)).font(.system(size: 10.5)).foregroundStyle(.secondary)
             }
             Spacer(minLength: 0)
 

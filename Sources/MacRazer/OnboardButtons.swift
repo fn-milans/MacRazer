@@ -1,0 +1,499 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+// Part of MacRazer, a control app for Razer mice on macOS. See LICENSE and NOTICE.md.
+
+import Foundation
+import CoreGraphics
+
+/// Remaps saved in the mouse itself, the way Synapse saves them: every control has an entry
+/// in the mouse's function table, and what is written there is what the mouse sends, on any
+/// connection and with MacRazer closed.
+///
+/// The table, its entry ids and the block layout were read from the Basilisk V4 Pro over the
+/// dongle (`RazerCommands.getButtonFunction`) and over Bluetooth
+/// (`BLEProtocol.Key.buttonFunctionGet`), and each id was confirmed by writing a test key to
+/// it and pressing the button (findings.md, 2026-10-19). The media-key block was read from a
+/// Basilisk Mobile that Synapse had configured.
+///
+/// A block is seven bytes: a function type, the length of its data, then the data.
+enum OnboardButtons {
+    /// One remappable control: the id the remap table keys it by (a CGEvent button number or a
+    /// `HardwareButton`), its entry in the mouse's table, and what the entry holds from the
+    /// factory.
+    struct Control: Equatable, Sendable {
+        let button: Int
+        let tableID: UInt8
+        let factory: [UInt8]
+    }
+
+    /// Entry 0x6A, most likely the button that switches the connection slot. Never written:
+    /// a mistake there could leave the mouse unable to pair.
+    static let connectionSlotID: UInt8 = 0x6A
+
+    /// The controls of a mouse whose table is known, or nil. Left and right click are left
+    /// out on purpose: a mistake there would leave the mouse unusable. Scroll up and down
+    /// (0x09, 0x0A) are in: on the factory function each notch is a wheel step, read from
+    /// the mouse (01 01 09, 01 01 0A). So is the wheel-mode button (entry 0x39), which Synapse doesn't remap
+    /// either: it stays on its own function, cycling the wheel's modes in the mouse. The side
+    /// trigger has no entry in the table (`fixed`).
+    static func layout(pid: Int) -> [Control]? {
+        RazerDevices.buttonTable(pid: pid).map(layout)
+    }
+
+    /// The function tables MacRazer knows, named by the mouse they were read from. A registry
+    /// row points at one (`RazerDeviceInfo.buttonTable`), so mice that share a table share it.
+    enum Table: Equatable, Sendable {
+        /// Basilisk V4 Pro: the same table on the cable, the dongle and Bluetooth.
+        case basiliskV4Pro
+    }
+
+    static func layout(_ table: Table) -> [Control] {
+        switch table {
+        case .basiliskV4Pro:
+            return [
+                Control(button: 2, tableID: 0x03, factory: mouseBlock(3)),
+                Control(button: HardwareButton.scrollUp.rawValue, tableID: 0x09, factory: mouseBlock(9)),
+                Control(button: HardwareButton.scrollDown.rawValue, tableID: 0x0A, factory: mouseBlock(10)),
+                Control(button: 3, tableID: 0x04, factory: mouseBlock(4)),
+                Control(button: 4, tableID: 0x05, factory: mouseBlock(5)),
+                Control(button: HardwareButton.dpiCycle.rawValue, tableID: 0x60, factory: [0x06, 0x01, 0x06, 0, 0, 0, 0]),
+                Control(button: HardwareButton.sideFront.rawValue, tableID: 0x80, factory: disabledBlock),
+                Control(button: HardwareButton.leftClickSide.rawValue, tableID: 0x0E, factory: [0x07, 0x01, 0x04, 0, 0, 0, 0]),
+                Control(button: HardwareButton.tiltLeft.rawValue, tableID: 0x34, factory: [0x0E, 0x01, 0x68, 0x00, 0x14, 0, 0]),
+                Control(button: HardwareButton.tiltRight.rawValue, tableID: 0x35, factory: [0x0E, 0x01, 0x69, 0x00, 0x14, 0, 0]),
+            ].filter { $0.tableID != connectionSlotID }
+        }
+    }
+
+    /// Controls listed without a remap menu, and what the row says instead: Scroll Mode
+    /// (Synapse doesn't remap it either) and the side trigger, which is the mouse's own
+    /// HyperShift clutch (Synapse's default for it) and which the firmware exposes in no
+    /// table, list or report outside driver mode (button-probe and table dumps, 2026-10-19).
+    static func fixed(pid: Int) -> [Int: String] {
+        layout(pid: pid) == nil ? [:] : [HardwareButton.wheelMode.rawValue: "Cycle Scroll Mode", HardwareButton.sideTrigger.rawValue: "HyperShift"]
+    }
+
+    /// What a control does from the factory, in the remap menu's words, for a row with no
+    /// remap: Synapse's default map (Left Side cycles profiles up, Side Front is off).
+    static func factoryLabel(_ control: Control) -> String {
+        switch (control.factory[0], control.factory[2]) {
+        case (0x00, _): return "Disabled"
+        case (0x01, 3): return "Middle Click"
+        case (0x01, 4): return "Back"
+        case (0x01, 5): return "Forward"
+        case (0x01, 9): return "Scroll Up"
+        case (0x01, 10): return "Scroll Down"
+        case (0x06, 0x06): return "DPI Cycle Up"
+        case (0x07, 0x04): return "Cycle Up Profile"
+        case (0x07, 0x05): return "Cycle Down Profile"
+        case (0x0E, 0x68): return "Scroll Left"
+        case (0x0E, 0x69): return "Scroll Right"
+        default: return "Default"
+        }
+    }
+
+    /// Whether a control sends nothing to the Mac on its factory function, so a press of it
+    /// can't be detected until it holds a remap: Side Front (disabled from the factory) and
+    /// Left Side (07 01 04, a function the mouse keeps to itself; silent in every probe).
+    static func silentOnFactory(_ control: Control) -> Bool {
+        control.factory.first == 0x00 || control.factory.first == 0x07
+    }
+
+    /// The remap-table keys a mouse can't take: controls listed without a remap menu, on
+    /// both layers. Saved remaps for them (from an earlier build) are dropped,
+    /// since the window offers no way to clear them.
+    static func unremappable(pid: Int) -> Set<Int> {
+        let ids = Array(fixed(pid: pid).keys)
+        return Set(ids + ids.map(ButtonRemapper.hyperShiftKey))
+    }
+
+    /// The order the remap window lists a mouse's controls in, top to bottom, as they sit on
+    /// the mouse. Nil for a mouse without one.
+    static func rowOrder(pid: Int) -> [Int]? {
+        guard layout(pid: pid) != nil else { return nil }
+        return [2, HardwareButton.scrollUp.rawValue, HardwareButton.scrollDown.rawValue, HardwareButton.tiltLeft.rawValue, HardwareButton.tiltRight.rawValue,
+                HardwareButton.dpiCycle.rawValue, HardwareButton.wheelMode.rawValue,
+                HardwareButton.leftClickSide.rawValue, HardwareButton.sideFront.rawValue,
+                4, 3, HardwareButton.sideTrigger.rawValue]
+    }
+
+    /// Whether MacRazer sees the control's presses while it holds its factory function: only
+    /// the ones that are a mouse button then. Actions only MacRazer can do (Double Click,
+    /// HyperShift) work on those alone.
+    static func appSees(_ control: Control) -> Bool {
+        // Mouse buttons 1-5 only: scroll up and down are 01 01 09 / 0A too, but arrive as
+        // wheel steps, which the tap doesn't remap.
+        control.factory.first == 0x01 && (1...5).contains(control.factory[2])
+    }
+
+    // MARK: Blocks
+
+    static let disabledBlock: [UInt8] = [0x00, 0x01, 0x00, 0, 0, 0, 0]
+
+    /// A mouse button by its HID number (1 left, 2 right, 3 middle, 4 back, 5 forward).
+    static func mouseBlock(_ hidButton: UInt8) -> [UInt8] { [0x01, 0x01, hidButton, 0, 0, 0, 0] }
+
+    /// A consumer-control usage (volume, media keys), big-endian.
+    static func consumerBlock(_ usage: UInt16) -> [UInt8] {
+        [0x0A, 0x02, UInt8(usage >> 8), UInt8(usage & 0xFF), 0, 0, 0]
+    }
+
+    /// IOKit NX_KEYTYPE codes (`ButtonRemapper.mediaOptions`) as consumer-control usages.
+    static let consumerUsages: [Int: UInt16] = [
+        0: 0x00E9, // Volume Up
+        1: 0x00EA, // Volume Down
+        7: 0x00E2, // Mute
+        16: 0x00CD, // Play / Pause
+        17: 0x00B5, // Next Track
+        18: 0x00B6, // Previous Track
+    ]
+
+    /// HyperShift while held: type 0C switches the mouse to its HyperShift layer
+    /// (`shiftedPlan`), the job the side trigger has from the factory. 0C 01 00, 01 and 02 all
+    /// did it on Side Front (press test with a layer-01 Volume Up, 2026-10-19); 0C 01 39 is the
+    /// wheel-mode button's own function, so the third byte picks a sub-function.
+    static let hyperShiftBlock: [UInt8] = [0x0C, 0x01, 0x01, 0, 0, 0, 0]
+
+    /// What the mouse itself can do for an action, or nil when only MacRazer can (a double
+    /// click, a key the mouse's keyboard format has no usage for). HyperShift is for the
+    /// standard layer only (`shiftedPlan`).
+    static func nativeBlock(for action: RemapAction) -> [UInt8]? {
+        switch action {
+        case .passthrough, .doubleClick:
+            return nil
+        case .hyperShift:
+            return hyperShiftBlock
+        case .keystroke(let keyCode, let modifiers, _):
+            // A lone modifier is its HID modifier bit with no key, which is what a keyboard
+            // sends for it (modkeytest, 2026-10-19: 02 02 08 00 made Side Back report a bare
+            // Left ⌘, held for as long as the button is).
+            if let bit = BLEProtocol.hidModifierBit(forMacKeyCode: keyCode) {
+                return BLEProtocol.keyboardBlock(hidUsage: 0, modifiers: bit)
+            }
+            guard let usage = BLEProtocol.hidUsage(forMacKeyCode: keyCode) else { return nil }
+            return BLEProtocol.keyboardBlock(hidUsage: usage,
+                                             modifiers: DPIShortcutModifiers.hidValue(from: CGEventFlags(rawValue: modifiers)))
+        case .mouseButton(let button, _):
+            guard (0...4).contains(button) else { return nil }
+            return mouseBlock(UInt8(button + 1))
+        case .mediaKey(let code, _):
+            return consumerUsages[code].map(consumerBlock)
+        case .cycleProfile(let up):
+            // Left Side's factory function is Cycle Up (Synapse's default map); 05 is Cycle
+            // Down. Both moved between slots when pressed (2026-10-19).
+            return [0x07, 0x01, up ? 0x04 : 0x05, 0, 0, 0, 0]
+        }
+    }
+
+    // MARK: Reading the mouse
+
+    /// The action a block in the mouse's table stands for, the reverse of `nativeBlock`:
+    /// `.passthrough` for the control's factory function, nil for a block MacRazer can't
+    /// write (a Synapse macro, a key it has no code for). Only blocks that `nativeBlock`
+    /// writes back byte for byte are recognised, so reading one and syncing it is no write.
+    static func action(for block: [UInt8], control: Control) -> RemapAction? {
+        if block == control.factory { return .passthrough }
+        guard block.count == 7 else { return nil }
+        let candidate: RemapAction?
+        switch block[0] {
+        case 0x01 where (1...5).contains(block[2]):
+            let names = ["Left Click", "Right Click", "Middle Click", "Back", "Forward"]
+            candidate = .mouseButton(button: Int(block[2]) - 1, name: names[Int(block[2]) - 1])
+        case 0x02:
+            candidate = keystroke(hidUsage: block[3], modifiers: block[2])
+        case 0x07 where block[2] == 0x04 || block[2] == 0x05:
+            candidate = .cycleProfile(up: block[2] == 0x04)
+        case 0x0A:
+            let usage = UInt16(block[2]) << 8 | UInt16(block[3])
+            candidate = consumerUsages.first { $0.value == usage }.flatMap { code, _ in
+                ButtonRemapper.mediaOptions.first { $0.code == code }.map { .mediaKey(code: $0.code, name: $0.name) }
+            }
+        case 0x0C:
+            candidate = .hyperShift
+        default:
+            candidate = nil
+        }
+        return candidate.flatMap { nativeBlock(for: $0) == block ? $0 : nil }
+    }
+
+    /// A keyboard block as a keystroke, named the way the key recorder names it (or as the
+    /// preset it matches).
+    private static func keystroke(hidUsage: UInt8, modifiers: UInt8) -> RemapAction? {
+        if hidUsage == 0 {
+            // A lone modifier key, left and right apart.
+            guard let keyCode = (0...127).map(UInt16.init).first(where: { BLEProtocol.hidModifierBit(forMacKeyCode: $0) == modifiers }),
+                  let name = RecorderNSView.modifierKeys[keyCode]?.name else { return nil }
+            return .keystroke(keyCode: keyCode, modifiers: 0, name: name)
+        }
+        guard let keyCode = (0...127).map(UInt16.init).first(where: { BLEProtocol.hidUsage(forMacKeyCode: $0) == hidUsage })
+        else { return nil }
+        var flags = CGEventFlags()
+        if modifiers & 0x01 != 0 { flags.insert(.maskControl) }
+        if modifiers & 0x02 != 0 { flags.insert(.maskShift) }
+        if modifiers & 0x04 != 0 { flags.insert(.maskAlternate) }
+        if modifiers & 0x08 != 0 { flags.insert(.maskCommand) }
+        if let preset = ButtonRemapper.presets.first(where: { $0.keyCode == keyCode && $0.flags == flags }) {
+            return preset.action
+        }
+        return .keystroke(keyCode: keyCode, modifiers: flags.rawValue,
+                          name: BLEProtocol.shortcutLabel(hidUsage: hidUsage, modifiers: modifiers))
+    }
+
+    /// The remap table with each control's entries set to what the mouse holds, standard
+    /// layer and HyperShift layer: the mouse is where remaps live, so a remap made on another
+    /// computer (or a fresh install's empty table) gives way to it. `standard` and `shifted`
+    /// are the blocks read, by table id; a shifted entry read as unset is the factory
+    /// function. A control missing from a read keeps its mapping. Kept as they are: a mapping
+    /// that already writes what the mouse holds (its name included), and an action only
+    /// MacRazer can do (Double Click) on a control the mouse still has on its factory function.
+    static func adopt(pid: Int, mappings: [Int: RemapAction],
+                      standard: [UInt8: [UInt8]], shifted: [UInt8: [UInt8]?]) -> [Int: RemapAction] {
+        guard let controls = layout(pid: pid) else { return mappings }
+        var out = mappings
+        func take(_ key: Int, read: [UInt8], control: Control, shiftedLayer: Bool) {
+            let local = mappings[key] ?? .passthrough
+            if local != .passthrough, nativeBlock(for: local) == read, !(shiftedLayer && local == .hyperShift) { return }
+            var found = action(for: read, control: control)
+            if shiftedLayer, found == .hyperShift { found = nil }
+            switch found {
+            case .passthrough?:
+                if !shiftedLayer, local != .passthrough, placement(for: control, mappings: [key: local]) == .app { return }
+                out.removeValue(forKey: key)
+            case let action?:
+                out[key] = action
+            case nil:
+                // Something MacRazer can't show; the row reads as factory and the entry is
+                // left alone (`step`).
+                out.removeValue(forKey: key)
+            }
+        }
+        for control in controls where control.tableID != connectionSlotID {
+            if let read = standard[control.tableID] {
+                take(control.button, read: read, control: control, shiftedLayer: false)
+            }
+            if let read = shifted[control.tableID] {
+                take(ButtonRemapper.hyperShiftKey(control.button), read: read ?? control.factory, control: control, shiftedLayer: true)
+            }
+        }
+        return out
+    }
+
+    // MARK: Plan
+
+    /// Where a control's remap lives.
+    enum Placement: Equatable, Sendable {
+        /// Nothing remapped: the mouse's own function.
+        case factory
+        /// Saved in the mouse as this block.
+        case mouse([UInt8])
+        /// Only MacRazer can do it, so the entry keeps its factory function and the event tap
+        /// acts on the presses (`appSees`).
+        case app
+    }
+
+    struct Entry: Equatable, Sendable {
+        let control: Control
+        let placement: Placement
+    }
+
+    /// Every control's placement for a remap table's standard layer. HyperShift mappings go
+    /// to the mouse's own HyperShift layer (`shiftedPlan`), switched by the side trigger and
+    /// by any control set to HyperShift (`hyperShiftBlock`).
+    static func plan(pid: Int, mappings: [Int: RemapAction]) -> [Entry] {
+        guard let controls = layout(pid: pid) else { return [] }
+        return controls.map { Entry(control: $0, placement: placement(for: $0, mappings: mappings)) }
+    }
+
+    static func placement(for control: Control, mappings: [Int: RemapAction]) -> Placement {
+        let action = mappings[control.button] ?? .passthrough
+        if action == .passthrough { return .factory }
+        return nativeBlock(for: action).map(Placement.mouse) ?? .app
+    }
+
+    // MARK: HyperShift layer
+
+    /// The mouse keeps a second function table, its HyperShift layer, used while the side
+    /// trigger (Synapse's HyperShift clutch) is held: 02/0C with the third argument 01
+    /// (`RazerCommands.setButtonFunction(_:block:layer:)`), read with 02/8C and the same
+    /// argument. Confirmed on the V4 Pro over the dongle: Volume Up written to Side Back's
+    /// layer 01 fired only with the trigger held, left the standard layer alone, and read back
+    /// with layer 01 (hslayerread, 2026-10-19). Over Bluetooth the same layer byte goes in the
+    /// write's payload, and every read carries the layer (bthstest, 2026-10-19).
+    ///
+    /// A control's HyperShift entry: its remap there, or `.factory` (left as the mouse has
+    /// it, which from the factory is the same function as the standard layer). Actions only
+    /// MacRazer can do don't exist on this layer, and neither does HyperShift itself.
+    static func shiftedPlan(pid: Int, mappings: [Int: RemapAction]) -> [Entry] {
+        guard let controls = layout(pid: pid) else { return [] }
+        return controls.map { control in
+            let action = mappings[ButtonRemapper.hyperShiftKey(control.button)] ?? .passthrough
+            guard action != .hyperShift else { return Entry(control: control, placement: .factory) }
+            return Entry(control: control, placement: nativeBlock(for: action).map(Placement.mouse) ?? .factory)
+        }
+    }
+
+    /// Brings the mouse's HyperShift layer in line with a plan, the same way `sync` does the
+    /// standard layer (`step`). An entry nothing was written to reads as the control's
+    /// factory function, which is what the mouse does with it.
+    static func syncShifted(_ table: ButtonFunctionTable, plan: [Entry],
+                            owned start: [UInt8: Set<[UInt8]>]) -> (owned: [UInt8: Set<[UInt8]>], failed: Int) {
+        var owned = start
+        var failed = 0
+        for entry in plan where entry.control.tableID != connectionSlotID {
+            let id = entry.control.tableID
+            // Not `try?`: it would flatten an unset entry (nil) into a failed read.
+            let read: [UInt8]?
+            do { read = try table.readShiftedBlock(id) } catch { failed += 1; continue }
+            let step = step(entry.placement, current: read ?? entry.control.factory,
+                            factory: entry.control.factory, owned: owned[id] ?? [])
+            if let block = step.write {
+                guard (try? table.writeShiftedBlock(id, block: block)) != nil else {
+                    owned[id] = step.ownedIfFailed
+                    failed += 1
+                    continue
+                }
+            }
+            owned[id] = step.owned
+        }
+        return (owned, failed)
+    }
+
+    // MARK: Detection
+
+    /// The control a press came from, for the remap window's "Detected" line: the one whose
+    /// entry holds what the mouse sent (`OnboardPressListener`). A HID value on the button,
+    /// keyboard or consumer page; `value` is its integer value, which for AC Pan (wheel
+    /// tilt) says the direction. Nil when no control sends it.
+    static func control(forPage page: Int, usage: Int, value: Int, in plan: [Entry]) -> Int? {
+        func holds(_ entry: Entry) -> [UInt8] {
+            if case .mouse(let block) = entry.placement { return block }
+            return entry.control.factory
+        }
+        for entry in plan {
+            let block = holds(entry)
+            switch (page, block[0]) {
+            case (0x01, 0x01) where usage == 0x38 && (block[2] == 0x09 || block[2] == 0x0A):
+                // A wheel step: positive is up (09), negative down (0A).
+                if (value > 0) == (block[2] == 0x09) { return entry.control.button }
+            case (0x09, 0x01) where usage == Int(block[2]):
+                return entry.control.button
+            case (0x07, 0x02) where usage == Int(block[3]) && usage != 0:
+                return entry.control.button
+            case (0x07, 0x02) where block[3] == 0 && (0xE0...0xE7).contains(usage)
+                                    && block[2] == 1 << UInt8(usage - 0xE0):
+                // A lone modifier: the press arrives as the modifier's own usage.
+                return entry.control.button
+            case (0x0C, 0x0A) where usage == Int(block[2]) << 8 | Int(block[3]):
+                return entry.control.button
+            case (0x0C, 0x0E) where usage == 0x238:
+                // Tilt: AC Pan, negative to the left. Factory 0E 01 68 is the left tilt.
+                if (value < 0) == (block[2] == 0x68) { return entry.control.button }
+            default:
+                break
+            }
+        }
+        return nil
+    }
+
+    /// The control behind one of the notices the mouse sends on its 16-byte keyboard-style
+    /// interface (report 5) when it acts on a button itself: `05 39 <mode>` after the
+    /// wheel-mode button, `05 02 <dpi>` after the DPI button (button-probe logs, normal
+    /// mode). Only while that control is still on its own function.
+    static func control(forNotice bytes: [UInt8], in plan: [Entry]) -> Int? {
+        guard bytes.count >= 2, bytes[0] == 0x05 else { return nil }
+        switch bytes[1] {
+        case 0x39:
+            // Never remapped (`fixed`), so it always does its own job.
+            return plan.isEmpty ? nil : HardwareButton.wheelMode.rawValue
+        case 0x02:
+            let button = HardwareButton.dpiCycle.rawValue
+            guard let entry = plan.first(where: { $0.control.button == button }), entry.placement == .factory else { return nil }
+            return button
+        default:
+            return nil
+        }
+    }
+
+    // MARK: Sync
+
+    /// What to do with one entry. `write` is the block to put in it (nil: leave it as it is);
+    /// `owned` is the blocks MacRazer may have left in it afterwards, which is what lets it
+    /// put the entry back later. A failed write counts the block it tried, since the mouse
+    /// may hold it anyway.
+    struct Step: Equatable {
+        let write: [UInt8]?
+        let owned: Set<[UInt8]>
+        /// What `owned` becomes when the write fails.
+        let ownedIfFailed: Set<[UInt8]>
+    }
+
+    /// One entry's step. Only an entry MacRazer wrote is ever put back: one that holds
+    /// something else was set some other way (Synapse on another computer) and is left alone.
+    static func step(_ placement: Placement, current: [UInt8], factory: [UInt8], owned: Set<[UInt8]>) -> Step {
+        switch placement {
+        case .mouse(let block):
+            guard current != block else { return Step(write: nil, owned: [block], ownedIfFailed: [block]) }
+            return Step(write: block, owned: [block], ownedIfFailed: owned.union([block]))
+        case .factory, .app:
+            let ours = owned.contains(current)
+            guard ours, current != factory else { return Step(write: nil, owned: [], ownedIfFailed: []) }
+            return Step(write: factory, owned: [], ownedIfFailed: owned.union([current]))
+        }
+    }
+
+    /// Brings a mouse's table in line with a plan, reading each entry first; a write is
+    /// checked by reading it back (`ButtonFunctionTable.writeButtonBlock`). Returns what
+    /// MacRazer owns afterwards and how many entries failed to read or write.
+    static func sync(_ table: ButtonFunctionTable, plan: [Entry],
+                     owned start: [UInt8: Set<[UInt8]>]) -> (owned: [UInt8: Set<[UInt8]>], failed: Int) {
+        var owned = start
+        var failed = 0
+        for entry in plan where entry.control.tableID != connectionSlotID {
+            let id = entry.control.tableID
+            guard let current = try? table.readButtonBlock(id) else { failed += 1; continue }
+            let step = step(entry.placement, current: current, factory: entry.control.factory, owned: owned[id] ?? [])
+            if let block = step.write {
+                guard (try? table.writeButtonBlock(id, block: block)) != nil else {
+                    owned[id] = step.ownedIfFailed
+                    failed += 1
+                    continue
+                }
+            }
+            owned[id] = step.owned
+        }
+        return (owned, failed)
+    }
+}
+
+/// Which blocks MacRazer wrote into which mouse's function table, by serial number, so only
+/// those are ever put back (`OnboardButtons.step`).
+struct OnboardOwnership {
+    static let defaultsKey = "onboardButtonsOwned"
+    let defaults: UserDefaults
+
+    /// The record of a mouse's HyperShift layer (`OnboardButtons.shiftedPlan`).
+    static func shiftedKey(serial: String) -> String { serial + "#hypershift" }
+
+    func owned(serial: String) -> [UInt8: Set<[UInt8]>] {
+        guard let all = defaults.dictionary(forKey: Self.defaultsKey),
+              let mouse = all[serial] as? [String: [Data]] else { return [:] }
+        var out: [UInt8: Set<[UInt8]>] = [:]
+        for (id, blocks) in mouse {
+            guard let id = UInt8(id, radix: 16) else { continue }
+            out[id] = Set(blocks.map { Array($0) })
+        }
+        return out
+    }
+
+    func set(_ owned: [UInt8: Set<[UInt8]>], serial: String) {
+        var all = defaults.dictionary(forKey: Self.defaultsKey) ?? [:]
+        let mouse = owned.filter { !$0.value.isEmpty }
+        if mouse.isEmpty {
+            all.removeValue(forKey: serial)
+        } else {
+            all[serial] = Dictionary(uniqueKeysWithValues: mouse.map { id, blocks in
+                (String(format: "%02X", id), blocks.sorted { $0.lexicographicallyPrecedes($1) }.map { Data($0) })
+            })
+        }
+        defaults.set(all, forKey: Self.defaultsKey)
+    }
+}
