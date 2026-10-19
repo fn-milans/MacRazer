@@ -189,10 +189,34 @@ final class ButtonRemapper: ObservableObject, @unchecked Sendable {
         saveMappings()
     }
 
+    /// The `HardwareButton`s to list in the remap window while the mouse reports them.
+    @Published private(set) var hardwareButtons: Set<Int> = []
+
+    func setHardwareButtons(_ buttons: [HardwareButton]) {
+        let ids = Set(buttons.map(\.rawValue))
+        if ids != hardwareButtons { hardwareButtons = ids }
+    }
+
+    /// A press or release of a button only driver mode reports (`HardwareButton`). Returns
+    /// whether a mapping took it; when not, the caller does the button's own job. No pause
+    /// check, unlike the tap: these come from the mouse's own interface, so they can't be
+    /// another device's. Main thread.
+    func hardwareButton(_ button: HardwareButton, down: Bool) -> Bool {
+        let id = button.rawValue
+        if down, lastDetectedButton != id || !seenButtons.contains(id) {
+            lastDetectedButton = id
+            seenButtons.insert(id)
+        }
+        guard let action = mappings[id], action != .passthrough else { return false }
+        if down { apply(action) }
+        return true
+    }
+
     func actionLabel(for button: Int) -> String { mappings[button]?.label ?? "None" }
 
     /// Friendly, compact label for a raw CGEvent button number.
     static func label(for button: Int) -> String {
+        if let hardware = HardwareButton(rawValue: button) { return hardware.label }
         switch button {
         case -1: return "DPI Cycle"
         case 2: return "Wheel Click"

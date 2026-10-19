@@ -23,7 +23,8 @@ struct RemapView: View {
     @State private var recorderError: String?
 
     private var buttons: [Int] {
-        Array(remapper.seenButtons.union(remapper.suggestedButtons).union(remapper.mappings.keys)).sorted()
+        Array(remapper.seenButtons.union(remapper.suggestedButtons).union(remapper.hardwareButtons)
+            .union(remapper.mappings.keys)).sorted()
     }
 
     var body: some View {
@@ -43,6 +44,7 @@ struct RemapView: View {
                     recordingDpiCycleShortcut = true
                 }
             }
+            if let controller { HardwareButtonsSection(controller: controller) }
             if remapper.isBasiliskV3XHyperSpeed { basiliskButtonLimits }
             footer
         }
@@ -249,6 +251,34 @@ struct RemapView: View {
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.batteryMid.opacity(0.10), in: RoundedRectangle(cornerRadius: 10))
+    }
+}
+
+/// The switch for driver mode (`MouseController.hardwareButtonsEnabled`), on mice whose
+/// driver-mode buttons are known.
+private struct HardwareButtonsSection: View {
+    @ObservedObject var controller: MouseController
+
+    var body: some View {
+        if controller.supportsHardwareButtons {
+            VStack(alignment: .leading, spacing: 6) {
+                Toggle(isOn: $controller.hardwareButtonsEnabled) {
+                    Text("Remap every button").font(.system(size: 12, weight: .medium))
+                }
+                .toggleStyle(.switch)
+                .controlSize(.small)
+                Text("Lets MacRazer see the DPI, wheel-mode and other special buttons, so they can be remapped. While this is on, MacRazer does the DPI and wheel-mode switching itself, so those buttons only work while it runs. Quitting MacRazer gives them back to the mouse.")
+                    .font(.system(size: 10)).foregroundStyle(.tertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let error = controller.hardwareButtonsError {
+                    Text(error).font(.system(size: 10)).foregroundStyle(Color.batteryMid)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
+        }
     }
 }
 

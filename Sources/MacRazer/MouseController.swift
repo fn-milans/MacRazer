@@ -339,7 +339,10 @@ final class MouseController: ObservableObject, @unchecked Sendable {
         // then loses power never reaches `applicationWillTerminate`. Save on the way down.
         sleepObserver = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.willSleepNotification, object: nil, queue: .main
-        ) { [weak self] _ in self?.saveHistorySoon() }
+        ) { [weak self] _ in
+            self?.saveHistorySoon()
+            self?.restoreNormalMode()
+        }
         // Sleep is where a mouse most often disappears: switched off, or its dongle moved to
         // another machine. The poll may be minutes away by then, so ask as soon as we're up.
         wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
@@ -575,6 +578,7 @@ final class MouseController: ObservableObject, @unchecked Sendable {
                 let charging = observedCharging ?? false
                 outcome = .battery(raw: raw, charging: charging)
             }
+            syncDriverModeSync()
         } catch {
             releaseDeviceIfNeeded(after: error)
             errText = String(describing: error)
@@ -876,6 +880,134 @@ final class MouseController: ObservableObject, @unchecked Sendable {
     /// red. Main thread. The protocol has no lighting read-back, so this is the app's own idea
     /// of what the mouse shows, the same one its controls work from.
     func lightingRestoreReport() -> RazerReport { report(for: effect, color: lightingColor) }
+
+    // MARK: - Driver mode (the buttons only it reports)
+
+    static let hardwareButtonsEnabledKey = "hardwareButtonsEnabled"
+
+    /// User preference: put a mouse whose driver-mode codes are known (`HardwareButton.layout`)
+    /// into OpenRazer's driver mode, so its DPI, wheel-mode and otherwise silent buttons reach
+    /// MacRazer and can be remapped. Off by default: in driver mode the mouse stops acting on
+    /// its DPI and wheel-mode buttons itself, and MacRazer has to do those jobs
+    /// (`HardwareButtonRouter`).
+    @Published var hardwareButtonsEnabled: Bool =
+        UserDefaults.standard.bool(forKey: MouseController.hardwareButtonsEnabledKey) {
+        didSet {
+            guard hardwareButtonsEnabled != oldValue else { return }
+            UserDefaults.standard.set(hardwareButtonsEnabled, forKey: Self.hardwareButtonsEnabledKey)
+            if hardwareButtonsEnabled { hardwareButtonsError = nil }
+            let wanted = hardwareButtonsEnabled
+            userCommand { [weak self] in
+                guard let self else { return }
+                self.driverModeWanted = wanted
+                _ = try? self.ensureDevice()
+                self.syncDriverModeSync()
+            }
+        }
+    }
+
+    /// Whether the connected mouse is in driver mode, as last read or set.
+    @Published private(set) var driverModeActive = false
+    /// Why `hardwareButtonsEnabled` was switched back off, for the remap window.
+    @Published private(set) var hardwareButtonsError: String?
+
+    var supportsHardwareButtons: Bool {
+        !deviceIsBluetooth && deviceID.map { HardwareButton.layout(pid: $0) != nil } == true
+    }
+
+    /// Main thread. Turns the preference off when MacRazer can't hear the buttons (no Input
+    /// Monitoring): leaving the mouse in driver mode would only make its DPI button dead.
+    func hardwareButtonsUnavailable(_ reason: String) {
+        hardwareButtonsError = reason
+        hardwareButtonsEnabled = false
+    }
+
+    /// io-queue mirror of `hardwareButtonsEnabled`.
+    private var driverModeWanted = UserDefaults.standard.bool(forKey: MouseController.hardwareButtonsEnabledKey)
+    /// io-queue only. The mouse this app switched into driver mode.
+    private var driverModeSetOn: (locationID: Int, pid: Int)?
+    /// io-queue only. The mouse whose mode was read since it was opened. A mouse left in
+    /// driver mode by a MacRazer that was killed gets put back once, even with the
+    /// preference off; after that, only a mouse that wants or has driver mode is asked.
+    private var driverModeCheckedOn: (locationID: Int, pid: Int)?
+
+    /// io-queue only. Brings the open mouse's mode in line with the preference. Driver mode
+    /// does not survive everything (the mouse powering off, for one), so while it is wanted
+    /// the mode is read back on every poll and set again when it has gone.
+    private func syncDriverModeSync() {
+        guard let dev = device, !dev.isBluetooth, HardwareButton.layout(pid: dev.productID) != nil else {
+            publish { self.update(\.driverModeActive, false) }
+            return
+        }
+        let here = (locationID: dev.locationID, pid: dev.productID)
+        let ours = driverModeSetOn.map { $0 == here } ?? false
+        let checked = driverModeCheckedOn.map { $0 == here } ?? false
+        guard driverModeWanted || ours || !checked else { return }
+        guard let mode = try? dev.sendWithRetry(RazerCommands.getDeviceMode()).arguments[0] else { return }
+        driverModeCheckedOn = here
+        let target = driverModeWanted ? RazerCommands.deviceModeDriver : RazerCommands.deviceModeNormal
+        var now = mode
+        if mode != target, (try? dev.sendWithRetry(RazerCommands.setDeviceMode(target))) != nil { now = target }
+        let active = now == RazerCommands.deviceModeDriver
+        driverModeSetOn = active ? here : nil
+        publish { self.update(\.driverModeActive, active) }
+    }
+
+    /// Puts the mouse back in normal mode, so its DPI and wheel-mode buttons work on their
+    /// own again: before the app quits, and before the Mac sleeps (the next poll after wake
+    /// sets driver mode again). Waits at most `timeout` for `io`, like `flushHistoryToDisk`.
+    func restoreNormalMode(timeout: TimeInterval = 1.5) {
+        let done = DispatchSemaphore(value: 0)
+        io.async {
+            defer { done.signal() }
+            guard let dev = self.device, let set = self.driverModeSetOn,
+                  set == (locationID: dev.locationID, pid: dev.productID),
+                  (try? dev.sendWithRetry(RazerCommands.setDeviceMode(RazerCommands.deviceModeNormal))) != nil
+            else { return }
+            self.driverModeSetOn = nil
+            self.publish { self.update(\.driverModeActive, false) }
+        }
+        _ = done.wait(timeout: .now() + timeout)
+    }
+
+    /// The DPI button's job while the mouse is in driver mode: the next stage of the mouse's
+    /// own stage table, wrapping after the last, as the mouse does it in normal mode.
+    func cycleDpiStage() {
+        userCommand { [weak self] in
+            guard let self else { return }
+            do {
+                let dev = try self.ensureDevice()
+                let stages = try dev.sendWithRetry(RazerCommands.getDPIStages())
+                guard let step = RazerCommands.nextDPIStage(from: stages) else { throw HIDDevice.HIDError.badResponse }
+                _ = try dev.sendWithRetry(step.report)
+                let v = UInt16(max(100, min(step.dpi, 45000)))
+                _ = try dev.sendWithRetry(RazerCommands.setDPI(x: v, y: v))
+                self.publish { self.dpi = Int(v); self.clearActiveProfileIfNeeded() }
+            } catch {
+                self.publish { self.lastWriteFailure = Date() }
+            }
+        }
+    }
+
+    /// io-queue only. The last non-zero wheel mode seen, for `nextWheelMode`.
+    private var lastOtherWheelMode: UInt8?
+
+    /// The wheel-mode button's job while the mouse is in driver mode: switch the wheel's
+    /// feel, read from the mouse first so a change made any other way is respected.
+    func toggleWheelMode() {
+        userCommand { [weak self] in
+            guard let self else { return }
+            do {
+                let dev = try self.ensureDevice()
+                let current = try dev.sendWithRetry(RazerCommands.getWheelMode()).arguments[1]
+                if current != 0 { self.lastOtherWheelMode = current }
+                let next = RazerCommands.nextWheelMode(current: current, lastOther: self.lastOtherWheelMode)
+                _ = try dev.sendWithRetry(RazerCommands.setWheelMode(next))
+            } catch {
+                self.publish { self.lastWriteFailure = Date() }
+            }
+        }
+    }
 
     // MARK: - Writes
 

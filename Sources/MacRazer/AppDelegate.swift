@@ -18,6 +18,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, UNU
     private var monitor: HIDMonitor?
     private var bluetoothMonitor: HIDMonitor?
     private let remapper = ButtonRemapper()
+    private lazy var hardwareButtons = HardwareButtonRouter(remapper: remapper, controller: controller)
     private lazy var remapWindow = RemapWindowController(remapper: remapper, controller: controller)
     private lazy var permissions = PermissionsModel(remapper: remapper, controller: controller)
     private lazy var permissionsWindow = PermissionsWindowController(model: permissions, controller: controller)
@@ -247,6 +248,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, UNU
         // A mapped button pressed while paused usually means the mouse just woke. Check now
         // rather than at the next poll, so its mappings come back straight away.
         remapper.onPressWhilePaused = { [weak controller] in controller?.checkIfOffline() }
+
+        // Driver mode: listen for the buttons only it reports, and do their jobs.
+        controller.$driverModeActive
+            .combineLatest(controller.$connected, controller.$deviceID)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] active, connected, pid in
+                self?.hardwareButtons.update(driverModeActive: active, connected: connected, pid: pid)
+            }
+            .store(in: &cancellables)
 
         // Update check: straight away on launch, then whenever the last answer is more than
         // `UpdateChecker.checkInterval` old. See `startUpdateTriggers()` for what asks.
@@ -729,6 +739,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, UNU
         monitor?.invalidate()
         updateTimer?.invalidate()
         updatePathMonitor?.cancel()
+        controller.restoreNormalMode()
         controller.flushHistoryToDisk()
     }
 

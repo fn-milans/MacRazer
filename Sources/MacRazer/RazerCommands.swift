@@ -170,6 +170,30 @@ enum RazerCommands {
         return r
     }
 
+    /// What the DPI button does in normal mode, for MacRazer to do in driver mode: the
+    /// set-stages report that makes the next stage active (wrapping after the last), and that
+    /// stage's DPI.
+    ///
+    /// Built from the mouse's own get-stages reply rather than `setDPIStages`, so every stage
+    /// record goes back byte for byte and only the active byte changes. The Basilisk V4 Pro
+    /// numbers both the active byte and the records from 1 (1600 DPI, its third stage, reads
+    /// as active 3, and the first record starts `01`). A reply whose active byte is outside
+    /// 1...count steps to stage 1.
+    static func nextDPIStage(from resp: RazerReport) -> (report: RazerReport, dpi: Int)? {
+        let count = Int(resp.arguments[2])
+        guard count > 0, count <= maxDPIStages else { return nil }
+        let active = Int(resp.arguments[1])
+        let next = (1...count).contains(active) ? active % count + 1 : 1
+        let base = 3 + (next - 1) * 7 // the record: stage#, x_hi, x_lo, y_hi, y_lo, 0, 0
+        let dpi = (Int(resp.arguments[base + 1]) << 8) | Int(resp.arguments[base + 2])
+        guard dpi > 0 else { return nil }
+        var r = RazerReport(commandClass: 0x04, commandId: 0x06, dataSize: 0x26)
+        for i in 0..<Int(r.dataSize) { r.arguments[i] = resp.arguments[i] }
+        r.arguments[0] = Razer.varstore
+        r.arguments[1] = UInt8(next)
+        return (r, dpi)
+    }
+
     /// razer_chroma_misc_set_polling_rate(rate)
     ///   get_razer_report(0x00, 0x05, 0x01); arg0: 1000->0x01, 500->0x02, 125->0x08
     static func setPollingRate(_ hz: Int) -> RazerReport {
@@ -246,6 +270,34 @@ enum RazerCommands {
         r.arguments[0] = store
         r.arguments[1] = mode
         return r
+    }
+
+    // --- Wheel mode on the Basilisk V4 Pro (not in OpenRazer) ---
+    // Found on the mouse itself, never from Synapse: a read-only sweep of class 0x02 gets
+    // before and after one press of its wheel-mode button changed exactly one answer, 0x02/0xB0.
+    // Writing 0x02/0x30 (the get id minus 0x80, OpenRazer's usual get/set pairing) with
+    // Milan's OK switched the wheel, read back the new value, and made the mouse send the same
+    // report-5 notice (`05 39 <mode>`) its own button does. Seen values: 0x02 (how it shipped)
+    // and 0x00 (one button press later). Which feel is which isn't pinned down, and pass 1
+    // of the probe also saw 0x01, so `nextWheelMode` treats any non-zero value as the other
+    // side of the toggle rather than naming them.
+
+    /// Wheel mode get: 0x02/0xB0, args [VARSTORE] -> [VARSTORE, mode].
+    static func getWheelMode() -> RazerReport { scrollRead(0xB0) }
+
+    /// Wheel mode set: 0x02/0x30, args [VARSTORE, mode].
+    static func setWheelMode(_ mode: UInt8) -> RazerReport {
+        var r = RazerReport(commandClass: 0x02, commandId: 0x30, dataSize: 0x02)
+        r.arguments[0] = Razer.varstore
+        r.arguments[1] = mode
+        return r
+    }
+
+    /// What one press of the wheel-mode button changes `current` to: 0x00 and the other mode
+    /// swap. `lastOther` is the non-zero mode to go back to, so a mouse that was on 0x01
+    /// returns to 0x01 rather than 0x02.
+    static func nextWheelMode(current: UInt8, lastOther: UInt8?) -> UInt8 {
+        current == 0 ? (lastOther ?? 0x02) : 0x00
     }
 
     private static func scrollRead(_ commandId: UInt8) -> RazerReport {
