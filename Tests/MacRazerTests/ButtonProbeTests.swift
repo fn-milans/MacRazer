@@ -57,4 +57,11 @@ final class ButtonProbeTests: XCTestCase {
         XCTAssertEqual(ButtonProbe.bits(0x20), "00100000")
         XCTAssertEqual(ButtonProbe.bits(0xFF), "11111111")
     }
+
+    func testScrollModeWriteMatchesOpenRazer() {
+        let r = RazerCommands.setScrollMode(1)
+        XCTAssertEqual([r.commandClass, r.commandId, r.dataSize], [0x02, 0x14, 0x02])
+        XCTAssertEqual(Array(r.arguments.prefix(2)), [Razer.varstore, 0x01])
+        XCTAssertEqual(RazerCommands.setScrollMode(2, store: Razer.nostore).arguments[0], Razer.nostore)
+    }
 }

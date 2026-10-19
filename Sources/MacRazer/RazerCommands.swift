@@ -238,6 +238,16 @@ enum RazerCommands {
     /// razer_chroma_misc_get_scroll_smart_reel() -> get_razer_report(0x02, 0x97, 0x02).
     static func getScrollSmartReel() -> RazerReport { scrollRead(0x97) }
 
+    /// razer_chroma_misc_set_scroll_mode(mode) -> get_razer_report(0x02, 0x14, 0x02);
+    /// args [store, mode]. OpenRazer writes VARSTORE; `store` is a parameter so the V4 Pro
+    /// probe can try both.
+    static func setScrollMode(_ mode: UInt8, store: UInt8 = Razer.varstore) -> RazerReport {
+        var r = RazerReport(commandClass: 0x02, commandId: 0x14, dataSize: 0x02)
+        r.arguments[0] = store
+        r.arguments[1] = mode
+        return r
+    }
+
     private static func scrollRead(_ commandId: UInt8) -> RazerReport {
         var r = RazerReport(commandClass: 0x02, commandId: commandId, dataSize: 0x02)
         r.arguments[0] = Razer.varstore

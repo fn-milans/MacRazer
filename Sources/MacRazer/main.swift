@@ -646,6 +646,48 @@ case "rgb":
         exit(2)
     }
 
+case "wheelmode":
+    // Looking for the V4 Pro's wheel-mode write: the read OpenRazer uses (0x02/0x94) is
+    // refused, and in driver mode the wheel-mode button no longer switches the wheel itself.
+    // Tries OpenRazer's scroll-mode read and write with both storage bytes while listening, so
+    // a write the mouse accepts shows up as its own "wheel mode changed" report (0x05, 0x39).
+    //   wheelmode            reads only
+    //   wheelmode --write    also tries the writes, ending on mode 2
+    let writes = args.dropFirst().contains("--write")
+    guard let dev = openDevice() else { exit(1) }
+    defer { dev.close() }
+    let probe = ButtonProbe()
+    probe.start(vendorId: Razer.vendorId)
+    func listen(_ seconds: Double) { _ = CFRunLoopRunInMode(.defaultMode, seconds, false) }
+    func attempt(_ label: String, _ report: RazerReport) {
+        do {
+            let resp = try dev.send(report)
+            probe.log("\(label): ok, args \(ButtonProbe.hex(resp.arguments.prefix(4)))")
+        } catch {
+            probe.log("\(label): \(error)")
+        }
+        listen(1.5)
+    }
+    for store in [Razer.varstore, Razer.nostore] {
+        var read = RazerCommands.getScrollMode()
+        read.arguments[0] = store
+        attempt(String(format: "read 02/94 store %02x", store), read)
+    }
+    if writes {
+        // 1 and 2 are the values the mouse itself reported for its two wheel modes; 0 is
+        // OpenRazer's tactile. Each value is tried with both storage bytes, ending on 2, the
+        // mode the wheel most likely started in (the button toggled it 1, 2 in the first probe).
+        for mode: UInt8 in [0, 1, 2] {
+            for store in [Razer.varstore, Razer.nostore] {
+                attempt(String(format: "write 02/14 store %02x mode %d", store, mode),
+                        RazerCommands.setScrollMode(mode, store: store))
+            }
+        }
+        probe.log("check the wheel's feel now; the last accepted write (if any) is the mode it is in")
+    }
+    listen(1)
+    probe.stop()
+
 case "buttonprobe":
     // What the mouse reports when each control is pressed, for learning a new model's
     // buttons from the mouse itself. See `ButtonProbe`. Usage:
