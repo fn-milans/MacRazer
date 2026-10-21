@@ -25,16 +25,14 @@ enum OnboardButtons {
         let factory: [UInt8]
     }
 
-    /// Entry 0x6A, most likely the button that switches the connection slot. Never written:
-    /// a mistake there could leave the mouse unable to pair.
-    static let connectionSlotID: UInt8 = 0x6A
-
     /// The controls of a mouse whose table is known, or nil. Left and right click are left
     /// out on purpose: a mistake there would leave the mouse unusable. Scroll up and down
     /// (0x09, 0x0A) are in: on the factory function each notch is a wheel step, read from
-    /// the mouse (01 01 09, 01 01 0A). So is the wheel-mode button (entry 0x39), which Synapse doesn't remap
-    /// either: it stays on its own function, cycling the wheel's modes in the mouse. The side
-    /// trigger has no entry in the table (`fixed`).
+    /// the mouse (01 01 09, 01 01 0A). So are the side trigger (entry 0x39, HyperShift from the
+    /// factory) and the wheel-mode button (entry 0x6A), both of which Synapse remaps too: a key
+    /// written to each fired from that button alone (2026-10-22). Their factory blocks are the
+    /// two functions the Basilisk V3's table documents as HyperShift switching (0C) and wheel
+    /// mode switching (12), github.com/geezmolycos/razerqdhid docs/cmd_button-en.md.
     static func layout(pid: Int) -> [Control]? {
         RazerDevices.buttonTable(pid: pid).map(layout)
     }
@@ -60,20 +58,15 @@ enum OnboardButtons {
                 Control(button: HardwareButton.leftClickSide.rawValue, tableID: 0x0E, factory: [0x07, 0x01, 0x04, 0, 0, 0, 0]),
                 Control(button: HardwareButton.tiltLeft.rawValue, tableID: 0x34, factory: [0x0E, 0x01, 0x68, 0x00, 0x14, 0, 0]),
                 Control(button: HardwareButton.tiltRight.rawValue, tableID: 0x35, factory: [0x0E, 0x01, 0x69, 0x00, 0x14, 0, 0]),
-            ].filter { $0.tableID != connectionSlotID }
+                Control(button: HardwareButton.sideTrigger.rawValue, tableID: 0x39, factory: [0x0C, 0x01, 0x39, 0, 0, 0, 0]),
+                Control(button: HardwareButton.wheelMode.rawValue, tableID: 0x6A, factory: [0x12, 0x01, 0x01, 0, 0, 0, 0]),
+            ]
         }
     }
 
-    /// Controls listed without a remap menu, and what the row says instead: Scroll Mode
-    /// (Synapse doesn't remap it either) and the side trigger, which is the mouse's own
-    /// HyperShift clutch (Synapse's default for it) and which the firmware exposes in no
-    /// table, list or report outside driver mode (button-probe and table dumps, 2026-10-19).
-    static func fixed(pid: Int) -> [Int: String] {
-        layout(pid: pid) == nil ? [:] : [HardwareButton.wheelMode.rawValue: "Cycle Scroll Mode", HardwareButton.sideTrigger.rawValue: "HyperShift"]
-    }
-
     /// What a control does from the factory, in the remap menu's words, for a row with no
-    /// remap: Synapse's default map (Left Side cycles profiles up, Side Front is off).
+    /// remap: Synapse's default map (Left Side cycles profiles up, Side Front is off, the side
+    /// trigger is HyperShift).
     static func factoryLabel(_ control: Control) -> String {
         switch (control.factory[0], control.factory[2]) {
         case (0x00, _): return "Disabled"
@@ -87,23 +80,24 @@ enum OnboardButtons {
         case (0x07, 0x05): return "Cycle Down Profile"
         case (0x0E, 0x68): return "Scroll Left"
         case (0x0E, 0x69): return "Scroll Right"
+        case (0x0C, _): return "HyperShift"
+        case (0x12, _): return "Cycle Scroll Mode"
         default: return "Default"
         }
     }
 
     /// Whether a control sends nothing to the Mac on its factory function, so a press of it
-    /// can't be detected until it holds a remap: Side Front (disabled from the factory) and
-    /// Left Side (07 01 04, a function the mouse keeps to itself; silent in every probe).
+    /// can't be detected until it holds a remap: Side Front (disabled from the factory), Left
+    /// Side (07 01 04, a function the mouse keeps to itself; silent in every probe) and the
+    /// side trigger (HyperShift, which the mouse keeps to itself too).
     static func silentOnFactory(_ control: Control) -> Bool {
-        control.factory.first == 0x00 || control.factory.first == 0x07
+        [0x00, 0x07, 0x0C].contains(control.factory.first)
     }
 
-    /// The remap-table keys a mouse can't take: controls listed without a remap menu, on
-    /// both layers. Saved remaps for them (from an earlier build) are dropped,
-    /// since the window offers no way to clear them.
-    static func unremappable(pid: Int) -> Set<Int> {
-        let ids = Array(fixed(pid: pid).keys)
-        return Set(ids + ids.map(ButtonRemapper.hyperShiftKey))
+    /// Whether a control is the HyperShift clutch on its factory function (the side trigger),
+    /// so it needs no HyperShift remap to be one.
+    static func isHyperShiftOnFactory(_ control: Control) -> Bool {
+        control.factory.first == 0x0C
     }
 
     /// The order the remap window lists a mouse's controls in, top to bottom, as they sit on
@@ -148,9 +142,8 @@ enum OnboardButtons {
     ]
 
     /// HyperShift while held: type 0C switches the mouse to its HyperShift layer
-    /// (`shiftedPlan`), the job the side trigger has from the factory. 0C 01 00, 01 and 02 all
-    /// did it on Side Front (press test with a layer-01 Volume Up, 2026-10-19); 0C 01 39 is the
-    /// wheel-mode button's own function, so the third byte picks a sub-function.
+    /// (`shiftedPlan`), the job the side trigger has from the factory (0C 01 39). 0C 01 00, 01
+    /// and 02 all did it on Side Front (press test with a layer-01 Volume Up, 2026-10-19).
     static let hyperShiftBlock: [UInt8] = [0x0C, 0x01, 0x01, 0, 0, 0, 0]
 
     /// What the mouse itself can do for an action, or nil when only MacRazer can (a double
@@ -266,7 +259,7 @@ enum OnboardButtons {
                 out.removeValue(forKey: key)
             }
         }
-        for control in controls where control.tableID != connectionSlotID {
+        for control in controls {
             if let read = standard[control.tableID] {
                 take(control.button, read: read, control: control, shiftedLayer: false)
             }
@@ -305,7 +298,7 @@ enum OnboardButtons {
 
     static func placement(for control: Control, mappings: [Int: RemapAction]) -> Placement {
         let action = mappings[control.button] ?? .passthrough
-        if action == .passthrough { return .factory }
+        if action == .passthrough || (action == .hyperShift && isHyperShiftOnFactory(control)) { return .factory }
         return nativeBlock(for: action).map(Placement.mouse) ?? .app
     }
 
@@ -338,7 +331,7 @@ enum OnboardButtons {
                             owned start: [UInt8: Set<[UInt8]>]) -> (owned: [UInt8: Set<[UInt8]>], failed: Int) {
         var owned = start
         var failed = 0
-        for entry in plan where entry.control.tableID != connectionSlotID {
+        for entry in plan {
             let id = entry.control.tableID
             // Not `try?`: it would flatten an unset entry (nil) into a failed read.
             let read: [UInt8]?
@@ -400,17 +393,14 @@ enum OnboardButtons {
     /// mode). Only while that control is still on its own function.
     static func control(forNotice bytes: [UInt8], in plan: [Entry]) -> Int? {
         guard bytes.count >= 2, bytes[0] == 0x05 else { return nil }
+        let button: Int
         switch bytes[1] {
-        case 0x39:
-            // Never remapped (`fixed`), so it always does its own job.
-            return plan.isEmpty ? nil : HardwareButton.wheelMode.rawValue
-        case 0x02:
-            let button = HardwareButton.dpiCycle.rawValue
-            guard let entry = plan.first(where: { $0.control.button == button }), entry.placement == .factory else { return nil }
-            return button
-        default:
-            return nil
+        case 0x39: button = HardwareButton.wheelMode.rawValue
+        case 0x02: button = HardwareButton.dpiCycle.rawValue
+        default: return nil
         }
+        guard let entry = plan.first(where: { $0.control.button == button }), entry.placement == .factory else { return nil }
+        return button
     }
 
     // MARK: Sync
@@ -447,7 +437,7 @@ enum OnboardButtons {
                      owned start: [UInt8: Set<[UInt8]>]) -> (owned: [UInt8: Set<[UInt8]>], failed: Int) {
         var owned = start
         var failed = 0
-        for entry in plan where entry.control.tableID != connectionSlotID {
+        for entry in plan {
             let id = entry.control.tableID
             guard let current = try? table.readButtonBlock(id) else { failed += 1; continue }
             let step = step(entry.placement, current: current, factory: entry.control.factory, owned: owned[id] ?? [])

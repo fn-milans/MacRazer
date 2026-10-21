@@ -28,7 +28,7 @@ struct RemapView: View {
     private var buttons: [Int] {
         // A mouse that keeps its remaps lists all its controls, pressed yet or not, in the
         // order they sit on the mouse (`OnboardButtons.rowOrder`).
-        let onboard = remapper.onboardControls.union(remapper.onboardFixed.keys)
+        let onboard = remapper.onboardControls
         let order = remapper.activeRowOrder
         func rank(_ id: Int) -> Int {
             if let index = order.firstIndex(of: id) { return index }
@@ -284,7 +284,7 @@ struct RemapView: View {
 
     private func buttonRow(_ button: Int) -> some View {
         let slot = key(for: button)
-        let isShiftKey = remapper.mappings[button] == .hyperShift
+        let isShiftKey = remapper.isHyperShiftClutch(button)
         return HStack(spacing: 8) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(remapper.displayLabel(for: button))
@@ -300,14 +300,12 @@ struct RemapView: View {
                 }
             }
             Spacer(minLength: 6)
-            if let job = remapper.onboardFixed[button] {
-                Text(job).foregroundStyle(.secondary)
-                    .frame(width: 150, alignment: .trailing)
-            } else if isShiftKey && slot != button {
+            if isShiftKey && slot != button {
                 Text("HyperShift").foregroundStyle(.secondary)
                     .frame(width: 150, alignment: .trailing)
             } else {
-                actionMenu(for: slot, allowsHyperShift: slot == button)
+                // Not offered where it is already the default (the side trigger).
+                actionMenu(for: slot, allowsHyperShift: slot == button && !remapper.hyperShiftIsDefault(button))
             }
         }
         .padding(.horizontal, 12)

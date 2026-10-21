@@ -222,8 +222,18 @@ final class ButtonRemapper: ObservableObject, @unchecked Sendable {
     var mappingsLiveInMouse: Bool { onboardLayout != nil }
     /// The active mouse's remappable controls, for the remap window.
     var onboardControls: Set<Int> { Set(onboardLayout?.map(\.button) ?? []) }
-    /// Controls listed with a fixed job instead of a remap menu (`OnboardButtons.fixed`).
-    var onboardFixed: [Int: String] { activeDeviceID.map(OnboardButtons.fixed(pid:)) ?? [:] }
+    /// Whether a control is HyperShift from the factory (the side trigger,
+    /// `OnboardButtons.isHyperShiftOnFactory`).
+    func hyperShiftIsDefault(_ button: Int) -> Bool {
+        onboardLayout?.first { $0.button == button }.map(OnboardButtons.isHyperShiftOnFactory) ?? false
+    }
+
+    /// Whether a control is the HyperShift clutch: set to HyperShift, or left on a factory
+    /// HyperShift.
+    func isHyperShiftClutch(_ button: Int) -> Bool {
+        if let action = mappings[button], action != .passthrough { return action == .hyperShift }
+        return hyperShiftIsDefault(button)
+    }
     /// Controls whose remap is saved in the mouse: what they send is already the remapped
     /// action, so the tap lets it through untouched.
     private var savedInMouse: Set<Int> = []
@@ -804,15 +814,13 @@ final class ButtonRemapper: ObservableObject, @unchecked Sendable {
         if kept != decoded { saveMappings() }
     }
 
-    /// `mappings` minus remaps the active mouse can't take (`OnboardButtons.unremappable`).
+    /// `mappings` minus remaps the active mouse can't take: on a mouse that keeps its remaps,
+    /// its HyperShift layer lives in the mouse, so a HyperShift action has to be one the mouse
+    /// can do. A button set to HyperShift is a clutch the mouse keeps itself, on the standard
+    /// layer only.
     private func withoutUnremappable(_ table: [Int: RemapAction]) -> [Int: RemapAction] {
-        guard let pid = activeDeviceID, onboardLayout != nil else { return table }
-        let dropped = OnboardButtons.unremappable(pid: pid)
-        // Its HyperShift layer lives in the mouse, so a HyperShift action has to be one the
-        // mouse can do. A button set to HyperShift is a clutch the mouse keeps itself, on the
-        // standard layer only.
+        guard onboardLayout != nil else { return table }
         return table.filter { key, action in
-            guard !dropped.contains(key) else { return false }
             guard Self.isHyperShiftKey(key) else { return true }
             return action == .passthrough || (action != .hyperShift && OnboardButtons.nativeBlock(for: action) != nil)
         }

@@ -17,13 +17,24 @@ final class OnboardButtonsTests: XCTestCase {
         XCTAssertNil(OnboardButtons.layout(pid: 0x00B9))
     }
 
-    func testLeftRightScrollAndTheConnectionButtonAreNeverWritten() {
+    func testLeftAndRightClickAreNeverWritten() {
         let ids = OnboardButtons.layout(pid: 0x00E3)!.map(\.tableID)
-        for never: UInt8 in [0x01, 0x02, 0x39, 0x6A] { XCTAssertFalse(ids.contains(never)) }
-        XCTAssertEqual(OnboardButtons.fixed(pid: 0x00E3), [HardwareButton.wheelMode.rawValue: "Cycle Scroll Mode",
-                                                          HardwareButton.sideTrigger.rawValue: "HyperShift"])
-        let plan = OnboardButtons.plan(pid: 0x00E3, mappings: [HardwareButton.wheelMode.rawValue: .mediaKey(code: 0, name: "Volume Up")])
-        XCTAssertFalse(plan.contains { $0.control.button == HardwareButton.wheelMode.rawValue }, "a stray wheel-mode remap is never written")
+        for never: UInt8 in [0x01, 0x02] { XCTAssertFalse(ids.contains(never)) }
+    }
+
+    func testSideTriggerAndScrollModeAreRemappableAndSavedInTheMouse() {
+        let layout = OnboardButtons.layout(pid: 0x00E3)!
+        let trigger = HardwareButton.sideTrigger.rawValue, wheel = HardwareButton.wheelMode.rawValue
+        XCTAssertEqual(layout.first { $0.button == trigger }?.tableID, 0x39)
+        XCTAssertEqual(layout.first { $0.button == trigger }?.factory, [0x0C, 0x01, 0x39, 0, 0, 0, 0])
+        XCTAssertEqual(layout.first { $0.button == wheel }?.tableID, 0x6A)
+        XCTAssertEqual(layout.first { $0.button == wheel }?.factory, [0x12, 0x01, 0x01, 0, 0, 0, 0])
+        let plan = OnboardButtons.plan(pid: 0x00E3, mappings: [trigger: .keystroke(keyCode: 40, modifiers: 0, name: "K"),
+                                                               wheel: .mediaKey(code: 0, name: "Volume Up")])
+        XCTAssertEqual(plan.first { $0.control.button == trigger }?.placement, .mouse([0x02, 0x02, 0x00, 0x0E, 0, 0, 0]))
+        XCTAssertEqual(plan.first { $0.control.button == wheel }?.placement, .mouse([0x0A, 0x02, 0x00, 0xE9, 0, 0, 0]))
+        let shift = OnboardButtons.plan(pid: 0x00E3, mappings: [trigger: .hyperShift])
+        XCTAssertEqual(shift.first { $0.control.button == trigger }?.placement, .factory, "HyperShift is its own function")
     }
 
     func testUnremappedRowsNameTheFactoryFunction() {
@@ -35,6 +46,8 @@ final class OnboardButtonsTests: XCTestCase {
         XCTAssertEqual(labels[HardwareButton.leftClickSide.rawValue], "Cycle Up Profile")
         XCTAssertEqual(labels[HardwareButton.sideFront.rawValue], "Disabled")
         XCTAssertEqual(labels[HardwareButton.tiltLeft.rawValue], "Scroll Left")
+        XCTAssertEqual(labels[HardwareButton.sideTrigger.rawValue], "HyperShift")
+        XCTAssertEqual(labels[HardwareButton.wheelMode.rawValue], "Cycle Scroll Mode")
         XCTAssertFalse(labels.values.contains("Default"), "every V4 Pro control has a known factory function")
     }
 
@@ -268,8 +281,10 @@ final class OnboardButtonsTests: XCTestCase {
         XCTAssertEqual(OnboardButtons.control(forNotice: [0x05, 0x02, 0x06, 0x40], in: plan), HardwareButton.dpiCycle.rawValue)
         XCTAssertNil(OnboardButtons.control(forNotice: [0x05, 0x31, 0xC2], in: plan), "a battery notice")
         XCTAssertNil(OnboardButtons.control(forNotice: [0x04, 0x52], in: plan))
-        let remapped = OnboardButtons.plan(pid: 0x00E3, mappings: [HardwareButton.dpiCycle.rawValue: .mediaKey(code: 7, name: "Mute")])
+        let remapped = OnboardButtons.plan(pid: 0x00E3, mappings: [HardwareButton.dpiCycle.rawValue: .mediaKey(code: 7, name: "Mute"),
+                                                                   HardwareButton.wheelMode.rawValue: .mediaKey(code: 7, name: "Mute")])
         XCTAssertNil(OnboardButtons.control(forNotice: [0x05, 0x02, 0x06, 0x40], in: remapped), "the DPI button no longer changes DPI")
+        XCTAssertNil(OnboardButtons.control(forNotice: [0x05, 0x39, 0x02], in: remapped), "the wheel-mode button no longer changes mode")
     }
 
     // MARK: Steps
@@ -325,7 +340,6 @@ final class OnboardButtonsTests: XCTestCase {
             return block
         }
         func writeButtonBlock(_ id: UInt8, block: [UInt8]) throws {
-            XCTAssertNotEqual(id, OnboardButtons.connectionSlotID)
             writes.append(id)
             guard !refuse.contains(id) else { throw HIDDevice.HIDError.badResponse }
             entries[id] = block
@@ -335,7 +349,6 @@ final class OnboardButtonsTests: XCTestCase {
             return shifted[id]
         }
         func writeShiftedBlock(_ id: UInt8, block: [UInt8]) throws {
-            XCTAssertNotEqual(id, OnboardButtons.connectionSlotID)
             shiftedWrites.append((id, block))
             guard !refuse.contains(id) else { throw HIDDevice.HIDError.badResponse }
             shifted[id] = block
@@ -418,7 +431,7 @@ final class OnboardButtonsTests: XCTestCase {
         XCTAssertTrue(click(r, 3, down: true), "whatever the mouse sends goes through")
         XCTAssertTrue(click(r, 3, down: false))
         XCTAssertEqual(emitted, [])
-        XCTAssertEqual(r.onboardFixed[HardwareButton.sideTrigger.rawValue], "HyperShift")
+        XCTAssertTrue(r.isHyperShiftClutch(HardwareButton.sideTrigger.rawValue), "HyperShift from the factory")
         XCTAssertEqual(r.activeDeviceKey, "V4PRO")
     }
 
@@ -430,22 +443,24 @@ final class OnboardButtonsTests: XCTestCase {
         XCTAssertEqual(emitted, [.doubleClick])
     }
 
-    func testRemapsForFixedOrUnsupportedControlsAreDropped() {
-        // Scroll Mode was remappable in an earlier build; its saved remap has no row to clear
-        // it from, and the popover counted it as "1 remapped".
+    func testSideTriggerAndScrollModeRemapsAreKeptButMouseLayerRemapsItCantDoAreDropped() {
+        // Both were fixed rows in an earlier build, which dropped their saved remaps.
         let name = "MacRazerTests.\(#function)"
         let defaults = UserDefaults(suiteName: name)!
         defaults.removePersistentDomain(forName: name)
-        let saved: [Int: RemapAction] = [HardwareButton.wheelMode.rawValue: .mediaKey(code: 1, name: "Volume Down"),
-                                         HardwareButton.sideTrigger.rawValue: .doubleClick, 3: .passthrough]
+        let trigger = HardwareButton.sideTrigger.rawValue, wheel = HardwareButton.wheelMode.rawValue
+        let saved: [Int: RemapAction] = [wheel: .mediaKey(code: 1, name: "Volume Down"),
+                                         trigger: .mediaKey(code: 7, name: "Mute"),
+                                         ButtonRemapper.hyperShiftKey(3): .doubleClick]
         defaults.set(try! JSONEncoder().encode(saved), forKey: "buttonMappings-V4PRO")
         let r = ButtonRemapper(defaults: defaults)
         r.setActiveDevice("V4PRO", deviceID: 0x00E3)
-        XCTAssertEqual(r.mappings, [3: .passthrough])
-        let stored = try! JSONDecoder().decode([Int: RemapAction].self, from: defaults.data(forKey: "buttonMappings-V4PRO")!)
-        XCTAssertEqual(stored, [3: .passthrough], "saved without them")
-        r.setMappings([HardwareButton.wheelMode.rawValue: .doubleClick, 4: .doubleClick])
-        XCTAssertEqual(r.mappings, [4: .doubleClick], "a profile can't bring one back")
+        XCTAssertEqual(r.mappings, [wheel: .mediaKey(code: 1, name: "Volume Down"), trigger: .mediaKey(code: 7, name: "Mute")])
+        XCTAssertFalse(r.isHyperShiftClutch(trigger), "remapped away from HyperShift")
+        r.setMappings([ButtonRemapper.hyperShiftKey(4): .hyperShift, 4: .hyperShift])
+        XCTAssertEqual(r.mappings, [4: .hyperShift], "HyperShift isn't a HyperShift-layer action")
+        XCTAssertTrue(r.isHyperShiftClutch(4))
+        XCTAssertTrue(r.isHyperShiftClutch(trigger), "back on its factory HyperShift")
     }
 
     func testSilentButtonsAreFlaggedUntilRemapped() {
@@ -453,6 +468,8 @@ final class OnboardButtonsTests: XCTestCase {
         let r = remapper([:])
         XCTAssertTrue(r.undetectable(front))
         XCTAssertTrue(r.undetectable(left))
+        XCTAssertTrue(r.undetectable(HardwareButton.sideTrigger.rawValue), "HyperShift sends nothing")
+        XCTAssertFalse(r.undetectable(HardwareButton.wheelMode.rawValue), "heard from its notice")
         XCTAssertFalse(r.undetectable(3))
         XCTAssertFalse(r.undetectable(HardwareButton.dpiCycle.rawValue), "heard from its notice")
         r.setAction(.mediaKey(code: 0, name: "Volume Up"), for: front)

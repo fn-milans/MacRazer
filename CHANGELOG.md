@@ -69,12 +69,13 @@ expect rough edges until 1.0.
   MacRazer closed, over the dongle, the cable or Bluetooth, and on other computers. When the
   mouse connects, MacRazer reads its remaps back, so another Mac shows the same ones. That covers
   key combos, mouse buttons and media keys, on Scroll Click, Scroll Up, Scroll Down, Scroll
-  Left, Scroll Right, DPI, Left Side and the side buttons. The HyperShift layer is saved in
-  the mouse too, for every one of those buttons: hold the side trigger to use it. Double
+  Left, Scroll Right, DPI, Scroll Mode, Left Side, the side buttons and the side trigger. The
+  HyperShift layer is saved in the mouse too, for every one of those buttons: hold the side
+  trigger (or any button set to HyperShift) to use it. Double
   Click still needs MacRazer running, and only Scroll Click and the side buttons offer it. MacRazer only
   changes buttons it remapped itself, and clearing a remap puts back the button's factory
-  function. Scroll Mode keeps cycling the wheel's modes, as in Synapse, and the side trigger is
-  the mouse's HyperShift key, as Synapse sets it. The buttons are listed in the
+  function. Until remapped, Scroll Mode cycles the wheel's modes and the side trigger is the
+  mouse's HyperShift key, as Synapse sets them. The buttons are listed in the
   order they sit on the mouse.
 
 - **Runs on Intel Macs.** The app is now a universal build, native on both Apple Silicon and

@@ -1063,7 +1063,7 @@ final class MouseController: ObservableObject, @unchecked Sendable {
         guard let controls = OnboardButtons.layout(pid: pid) else { return nil }
         var standard: [UInt8: [UInt8]] = [:]
         var shifted: [UInt8: [UInt8]?] = [:]
-        for control in controls where control.tableID != OnboardButtons.connectionSlotID {
+        for control in controls {
             let id = control.tableID
             guard let block = try? table.readButtonBlock(id) else { return nil }
             standard[id] = block
@@ -1225,7 +1225,7 @@ final class MouseController: ObservableObject, @unchecked Sendable {
         let key = OnboardSlots.ownershipKey(serial: serial, slot: slot)
         var owned: [UInt8: Set<[UInt8]>] = [:]
         var shifted: [UInt8: Set<[UInt8]>] = [:]
-        for control in controls where control.tableID != OnboardButtons.connectionSlotID {
+        for control in controls {
             let id = control.tableID
             if let block = try? slotted.readButtonBlock(id) { owned[id] = [block] }
             if let block = (try? slotted.readShiftedBlock(id)) ?? nil { shifted[id] = [block] }

@@ -122,8 +122,8 @@ button like any other.
 The exception is a mouse whose button table MacRazer knows, today the **Basilisk V4 Pro**.
 There MacRazer writes each remap into the mouse's onboard memory itself, the way Synapse
 does, and the remaps keep working with MacRazer closed, on any link and on other computers.
-Its side trigger stays the HyperShift key, and the HyperShift layer is saved in the mouse
-too. The table was learned from the mouse's own replies, not from Synapse.
+The side trigger is the HyperShift key until you remap it (any other button can take that
+job), and the HyperShift layer is saved in the mouse too. The table was learned from the mouse's own replies, not from Synapse.
 
 ### Known limitation: two identical mice without a hardware serial
 
