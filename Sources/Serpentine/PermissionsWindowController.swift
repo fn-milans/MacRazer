@@ -17,8 +17,6 @@ final class PermissionsWindowController: AppWindowPresenter {
         self.controller = controller
     }
 
-    var isVisible: Bool { window?.isVisible ?? false }
-
     func show() {
         if window == nil {
             let root = PermissionsView(model: model, controller: controller,

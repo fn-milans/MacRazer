@@ -89,7 +89,7 @@ final class BatteryHistory {
     /// a preferences-file rewrite every 15 seconds. Riding on the history write rather than a
     /// timer of its own means the two are always saved, and lost, together.
     private var learnedRate: Double?
-    private var learnedRateKey: String { "learnedDischargeRate-\(deviceKey)" }
+    private var learnedRateKey: String { Preferences.Device.learnedDischargeRate(deviceKey) }
 
     /// How often the history file is rewritten outside of `saveNow`. The whole file goes each
     /// time, and a multi-day cycle grows it to several hundred KB, so every 30 seconds added

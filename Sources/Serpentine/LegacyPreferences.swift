@@ -39,10 +39,10 @@ enum LegacyPreferences {
 enum LegacyInstall {
     static let bundleID = "com.macrazer.menubar"
     static let directoryName = "MacRazer"
-    static let migratedKey = "migratedFromLegacyInstall"
+    static let migratedKey = Preferences.migratedFromLegacyInstall
     /// The login item belonged to the old bundle id and went with it, so Serpentine's
     /// first-run default has to apply again rather than be recorded as done.
-    static let notImported: Set<String> = ["launchAtLoginDefaultApplied"]
+    static let notImported: Set<String> = [Preferences.launchAtLoginDefaultApplied]
 
     static func migrate(defaults: UserDefaults = .standard,
                         applicationSupport: URL = FileManager.default

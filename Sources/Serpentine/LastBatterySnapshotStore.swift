@@ -70,7 +70,7 @@ struct LastBatterySnapshot: Codable, Equatable {
 /// preferences on every battery poll; meaningful state changes and shutdown/sleep are saved
 /// immediately.
 final class LastBatterySnapshotStore {
-    static let storageKey = "lastBatterySnapshot.v1"
+    static let storageKey = Preferences.lastBatterySnapshot
     static let saveInterval: TimeInterval = 5 * 60
     /// Mice not seen for this long are dropped on the next save, so the store can't grow
     /// with every mouse ever connected.

@@ -183,7 +183,7 @@ case "login-item":
     @unknown default: described = "unknown (raw \(status.rawValue))"
     }
     print("Status:   \(described)")
-    print("Default applied once: \(UserDefaults.standard.bool(forKey: "launchAtLoginDefaultApplied"))")
+    print("Default applied once: \(UserDefaults.standard.bool(forKey: Preferences.launchAtLoginDefaultApplied))")
 
 case "render-ui":
     // Render the popover to a PNG for static visual inspection (no device needed).
@@ -199,7 +199,7 @@ case "render-ui":
     if args.contains("zones") {
         // The Basilisk V4 Pro's lighting zones, with the Lighting row open.
         controller.setPreviewZonedLighting()
-        UserDefaults.standard.set("lighting", forKey: "popoverExpandedSections")
+        UserDefaults.standard.set("lighting", forKey: Preferences.popoverExpandedSections)
     }
     let launchAtLogin = LaunchAtLogin()
     launchAtLogin.loadPreviewState()
@@ -267,29 +267,12 @@ case "icon":
 case "icon-models":
     // Render each per-model silhouette (header icon variants) to PNGs for visual inspection.
     let dir = args.dropFirst().first ?? "/tmp"
-    let shapes: [(String, RazerMouseSilhouette, Bool)] = [
-        ("cobra", .cobra, true), ("cobra-pro", .cobraPro, true), ("atheris", .atheris, false),
+    let shapes: [(String, RazerMouseSilhouette)] = [
+        ("cobra", .cobra), ("cobra-pro", .cobraPro), ("atheris", .atheris),
     ]
-    for (name, shape, lighting) in shapes {
+    for (name, shape) in shapes {
         let p = "\(dir)/serpentine-model-\(name).png"
-        MenuBarIcon.writePreview(to: p, size: 256, silhouette: shape, razerCutout: lighting)
-        print("Wrote \(p)")
-    }
-
-case "appicon":
-    // Render app-icon colour concepts around the serpent.
-    let dir = args.dropFirst().first ?? "/tmp"
-    let green = NSColor(red: 0x44/255, green: 0xD6/255, blue: 0x2C/255, alpha: 1)
-    let greenBright = NSColor(red: 0.42, green: 1.0, blue: 0.25, alpha: 1)
-    let dark = NSColor(white: 0.09, alpha: 1)
-    let concepts: [(String, NSColor, NSColor)] = [
-        ("concept1-dark-green", dark, greenBright),
-        ("concept2-green-dark", green, dark),
-        ("concept3-dark-white", NSColor(white: 0.13, alpha: 1), .white),
-    ]
-    for (name, bg, mark) in concepts {
-        let p = "\(dir)/serpentine-\(name).png"
-        MenuBarIcon.writeAppIcon(to: p, size: 512, bg: bg, mark: mark)
+        MenuBarIcon.writePreview(to: p, size: 256, silhouette: shape)
         print("Wrote \(p)")
     }
 

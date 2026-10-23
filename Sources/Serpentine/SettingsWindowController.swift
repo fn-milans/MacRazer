@@ -17,11 +17,6 @@ final class SettingsWindowController: AppWindowPresenter {
         self.launchAtLogin = launchAtLogin
     }
 
-    /// Whether the window is actually on screen. Reading this builds the controller if it
-    /// hasn't been already, which costs two stored references — the `NSWindow` itself is
-    /// still only created by `show()`.
-    var isVisible: Bool { window?.isVisible ?? false }
-
     func show() {
         if window == nil {
             let root = SettingsView(controller: controller, launchAtLogin: launchAtLogin,

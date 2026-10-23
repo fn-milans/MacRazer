@@ -334,7 +334,7 @@ struct PopoverView: View {
     /// nil while no device key is known — persisting then would land in a "default" slot
     /// shared by every mouse and never migrated to the real key once it resolves.
     private var customDPIKey: String? {
-        controller.deviceKey.map { "customDPI-\($0)" }
+        controller.deviceKey.map(Preferences.Device.customDPI)
     }
 
     private func loadCustomDPI() {
@@ -357,7 +357,7 @@ struct PopoverView: View {
             HStack(spacing: 10) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 9).fill(Color.razerGreenBright.opacity(0.20))
-                    Image(nsImage: MenuBarIcon.mouseModel(pid: controller.deviceID, razerCutout: controller.deviceHasLighting, pointSize: 20))
+                    Image(nsImage: MenuBarIcon.mouseModel(pid: controller.deviceID, pointSize: 20))
                         .renderingMode(.template)
                         .resizable().scaledToFit()
                         .frame(width: 19, height: 19)
@@ -957,7 +957,7 @@ struct PopoverView: View {
     /// Where the five stages wait while a slot is in Single mode, which holds only one.
     private var rememberedStagesKey: String? {
         guard let key = controller.deviceKey else { return nil }
-        return "dpiStages-\(key)-slot\(controller.activeOnboardSlot ?? 1)"
+        return Preferences.Device.rememberedDpiStages(key, slot: controller.activeOnboardSlot ?? 1)
     }
 
     private var presetDpiCard: some View {
@@ -1399,7 +1399,7 @@ struct PopoverView: View {
     private enum DisclosureSection: String, CaseIterable { case polling, lighting, power, profiles }
     private enum GroupRow: Hashable { case section(DisclosureSection), buttons }
     /// The open sections, comma-separated: `@AppStorage` can't hold a set.
-    @AppStorage("popoverExpandedSections") private var expandedSectionsRaw = ""
+    @AppStorage(Preferences.popoverExpandedSections) private var expandedSectionsRaw = ""
     private var expandedSections: Set<DisclosureSection> {
         Set(expandedSectionsRaw.split(separator: ",").compactMap { DisclosureSection(rawValue: String($0)) })
     }

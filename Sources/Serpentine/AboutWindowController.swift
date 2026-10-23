@@ -9,8 +9,6 @@ import SwiftUI
 final class AboutWindowController: AppWindowPresenter {
     private var window: NSWindow?
 
-    var isVisible: Bool { window?.isVisible ?? false }
-
     func show() {
         if window == nil {
             let root = AboutView(onDone: { [weak self] in self?.window?.close() })

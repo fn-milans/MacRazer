@@ -17,8 +17,6 @@ final class RemapWindowController: AppWindowPresenter {
         self.controller = controller
     }
 
-    var isVisible: Bool { window?.isVisible ?? false }
-
     func show() {
         if window == nil {
             let hosting = NSHostingController(rootView: RemapView(remapper: remapper, controller: controller))

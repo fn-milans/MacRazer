@@ -509,7 +509,7 @@ enum OnboardButtons {
 /// Which blocks Serpentine wrote into which mouse's function table, by serial number, so only
 /// those are ever put back (`OnboardButtons.step`).
 struct OnboardOwnership {
-    static let defaultsKey = "onboardButtonsOwned"
+    static let defaultsKey = Preferences.onboardButtonsOwned
     let defaults: UserDefaults
 
     /// The record of a mouse's HyperShift layer (`OnboardButtons.shiftedPlan`).

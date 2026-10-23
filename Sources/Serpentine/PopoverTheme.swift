@@ -73,8 +73,8 @@ enum PopoverLook: Equatable, CaseIterable {
 /// edits them, and the app delegate, which applies them to the popover and the windows.
 @MainActor
 final class AppearanceSettings: ObservableObject {
-    static let themeKey = "appearance.theme"
-    static let glassKey = "appearance.glass"
+    static let themeKey = Preferences.appearanceTheme
+    static let glassKey = Preferences.appearanceGlass
 
     /// The app's one instance. The window controllers reach it here rather than having it
     /// threaded through every initializer; tests make their own with a scratch defaults suite.

@@ -125,7 +125,7 @@ final class ButtonRemapper: ObservableObject, @unchecked Sendable {
         activeKey != "none" && (activeDeviceID.map(RazerDevices.supportsDpiButtonBinding(pid:)) ?? false)
     }
     var remappingPermissionsGranted: Bool { accessibilityGranted && eventTapAvailable }
-    private var defaultsKey: String { "buttonMappings-\(activeKey)" }
+    private var defaultsKey: String { Preferences.Device.buttonMappings(activeKey) }
     /// Mirrors `MouseController.connected` (wired in AppDelegate; main-thread, same as the
     /// tap callback). While the mouse is offline — powered off, asleep, dongle unplugged —
     /// its mappings must not fire: the tap can't tell which device sent a click, so they'd
@@ -738,7 +738,7 @@ final class ButtonRemapper: ObservableObject, @unchecked Sendable {
         guard isBasiliskV3XHyperSpeed else { return }
         let previous = dpiCycleSoftwareAction
         dpiCycleSoftwareAction = action
-        let key = "dpiCycleSoftwareAction-\(activeKey)"
+        let key = Preferences.Device.dpiCycleSoftwareAction(activeKey)
         if let action, let data = try? JSONEncoder().encode(action) {
             defaults.set(data, forKey: key)
         } else {
@@ -751,7 +751,7 @@ final class ButtonRemapper: ObservableObject, @unchecked Sendable {
     private func loadDpiSoftwareAction() {
         dpiCycleSoftwareAction = nil
         guard isBasiliskV3XHyperSpeed,
-              let data = defaults.data(forKey: "dpiCycleSoftwareAction-\(activeKey)") else { return }
+              let data = defaults.data(forKey: Preferences.Device.dpiCycleSoftwareAction(activeKey)) else { return }
         dpiCycleSoftwareAction = try? JSONDecoder().decode(RemapAction.self, from: data)
     }
 

@@ -4,9 +4,9 @@
 import AppKit
 
 /// Opens a second instance of a bundle and reports, on the main actor, whether it launched.
-/// Shared by the update install and the Input Monitoring "Quit & Relaunch".
+/// Used by the Input Monitoring "Quit & Relaunch".
 ///
-/// Both callers are `@MainActor` classes, and that is exactly what made this crash. A closure
+/// The caller is a `@MainActor` class, and that is exactly what made this crash. A closure
 /// written inline there inherits main-actor isolation under Swift 6, so the compiler puts a
 /// runtime executor check at its top. LaunchServices calls the completion handler on its own
 /// open queue, the check fails, and the process traps with SIGTRAP after the new instance is

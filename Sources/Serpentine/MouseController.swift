@@ -44,7 +44,7 @@ enum BluetoothRecoveryState: Equatable {
 /// `@unchecked Sendable`: state is accessed under a strict discipline — `device` only on the
 /// `io` queue, `@Published` properties only on the main queue (via `publish`).
 final class MouseController: ObservableObject, @unchecked Sendable {
-    static let connectionSoundsEnabledKey = "connectionSoundsEnabled"
+    static let connectionSoundsEnabledKey = Preferences.connectionSoundsEnabled
 
     @Published private(set) var connected = false
     @Published private(set) var batteryPercent: Int?
@@ -158,9 +158,9 @@ final class MouseController: ObservableObject, @unchecked Sendable {
     @Published private(set) var profileApplyFailed = false
 
     /// User preference: show the battery % beside the menu bar icon (persisted).
-    @Published var showPercentInMenuBar: Bool = (UserDefaults.standard.object(forKey: "showPercentInMenuBar") as? Bool) ?? true {
+    @Published var showPercentInMenuBar: Bool = (UserDefaults.standard.object(forKey: Preferences.showPercentInMenuBar) as? Bool) ?? true {
         didSet {
-            UserDefaults.standard.set(showPercentInMenuBar, forKey: "showPercentInMenuBar")
+            UserDefaults.standard.set(showPercentInMenuBar, forKey: Preferences.showPercentInMenuBar)
             updateStatusText()
         }
     }
@@ -2397,7 +2397,7 @@ final class MouseController: ObservableObject, @unchecked Sendable {
             }
         }
         let defaults = UserDefaults.standard
-        for prefix in ["learnedDischargeRate-", "buttonMappings-", "customDPI-", "dpiCycleSoftwareAction-"] {
+        for prefix in Preferences.Device.migratedPrefixes {
             let srcKey = "\(prefix)\(old)", dstKey = "\(prefix)\(new)"
             if let value = defaults.object(forKey: srcKey), defaults.object(forKey: dstKey) == nil {
                 defaults.set(value, forKey: dstKey)

@@ -121,14 +121,13 @@ enum MenuBarIcon {
     /// the generic Cobra shape for an unknown or absent device.
     /// No charging variant here on purpose: this is the popover's header mark, and the card
     /// directly below it already spells out the charging state in words.
-    static func mouseModel(pid: Int?, razerCutout: Bool = true, pointSize: CGFloat = 20) -> NSImage {
-        let img = drawMouse(size: pointSize, razerCutout: razerCutout,
-                            silhouette: RazerDevices.silhouette(pid: pid))
+    static func mouseModel(pid: Int?, pointSize: CGFloat = 20) -> NSImage {
+        let img = drawMouse(size: pointSize, silhouette: RazerDevices.silhouette(pid: pid))
         img.isTemplate = true
         return img
     }
 
-    private static func drawMouse(size s: CGFloat, razerCutout: Bool, silhouette: RazerMouseSilhouette,
+    private static func drawMouse(size s: CGFloat, silhouette: RazerMouseSilhouette,
                                   color: NSColor = .black) -> NSImage {
         NSImage(size: NSSize(width: s, height: s), flipped: false) { rect in
             guard let ctx = NSGraphicsContext.current?.cgContext else { return false }
@@ -185,26 +184,6 @@ enum MenuBarIcon {
                 ctx.addPath(CGPath(roundedRect: dpi, cornerWidth: s * 0.025, cornerHeight: s * 0.025, transform: nil))
             }
             ctx.strokePath()
-
-            // Triskelion mark near the base.
-            if razerCutout {
-                let center = P(0, -0.29)
-                let r = s * 0.105
-                for k in 0..<3 {
-                    let a = CGFloat(k) * (2 * .pi / 3) - .pi / 2
-                    let perp = a + .pi / 2
-                    func pt(_ along: CGFloat, _ side: CGFloat) -> CGPoint {
-                        CGPoint(x: center.x + cos(a) * r * along + cos(perp) * s * side,
-                                y: center.y + sin(a) * r * along + sin(perp) * s * side)
-                    }
-                    let blade = CGMutablePath()
-                    blade.move(to: pt(0.0, -0.01))
-                    blade.addCurve(to: pt(1.0, 0.035), control1: pt(0.35, 0.07), control2: pt(0.85, 0.07))
-                    ctx.addPath(blade)
-                }
-                ctx.setLineWidth(lw * 0.85)
-                ctx.strokePath()
-            }
             return true
         }
     }
@@ -243,7 +222,7 @@ enum MenuBarIcon {
     /// visual verification). No `silhouette` draws the serpent.
     @discardableResult
     static func writePreview(to path: String, size: CGFloat, silhouette: RazerMouseSilhouette? = nil,
-                             razerCutout: Bool = true, charging: Bool = false,
+                             charging: Bool = false,
                              lightMenuBar: Bool = false) -> Bool {
         // Charging previews reproduce a real menu-bar pairing — body and bolt colour both
         // depend on it, and the light one is the harder of the two to get right (yellow on
@@ -253,7 +232,7 @@ enum MenuBarIcon {
         let green = NSColor(red: 0x44/255, green: 0xD6/255, blue: 0x2C/255, alpha: 1)
         let image: NSImage
         if let silhouette {
-            image = drawMouse(size: size, razerCutout: razerCutout, silhouette: silhouette, color: green)
+            image = drawMouse(size: size, silhouette: silhouette, color: green)
         } else {
             image = drawSerpent(size: size, color: charging ? chargingBody : green, charging: charging,
                                 boltColor: charging ? chargingBolt : nil)

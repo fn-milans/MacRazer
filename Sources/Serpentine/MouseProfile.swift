@@ -75,7 +75,7 @@ struct MouseProfile: Codable, Identifiable, Equatable {
 /// The names of a mouse's onboard slots (`OnboardSlots`), which are its profiles: the mouse
 /// keeps no names, so they live here, by device key and slot. An unnamed slot is "Profile N".
 struct SlotNames {
-    private static func key(forDevice deviceKey: String) -> String { "slotNames-\(deviceKey)" }
+    private static func key(forDevice deviceKey: String) -> String { Preferences.Device.slotNames(deviceKey) }
 
     static func defaultName(_ slot: Int) -> String { "Profile \(slot)" }
 
@@ -99,8 +99,8 @@ struct SlotNames {
 /// Per-device persistence for `[MouseProfile]`, following the same UserDefaults pattern as
 /// `ButtonRemapper`'s mapping storage (JSON-encoded `Data` under a device-keyed string).
 struct ProfileStore {
-    private static func key(forDevice deviceKey: String) -> String { "profiles-\(deviceKey)" }
-    private static func activeKey(forDevice deviceKey: String) -> String { "activeProfileID-\(deviceKey)" }
+    private static func key(forDevice deviceKey: String) -> String { Preferences.Device.profiles(deviceKey) }
+    private static func activeKey(forDevice deviceKey: String) -> String { Preferences.Device.activeProfileID(deviceKey) }
 
     static func profiles(forDevice deviceKey: String) -> [MouseProfile] {
         guard let data = UserDefaults.standard.data(forKey: key(forDevice: deviceKey)),

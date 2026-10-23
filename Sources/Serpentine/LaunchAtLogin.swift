@@ -31,7 +31,7 @@ final class LaunchAtLogin: ObservableObject {
     /// (or won't exist) at the next boot. See `AppLocation`.
     @Published private(set) var isSupported: Bool
 
-    private static let appliedDefaultKey = "launchAtLoginDefaultApplied"
+    private static let appliedDefaultKey = Preferences.launchAtLoginDefaultApplied
 
     init() {
         isSupported = AppLocation.installedBundleURL != nil
