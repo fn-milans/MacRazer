@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Build a standalone "MacRazer.app" menu bar bundle from the SwiftPM executable.
+# Build a standalone "Serpentine.app" menu bar bundle from the SwiftPM executable.
 #
-#   ./Scripts/build-app.sh           # release build → ./MacRazer.app
+#   ./Scripts/build-app.sh           # release build → ./Serpentine.app
 #   ./Scripts/build-app.sh --adhoc   # the same, ad-hoc signed whatever certificates exist
-#   open "MacRazer.app"           # launch it
+#   open "Serpentine.app"           # launch it
 #
 # Needs Xcode, not just the Command Line Tools: a build for two architectures goes through
 # Xcode's build system. (`swift build` / `swift run` for development work with either.)
@@ -27,8 +27,8 @@ done
 
 cd "$(dirname "$0")/.."
 
-APP="MacRazer.app"
-EXEC_NAME="MacRazer"
+APP="Serpentine.app"
+EXEC_NAME="Serpentine"
 
 # Universal: one binary for Apple Silicon and Intel. Nothing in the app is tied to either, and
 # macOS 14 still runs on Intel Macs. The two-arch build lands in .build/apple/, not the usual
@@ -67,8 +67,8 @@ fi
 SIGN_NAME="Apple Development"
 if [ -z "${SIGN_ID}" ] && [ "${ADHOC}" -eq 0 ]; then
     SIGN_ID="$(security find-identity -p codesigning 2>/dev/null \
-        | awk '/"MacRazer Self-Signed"/ { print $2; exit }')"
-    SIGN_NAME="MacRazer Self-Signed"
+        | awk '/"Serpentine Self-Signed"/ { print $2; exit }')"
+    SIGN_NAME="Serpentine Self-Signed"
 fi
 if [ -n "${SIGN_ID}" ]; then
     echo "▸ Codesigning with stable identity '${SIGN_NAME}'…"
@@ -81,13 +81,13 @@ if [ -n "${SIGN_ID}" ]; then
     # has been recycled by another process answers `kill -0` just as happily, which would print
     # "still signing" about a build that finished in half a second. The file existing means
     # codesign has not returned — nothing else can claim it.
-    DONE_FLAG="$(mktemp -t macrazer-codesign)"
+    DONE_FLAG="$(mktemp -t serpentine-codesign)"
     # The explicit `rm -f` below is what stops the watchdog promptly; this is the safety net
     # for the paths that never reach it — Ctrl-C while waiting on the keychain prompt, which
     # is the exact situation this watchdog exists for. `:-` because the trap is script-wide
     # and `set -u` would fire on the ad-hoc branch, where DONE_FLAG is never set.
     trap 'rm -f "${DONE_FLAG:-}"' EXIT
-    codesign --force --sign "${SIGN_ID}" --identifier com.macrazer.menubar --timestamp=none "${APP}" &
+    codesign --force --sign "${SIGN_ID}" --identifier io.github.fn-milans.serpentine --timestamp=none "${APP}" &
     CODESIGN_PID=$!
     (
         # Polled in short steps rather than one `sleep 5`: killing the watchdog while it sits
@@ -117,10 +117,10 @@ if [ -n "${SIGN_ID}" ]; then
     fi
 elif [ "${ADHOC}" -eq 1 ]; then
     echo "▸ Ad-hoc codesigning (--adhoc)…"
-    codesign --force --sign - --identifier com.macrazer.menubar --timestamp=none "${APP}"
+    codesign --force --sign - --identifier io.github.fn-milans.serpentine --timestamp=none "${APP}"
 else
     echo "▸ Ad-hoc codesigning (run Scripts/setup-signing.sh for a stable identity)…"
-    codesign --force --sign - --identifier com.macrazer.menubar --timestamp=none "${APP}"
+    codesign --force --sign - --identifier io.github.fn-milans.serpentine --timestamp=none "${APP}"
 fi
 
 # An --adhoc build must carry no certificate at all: check the signature, not the branch taken.

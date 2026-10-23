@@ -1,0 +1,215 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+// Part of Serpentine, a control app for Razer mice on macOS. See LICENSE and NOTICE.md.
+
+import SwiftUI
+
+/// Control-Center-style tile: a rounded, lightly-frosted card on the dark popover. Shared by
+/// every popover sub-page so the card style can't drift between them.
+func card<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+    cardSurface(content()
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading))
+}
+
+/// The card's fill and shape without its padding, for cards that lay out their own insets (the
+/// popover's expandable section rows).
+///
+/// A free function like `card`, not a `View` extension: an extension method is main-actor
+/// isolated, and `card` (nonisolated) couldn't call it under Swift 6 concurrency checking.
+func cardSurface<Content: View>(_ content: Content) -> some View {
+    content.background(Color.primary.opacity(0.10), in: RoundedRectangle(cornerRadius: 13))
+}
+
+/// A card with a small uppercase heading — the window-sized counterpart to `card`, shared by
+/// the Settings and About windows so their sections can't drift apart.
+///
+/// Flatter and tighter-cornered than `card` (0.07 vs 0.10 fill, radius 12 vs 13) but roomier
+/// inside it (14 vs 12): `card` sits on the popover's dark material at popover width, this
+/// sits on a plain window background at more than twice that, where the popover's contrast
+/// reads as heavy and its padding as cramped.
+func titledSection<Content: View>(_ title: String, @ViewBuilder _ content: () -> Content) -> some View {
+    VStack(alignment: .leading, spacing: 12) {
+        Text(title.uppercased())
+            .font(.system(size: 10, weight: .semibold))
+            .foregroundStyle(.tertiary)
+            .kerning(0.6)
+        content()
+    }
+    .padding(14)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
+}
+
+/// Wrapped explanatory text under a control or heading — the small secondary paragraph both
+/// the Settings and About windows are mostly made of. Shared for the same reason as
+/// `titledSection`: the two windows had grown separate copies, one of them named `body`, which
+/// shadows the `View` requirement it sat next to.
+func sectionNote(_ text: String, color: Color = .secondary) -> some View {
+    Text(text)
+        .font(.system(size: 11.5))
+        .foregroundStyle(color)
+        .fixedSize(horizontal: false, vertical: true)
+}
+
+/// A faint wash over a clickable chip or row while the pointer is on it — the feedback
+/// Control Center's tiles and menu items give, which plain-styled SwiftUI buttons don't.
+/// Skipped while disabled, so a dimmed control doesn't look like it would respond.
+private struct HoverHighlight<S: Shape>: ViewModifier {
+    let shape: S
+    @State private var hovered = false
+    @Environment(\.isEnabled) private var isEnabled
+
+    func body(content: Content) -> some View {
+        content
+            .overlay(shape.fill(Color.primary.opacity(hovered && isEnabled ? 0.08 : 0)).allowsHitTesting(false))
+            .onHover { hovered = $0 }
+            .animation(.easeOut(duration: 0.12), value: hovered)
+    }
+}
+
+extension View {
+    func hoverHighlight<S: Shape>(_ shape: S) -> some View { modifier(HoverHighlight(shape: shape)) }
+}
+
+/// The app's primary-action button: a Razer-green rounded rect with dark text, in place of
+/// `.borderedProminent.tint(.razerGreen)`. That draws the system's white label on the green,
+/// about 1.9:1 contrast, and macOS gives no way to recolour it; this matches the selected
+/// chips' `onRazerGreen` instead. Sized off the control size (regular or small), dimmed when
+/// disabled, darkened while pressed, with a hover wash and a focus ring.
+/// `keyboardShortcut(.defaultAction)` still works on it.
+struct RazerProminentButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        StyledButton(configuration: configuration)
+    }
+
+    // A view rather than inline in `makeBody`, so it can read the control size, enabled state
+    // and font from the environment. A font the caller set wins; otherwise the system's
+    // button size for the control size.
+    private struct StyledButton: View {
+        let configuration: Configuration
+        @Environment(\.controlSize) private var controlSize
+        @Environment(\.isEnabled) private var isEnabled
+        @Environment(\.font) private var font
+        @Environment(\.isFocused) private var isFocused
+
+        var body: some View {
+            let small = controlSize == .small || controlSize == .mini
+            let shape = RoundedRectangle(cornerRadius: small ? 5 : 6, style: .continuous)
+            configuration.label
+                .font(font ?? .system(size: small ? 11 : 13))
+                .foregroundStyle(Color.onRazerGreen)
+                .padding(.horizontal, small ? 8 : 10)
+                .padding(.vertical, small ? 2 : 3)
+                .background(Color.razerGreen, in: shape)
+                .overlay(shape.fill(Color.black.opacity(configuration.isPressed ? 0.18 : 0)))
+                .hoverHighlight(shape)
+                .opacity(isEnabled ? 1 : 0.45)
+                // A custom style loses the system focus ring; draw one for keyboard navigation.
+                .overlay(shape.inset(by: -2).stroke(Color.accentColor.opacity(isFocused ? 0.8 : 0), lineWidth: 2.5))
+                .contentShape(shape)
+        }
+    }
+}
+
+/// Small secondary-styled section heading used inside cards.
+func sectionLabel(_ text: String, _ symbol: String) -> some View {
+    Label(text, systemImage: symbol)
+        .font(.system(size: 11, weight: .medium))
+        .foregroundStyle(.secondary)
+}
+
+/// The battery-percentage bands, in one place so every consumer agrees: this file's colour
+/// helper, the percent readout in PopoverView, the usage chart's curve bands, and the
+/// low-battery alert.
+enum Battery {
+    /// Below this the battery reads as "low" — red gauge/readout/curve, and the one
+    /// `LowBatteryAlertPolicy` notification.
+    static let lowThresholdPercent = 15
+    /// Below this (and at or above `lowThresholdPercent`) is the amber middle band.
+    static let midThresholdPercent = 40
+    /// The alert re-arms only once the charge climbs back to here — deliberately above
+    /// `lowThresholdPercent`. Without that gap, one garbage-but-accepted high reading (the
+    /// poll state machine adopts a third consecutive outlier as the new baseline) would
+    /// re-arm and let the next genuine low reading fire a duplicate alert.
+    static let lowRearmPercent = 20
+    /// Lighting brightness above this shows the battery-saver hint in the lighting card.
+    /// LED brightness is PWM, so its draw scales roughly with the percent, and on a wireless
+    /// mouse the LEDs are the biggest load the user controls. Half is where the saving is
+    /// large and the lighting still reads clearly lit, so it's a suggestion people can take.
+    static let lightingHintBrightnessPercent = 50
+}
+
+/// Battery-state color for a given percent — the same low/mid/full thresholds as the battery
+/// card's level bar and gauge, shared so the usage graph's discharge curve matches it exactly.
+func batteryLevelColor(forPercent pct: Int) -> Color {
+    switch pct {
+    case ..<Battery.lowThresholdPercent: return .batteryLow
+    case ..<Battery.midThresholdPercent: return .batteryMid
+    default: return .batteryFull
+    }
+}
+
+/// Minimal left-aligned flow container: lays subviews in rows, wrapping when the next one
+/// wouldn't fit the proposed width. SwiftUI has no built-in flow layout, and the profile
+/// chips would otherwise overflow the fixed-width popover once a handful of profiles exist.
+struct FlowLayout: Layout {
+    var spacing: CGFloat = 6
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let rows = layoutRows(maxWidth: proposal.width ?? .infinity, subviews: subviews)
+        let height = rows.last.map { $0.minY + $0.height } ?? 0
+        let width = proposal.width ?? rows.map(\.width).max() ?? 0
+        return CGSize(width: width, height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let rows = layoutRows(maxWidth: bounds.width, subviews: subviews)
+        for row in rows {
+            var x = bounds.minX
+            for index in row.indices {
+                let natural = subviews[index].sizeThatFits(.unspecified)
+                // Clamp to the container: a single over-wide subview (a chip with a long
+                // profile name) truncates within bounds instead of drawing past the card.
+                let width = min(natural.width, bounds.width)
+                // Center each subview vertically within its row.
+                let y = bounds.minY + row.minY + (row.height - natural.height) / 2
+                subviews[index].place(at: CGPoint(x: x, y: y),
+                                      proposal: ProposedViewSize(width: width, height: natural.height))
+                x += width + spacing
+            }
+        }
+    }
+
+    private struct Row {
+        var indices: [Int] = []
+        var width: CGFloat = 0
+        var height: CGFloat = 0
+        var minY: CGFloat = 0
+    }
+
+    private func layoutRows(maxWidth: CGFloat, subviews: Subviews) -> [Row] {
+        var rows: [Row] = []
+        var current = Row()
+        var y: CGFloat = 0
+        for (index, subview) in subviews.enumerated() {
+            let natural = subview.sizeThatFits(.unspecified)
+            // Same clamp as placement, so row math matches what actually gets drawn.
+            let size = CGSize(width: min(natural.width, maxWidth), height: natural.height)
+            let needed = current.indices.isEmpty ? size.width : current.width + spacing + size.width
+            if !current.indices.isEmpty && needed > maxWidth {
+                current.minY = y
+                y += current.height + spacing
+                rows.append(current)
+                current = Row()
+            }
+            current.width = current.indices.isEmpty ? size.width : current.width + spacing + size.width
+            current.height = max(current.height, size.height)
+            current.indices.append(index)
+        }
+        if !current.indices.isEmpty {
+            current.minY = y
+            rows.append(current)
+        }
+        return rows
+    }
+}

@@ -47,7 +47,7 @@ jobs:
         run: |
           version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' Packaging/Info.plist)"
           echo "version=${version}" >> "${GITHUB_OUTPUT}"
-          echo "Building MacRazer ${version} at ${GITHUB_SHA::7}"
+          echo "Building Serpentine ${version} at ${GITHUB_SHA::7}"
       # Before the build, so a version that was already released stops the run in seconds.
       - name: Check the version isn't released yet
         if: inputs.draft_release
@@ -66,9 +66,9 @@ jobs:
       - name: Check the DMG
         run: |
           mount="$(mktemp -d)"
-          hdiutil attach -nobrowse -readonly -mountpoint "${mount}" dist/MacRazer.dmg
-          signature="$(codesign -dvv "${mount}/MacRazer.app" 2>&1)"
-          built="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "${mount}/MacRazer.app/Contents/Info.plist")"
+          hdiutil attach -nobrowse -readonly -mountpoint "${mount}" dist/Serpentine.dmg
+          signature="$(codesign -dvv "${mount}/Serpentine.app" 2>&1)"
+          built="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "${mount}/Serpentine.app/Contents/Info.plist")"
           hdiutil detach "${mount}"
           echo "${signature}" | grep -E '^(Identifier|Signature|TeamIdentifier)='
           if ! grep -q '^Signature=adhoc' <<<"${signature}" || grep -q '^Authority=' <<<"${signature}"; then
@@ -81,10 +81,10 @@ jobs:
           fi
       - uses: actions/upload-artifact@v4
         with:
-          name: MacRazer-${{ steps.version.outputs.version }}
+          name: Serpentine-${{ steps.version.outputs.version }}
           path: |
-            dist/MacRazer.dmg
-            dist/MacRazer-${{ steps.version.outputs.version }}.dmg
+            dist/Serpentine.dmg
+            dist/Serpentine-${{ steps.version.outputs.version }}.dmg
           if-no-files-found: error
       - name: Put it on a draft release
         if: inputs.draft_release
@@ -96,10 +96,10 @@ jobs:
           # A draft to edit, not the finished copy: it carries the changelog entries verbatim.
           if ! ./Scripts/release-notes.sh "${VERSION}" --repo "${GITHUB_REPOSITORY}" > "${RUNNER_TEMP}/notes.md"; then
             cat > "${RUNNER_TEMP}/notes.md" <<EOF
-          MacRazer ${VERSION}. See the [changelog](https://github.com/${GITHUB_REPOSITORY}/blob/${GITHUB_SHA}/CHANGELOG.md).
+          Serpentine ${VERSION}. See the [changelog](https://github.com/${GITHUB_REPOSITORY}/blob/${GITHUB_SHA}/CHANGELOG.md).
           EOF
           fi
-          assets=(dist/MacRazer.dmg "dist/MacRazer-${VERSION}.dmg")
+          assets=(dist/Serpentine.dmg "dist/Serpentine-${VERSION}.dmg")
           if gh release view "${tag}" >/dev/null 2>&1; then
             # A draft from an earlier run: keep its notes, which may have been edited, and
             # replace the DMGs.

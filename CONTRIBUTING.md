@@ -8,11 +8,11 @@ the HID protocol, and every feature.
 
 ## Build & run
 ```sh
-swift run MacRazer # menu bar app (uses your Terminal's permission grants)
-swift run MacRazer battery # CLI diagnostics: battery / dpi / poll / rgb / brightness / info
+swift run Serpentine # menu bar app (uses your Terminal's permission grants)
+swift run Serpentine battery # CLI diagnostics: battery / dpi / poll / rgb / brightness / info
 swift test # unit tests (protocol codec, battery models, persistence — no hardware needed)
 ./Scripts/build-app.sh # build a standalone .app
-./Scripts/make-dmg.sh # package the .app into dist/MacRazer.dmg
+./Scripts/make-dmg.sh # package the .app into dist/Serpentine.dmg
 ./Scripts/make-dmg.sh --adhoc # the same, ad-hoc signed, for a DMG you share
 ./Scripts/release.sh 0.3.0 --dry-run # preview a release (see 'Cutting a release' below)
 ```
@@ -47,7 +47,7 @@ dirty, you're not on an up-to-date main, or `[Unreleased]` is empty.
 
 It stops before `git commit`, printing the rest — review the diff first. Then commit, push,
 and run the Release workflow, which puts both DMGs on a draft release `v<version>`: the fixed
-`MacRazer.dmg` name that links point at, and a versioned copy that makes the Releases page
+`Serpentine.dmg` name that links point at, and a versioned copy that makes the Releases page
 self-describing. Replace the draft's notes with yours and publish it, which creates the tag.
 `Tests/Scripts/release-test.sh` covers the version comparison and both changelog operations;
 CI runs it. `--dry-run` shows what it would do.
@@ -88,12 +88,12 @@ what lets a reviewer see the status bytes and the read-backs, and it is what ear
 the README table.
 
 ```sh
-swift run MacRazer info              # confirms detection and the PID it enumerates as
-swift run MacRazer battery
-swift run MacRazer dpi               # then: dpi 3200   (check the read-back matches)
-swift run MacRazer poll              # then: poll 1000  (check the read-back matches)
-swift run MacRazer rgb static ff0000 # if it has lighting
-swift run MacRazer brightness        # sweeps LOGO / SCROLL / ZERO / BACKLIGHT
+swift run Serpentine info              # confirms detection and the PID it enumerates as
+swift run Serpentine battery
+swift run Serpentine dpi               # then: dpi 3200   (check the read-back matches)
+swift run Serpentine poll              # then: poll 1000  (check the read-back matches)
+swift run Serpentine rgb static ff0000 # if it has lighting
+swift run Serpentine brightness        # sweeps LOGO / SCROLL / ZERO / BACKLIGHT
 ```
 
 `status=0x02` is success. `0x03` is the mouse refusing, which is information, not failure —

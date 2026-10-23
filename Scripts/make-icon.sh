@@ -4,8 +4,8 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-ICONSET="$(mktemp -d)/MacRazer.iconset"
+ICONSET="$(mktemp -d)/Serpentine.iconset"
 mkdir -p "$ICONSET"
-swift run MacRazer iconset "$ICONSET"
+swift run Serpentine iconset "$ICONSET"
 iconutil -c icns "$ICONSET" -o Packaging/AppIcon.icns
 echo "Wrote Packaging/AppIcon.icns"

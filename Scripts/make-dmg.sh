@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# Package "MacRazer.app" into a drag-to-install DMG for distribution.
+# Package "Serpentine.app" into a drag-to-install DMG for distribution.
 #
-#   ./Scripts/make-dmg.sh            # builds the app, then writes ./dist/MacRazer.dmg
-#                                     # plus a versioned copy, e.g. ./dist/MacRazer-0.1.5.dmg
+#   ./Scripts/make-dmg.sh            # builds the app, then writes ./dist/Serpentine.dmg
+#                                     # plus a versioned copy, e.g. ./dist/Serpentine-0.1.5.dmg
 #   ./Scripts/make-dmg.sh --adhoc    # the same, with the app ad-hoc signed (`build-app.sh
 #                                     # --adhoc`): for a DMG others download, so it never
 #                                     # carries this Mac's Apple Development certificate
 #
-# Both files have identical contents. "MacRazer.dmg" is the canonical name links download by,
+# Both files have identical contents. "Serpentine.dmg" is the canonical name links download by,
 # through GitHub's /releases/latest/download/<name> shortcut, which only works if the filename
 # is the same on every release, so it must keep this exact name. The versioned copy
 # is just so the filename is self-describing for anyone browsing the Releases page directly;
@@ -28,16 +28,16 @@ done
 
 cd "$(dirname "$0")/.."
 
-APP="MacRazer.app"
-VOLNAME="MacRazer"
+APP="Serpentine.app"
+VOLNAME="Serpentine"
 OUT_DIR="dist"
-OUT_DMG="${OUT_DIR}/MacRazer.dmg"
+OUT_DMG="${OUT_DIR}/Serpentine.dmg"
 
 echo "▸ Building ${APP}…"
 ./Scripts/build-app.sh ${BUILD_ARGS[@]+"${BUILD_ARGS[@]}"}
 
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' Packaging/Info.plist)"
-VERSIONED_DMG="${OUT_DIR}/MacRazer-${VERSION}.dmg"
+VERSIONED_DMG="${OUT_DIR}/Serpentine-${VERSION}.dmg"
 
 echo "▸ Staging DMG contents…"
 STAGE="$(mktemp -d)"

@@ -15,7 +15,7 @@
 #
 # If this scripted path gives you trouble, the GUI alternative is just as good:
 #   Keychain Access → Certificate Assistant → Create a Certificate…
-#     Name: "MacRazer Self-Signed"   Identity Type: Self-Signed Root
+#     Name: "Serpentine Self-Signed"   Identity Type: Self-Signed Root
 #     Certificate Type: Code Signing    → Create
 set -euo pipefail
 
@@ -31,7 +31,7 @@ if [ "$#" -gt 1 ]; then
     exit 64
 fi
 
-CERT_NAME="MacRazer Self-Signed"
+CERT_NAME="Serpentine Self-Signed"
 # `security default-keychain` prints the path indented and quoted. Strip exactly that —
 # deleting every space (an earlier `tr -d ' "'`) mangles any path containing one, which is
 # every home directory derived from a full name.
@@ -113,7 +113,7 @@ openssl req -x509 -newkey rsa:2048 -nodes -days 3650 \
 # defaults to newer ones whose MAC `security` can't verify ("MAC verification failed"), so
 # pass -legacy when the installed openssl supports it. Use a real password too — an empty
 # one trips the same MAC bug on some toolchains.
-P12PASS="macrazer"
+P12PASS="serpentine"
 LEGACY=""
 if openssl pkcs12 -help 2>&1 | grep -q -- "-legacy"; then LEGACY="-legacy"; fi
 openssl pkcs12 -export ${LEGACY} -inkey "$TMP/key.pem" -in "$TMP/cert.pem" \

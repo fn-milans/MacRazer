@@ -192,7 +192,7 @@ cat <<EOF
 
 ### Install
 This build is unsigned (no paid Apple Developer ID), so first launch shows the standard
-Gatekeeper warning. Right-click **MacRazer.app** in Finder → **Open** → **Open**. Only needed
+Gatekeeper warning. Right-click **Serpentine.app** in Finder → **Open** → **Open**. Only needed
 once. See the README for details.
 
 **Full changelog:** https://github.com/${REPO}/blob/main/${CHANGELOG}

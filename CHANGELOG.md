@@ -7,6 +7,15 @@ expect rough edges until 1.0.
 ## [Unreleased]
 
 ### Changed
+- **MacRazer is now Serpentine.** New name, new bundle id (`io.github.fn-milans.serpentine`),
+  and the app is `Serpentine.app` in `Serpentine.dmg`. Settings, remaps and battery history
+  carry over on the first launch: the old preferences are copied and `Application Support/MacRazer`
+  is moved to `Application Support/Serpentine`. macOS ties permissions to the bundle id, so
+  Input Monitoring and Accessibility have to be granted once more, and Start at login is set
+  up afresh (on, as on a first install). Delete the old MacRazer.app afterwards. A self-signed
+  certificate from an earlier `setup-signing.sh` is now looked for as "Serpentine Self-Signed";
+  run the script again to make one.
+
 - **The popover follows your Mac's light or dark mode.** It used to be dark all the time. On a
   light Mac it is now light glass, with a darker green for text so it stays readable. Settings,
   About and the other windows follow too, with the same glass or solid background. Selected chips now use dark text on the green
@@ -50,17 +59,17 @@ expect rough edges until 1.0.
 
 - **Basilisk V4 Pro profiles are the mouse's own onboard slots.** The mouse keeps up to 5,
   each with its DPI, DPI stages, lighting, wheel settings and button remaps, so they work with
-  MacRazer closed. One is always active, and whatever you change goes into it, with no saving
+  Serpentine closed. One is always active, and whatever you change goes into it, with no saving
   step. The Profiles dropdown lists the slots the mouse has, by name, and is where you add one
   (it starts as the mouse came from the factory), switch to one, rename one, reset one to
   factory, or delete one (slot 1 always stays). The button beside the left click cycles
   through them, as from the factory, and Configure Buttons can put Cycle Up Profile or Cycle
-  Down Profile on any button. MacRazer follows a switch made on the mouse, remaps included.
+  Down Profile on any button. Serpentine follows a switch made on the mouse, remaps included.
 
 - **Basilisk V4 Pro remaps are saved in the mouse, like Synapse does it.** Configure Buttons
   writes each remap into the mouse and reads it back to check it. Remaps keep working with
-  MacRazer closed, over the dongle, the cable or Bluetooth, and on other computers. When the
-  mouse connects, MacRazer reads its remaps back, so another Mac shows the same ones. That
+  Serpentine closed, over the dongle, the cable or Bluetooth, and on other computers. When the
+  mouse connects, Serpentine reads its remaps back, so another Mac shows the same ones. That
   covers key combos, mouse buttons and media keys, on Right Click, Scroll Click, Scroll Up,
   Scroll Down, Scroll Left, Scroll Right, DPI, Scroll Mode, Left Index, the side buttons and
   the side trigger. The HyperShift layer is saved in the mouse too, for every one of those
@@ -70,7 +79,7 @@ expect rough edges until 1.0.
   Right Click), Sensitivity (Stage Up, Stage Down, and a Clutch at any DPI while held),
   Multimedia, Profile, Cycle Scroll Mode, HyperShift and Disable. The mouse does all of them
   itself, on any button and either layer. Scroll Up and Down offer keys, mouse actions,
-  multimedia and Disable, as in Synapse. MacRazer only changes buttons it remapped itself, and
+  multimedia and Disable, as in Synapse. Serpentine only changes buttons it remapped itself, and
   clearing a remap puts back the button's factory function. Until remapped, Scroll Mode cycles
   the wheel's modes and the side trigger is the mouse's HyperShift key, as Synapse sets them.
   The buttons are listed in the order they sit on the mouse.
@@ -98,7 +107,7 @@ expect rough edges until 1.0.
  and a static lighting colour work in Bluetooth mode. You can also edit each DPI stage
  (right-click a DPI chip), set how long the mouse waits before it sleeps, and reassign its
  DPI button to a mouse button, a keyboard shortcut or a media key. Media keys and other
- actions only the app can perform need MacRazer running, and they use F20 as the signal,
+ actions only the app can perform need Serpentine running, and they use F20 as the signal,
  so F20 from a keyboard is taken over while one is set. Choose "DPI Cycle (default)" to
  give the button back. Contributed by [@ungrav](https://github.com/ungrav) in #32.
 
@@ -112,10 +121,10 @@ expect rough edges until 1.0.
 
 
 ### Removed
-- **MacRazer no longer sends anything anywhere.** This fork is detached from the original
+- **Serpentine no longer sends anything anywhere.** This fork is detached from the original
   project, and it drops everything that reached the network on its own. The updater is gone:
   no update checks, no update card, no "Update & Restart" and no "What's new" page. New
-  versions are on the [Releases page](https://github.com/fn-milans/MacRazer/releases), and the
+  versions are on the [Releases page](https://github.com/fn-milans/Serpentine/releases), and the
   version in the popover footer links there. The usage stats, the device test with its Send
   button, the crash report window and the Cloudflare Worker behind them are gone too, as are
   the `discover` and `devicetest` commands and the project website. The About window credits
@@ -203,7 +212,7 @@ expect rough edges until 1.0.
  something to show rather than waiting for a check.
 
 ### Fixed
-- **MacRazer no longer burns 50-100% of a CPU core while it sits in the menu bar** (#25).
+- **Serpentine no longer burns 50-100% of a CPU core while it sits in the menu bar** (#25).
  Since 0.3.0 the app watched the menu bar's light or dark appearance so it could recolour the
  charging icon. Every time that fired, it set the status item's image again. Setting the image
  makes macOS redraw the menu bar icon, and that redraw reports an appearance change even when
@@ -224,7 +233,7 @@ expect rough edges until 1.0.
  does not make it the active application, and a control in an inactive app's window does not
  respond to the first click the way it looks like it should. Activating takes keyboard focus
  from the app you were in, so closing the popover now hands it back, unless the close was on
- the way to one of MacRazer's windows or you closed it by clicking into another app.
+ the way to one of Serpentine's windows or you closed it by clicking into another app.
 
  Separately, everything the app says to the mouse goes through one serial queue, in order.
  That is right for a device that answers one command at a time, but opening the popover alone
@@ -339,7 +348,7 @@ expect rough edges until 1.0.
  DPI up to 20000 over its dongle. The Orochi 2013 has no battery and no lighting, so it gets
  DPI and polling rate only. Neither is hardware-verified here, so both are listed as
  user-reported.
-- **A "For developers" section in the About window**, saying MacRazer was built with
+- **A "For developers" section in the About window**, saying Serpentine was built with
  Hiveship, with a button to go there. In About rather than the popover: the popover is what
  you open daily to read a battery percentage, and nothing permanent there stays subtle past
  the third time you see it.
@@ -400,7 +409,7 @@ expect rough edges until 1.0.
  only when the cache is demonstrably about the version running, and a first install is not
  an update — "Updated to 0.3.1" on a first launch would simply be false. The upgrade *to*
  this release is the awkward case: the version before it never recorded one, so it looks
- exactly like a first install. Evidence that MacRazer has run here before — the update
+ exactly like a first install. Evidence that Serpentine has run here before — the update
  check's date, or the login-item default — tells them apart, so the release that introduces
  the card is not the one release that never shows it. It is written down rather than only
  held in memory: the card waits for the popover to be opened, which for a menu bar app can be
@@ -459,7 +468,7 @@ expect rough edges until 1.0.
  settings are set once and rarely revisited, and they need room to explain themselves; a
  sixth card on the bottom of an already-long popover was the wrong shape for both, so they
  moved out. "Show battery % in menu bar" moved with them.
-- **"Install updates automatically" — off by default.** On, MacRazer downloads, replaces
+- **"Install updates automatically" — off by default.** On, Serpentine downloads, replaces
  itself and relaunches on its own when a new version appears. Off (the default), you get the
  dot on the menu bar icon and the update card, as before: installing and relaunching behind
  someone's back is a much bigger thing to do to them than a badge, and this app isn't
@@ -469,15 +478,15 @@ expect rough edges until 1.0.
  triggers it. Each version is attempted once per launch, so a payload that can't be installed
  doesn't re-download itself every time the popover closes, and any failure falls through to
  the ordinary update card rather than quietly stranding you on an old version.
-- **"Start MacRazer at login" (on by default), in the new Settings window.** A menu bar
+- **"Start Serpentine at login" (on by default), in the new Settings window.** A menu bar
 - **Tests for the in-place installer itself**, against real signed bundles inside real disk
  images — the one code path that deletes the user's installed application had no automated
  coverage at all, only unit tests of the pure predicate feeding it. Every refusal (older
  payload, same version, wrong app, tampered bundle, unmountable image, image with no app)
  asserts the installed bundle is still there and still the old version.
-- **"Start MacRazer at login" (on by default) in the popover's settings card.** A menu bar
+- **"Start Serpentine at login" (on by default) in the popover's settings card.** A menu bar
  battery meter that silently stops existing after every reboot, until you remember to go and
- open it, isn't a battery meter. Backed by `SMAppService.mainApp`, so MacRazer also appears
+ open it, isn't a battery meter. Backed by `SMAppService.mainApp`, so Serpentine also appears
  in System Settings › General › Login Items and can be switched off from there — the toggle
  reads the system's registration rather than a preference of its own, and re-reads it
  whenever the app comes back to the foreground, so the two can't disagree. The default is
@@ -489,7 +498,7 @@ expect rough edges until 1.0.
 - **"Update & Restart": the update card now installs the update instead of handing you a
  DMG to drag.** Downloads with a real progress bar (a multi-megabyte download behind a bare
  spinner is indistinguishable from a hang), then mounts the image, checks that what's inside
- really is a newer MacRazer with an intact code signature, swaps the bundle atomically and
+ really is a newer Serpentine with an intact code signature, swaps the bundle atomically and
  relaunches into the new version. The swap is in place — same path, same signing identity —
  which is what keeps the Input Monitoring grant and the login item pointing at the app
  instead of silently costing you both. Nothing is deleted until a verified replacement is
@@ -498,7 +507,7 @@ expect rough edges until 1.0.
  copy, or a folder you can't write to) the card falls back to the old download-the-DMG
  behaviour, and offers that as a second chance if an install fails.
 - **A `login-item [on|off]` CLI diagnostic.** The login-item registration is the one piece of
- app state that lives in the system rather than in MacRazer's own defaults, so it can't be
+ app state that lives in the system rather than in Serpentine's own defaults, so it can't be
  checked by reading a file; this reports it, and `on`/`off` drive the same code the popover
  switch does — which also makes it the repair path when the menu bar item isn't reachable.
 - **The version in the popover footer is now a link to the project page.** A menu bar app has
@@ -519,7 +528,7 @@ expect rough edges until 1.0.
  drawn for a specific menu bar instead: white body with a bright yellow bolt on a dark one,
  black body with a deeper amber on a light one, because system yellow vanishes against white.
  It's repainted when the menu bar switches between light and dark, which the template image
- used to get for free. The idle mark is untouched and still a template. `MacRazer icon …
+ used to get for free. The idle mark is untouched and still a template. `Serpentine icon …
  charging light` previews the light-mode pairing.
 - **"Check for Updates…" in the menu bar right-click menu.** The background check runs once a
  day; this asks for one now, and is the only way back to the update card after dismissing a
@@ -576,7 +585,7 @@ expect rough edges until 1.0.
  default is now an explicit call the app delegate makes at launch.
 - **Apps installed on a second volume get the login item and self-updates again.** Every path
  under `/Volumes/` was rejected to catch a mounted disk image, which also caught external
- drives and secondary volumes — those users were told to move MacRazer to an Applications
+ drives and secondary volumes — those users were told to move Serpentine to an Applications
  folder it was already in. A disk image is now recognised by being read-only, which is the
  property that actually distinguishes it from a disk.
 - **A version check landing mid-install can no longer erase the progress bar.** The popover's
@@ -642,7 +651,7 @@ expect rough edges until 1.0.
  repeat it. Swapping to a second mouse re-arms it for that unit, and charging back up
  withdraws the banner instead of leaving it in Notification Center. The armed state lives
  in memory, so a relaunch while the mouse is still low can alert once more. If notifications
- are switched off for MacRazer the alert stays pending rather than being silently spent, so
+ are switched off for Serpentine the alert stays pending rather than being silently spent, so
  turning them on mid-discharge still gets you the warning.
 - **The usage chart now shows ~2 charges: the previous charge stays visible (dimmed) behind
  the current one.** Recharging no longer blanks the chart back to "Gathering data…" — the
@@ -697,7 +706,7 @@ expect rough edges until 1.0.
  only the single current DPI). Applying a profile writes the stages (marking the one
  matching the profile's DPI as active), then the exact DPI. Profiles saved by older
  versions keep working and simply don't touch the stage table. A `stages` CLI diagnostic
- reads/writes the table (`swift run MacRazer stages 400,800,1600 0`); the write was
+ reads/writes the table (`swift run Serpentine stages 400,800,1600 0`); the write was
  verified on Cobra HyperSpeed hardware.
 - **A serial number that resolves late no longer strands that session's data.** If the
  serial probe fails on the session's first connect, per-device data (battery history,
@@ -931,7 +940,7 @@ expect rough edges until 1.0.
 ### Added
 - **First-run setup & permissions screen.** A dedicated window (shown automatically whenever the
  required **Input Monitoring** permission is missing — and reopenable any time from the menu
- bar's "Setup & Permissions…") explains the two macOS permissions MacRazer needs — Input
+ bar's "Setup & Permissions…") explains the two macOS permissions Serpentine needs — Input
  Monitoring (for talking to the mouse) and **Accessibility** (optional, only for button
  remapping) — with live status and native grant prompts. Handles the macOS "grant needs a
  relaunch" gotcha with a **Quit & Relaunch** action and an explanatory tip, and shows the

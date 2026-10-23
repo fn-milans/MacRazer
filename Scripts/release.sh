@@ -155,7 +155,7 @@ step "Bumping ${PLIST}…"
 step "Closing off ${CHANGELOG}…"
 # Insert the new heading directly under [Unreleased]: everything already written falls under
 # it, and [Unreleased] is left empty for the next cycle.
-CHANGELOG_TMP="$(mktemp -t macrazer-changelog)"
+CHANGELOG_TMP="$(mktemp -t serpentine-changelog)"
 TEMP_FILES="${TEMP_FILES} ${CHANGELOG_TMP}"
 awk -v ver="${VERSION}" -v today="${TODAY}" -v h="${UNRELEASED_HEADING}" '
     { print }
@@ -187,11 +187,11 @@ step "Building the DMGs…"
 # --- Verify -------------------------------------------------------------------------------
 # The point of the whole script: prove the artifact actually carries the version being tagged.
 
-BUILT="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' MacRazer.app/Contents/Info.plist)"
+BUILT="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' Serpentine.app/Contents/Info.plist)"
 [ "${BUILT}" = "${VERSION}" ] \
     || fail "built app reports ${BUILT}, not ${VERSION} — do not tag this"
 
-for asset in "dist/MacRazer.dmg" "dist/MacRazer-${VERSION}.dmg"; do
+for asset in "dist/Serpentine.dmg" "dist/Serpentine-${VERSION}.dmg"; do
     [ -f "${asset}" ] || fail "expected ${asset} — make-dmg.sh did not produce it"
 done
 

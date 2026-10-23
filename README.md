@@ -1,6 +1,11 @@
-# Razer mouse control for macOS
+# Serpentine
 
-A native menu bar app to control Razer mice on macOS. Razer does ship a Synapse for Mac now,
+Razer mouse control for macOS. Serpentine's aim is to put every setting in the mouse's own
+memory, so the mouse behaves the same with the app closed, on any link and on any computer.
+Features that only software can do (the "driver mode" actions) work while the app runs, and it
+can stay in the background for them.
+
+A native app to control Razer mice on macOS. Razer does ship a Synapse for Mac now,
 but its [supported-device list](https://mysupport.razer.com/app/answers/detail/a_id/14809/~/razer-synapse-for-mac-supported-and-compatible-devices)
 is short and doesn't include the Cobra HyperSpeed or Atheris — this fills that gap. It talks
 to the mouse directly over USB HID (no kernel extension, no driver install), using a protocol
@@ -13,7 +18,7 @@ Razer mice that use the same HID protocol family, but those are untested, so tre
 
 > Unofficial. Not affiliated with, authorized by, or endorsed by Razer Inc. See [NOTICE.md](NOTICE.md).
 >
-> A fork of [MacRazer by SorcRR](https://github.com/SorcRR/MacRazer). It sends nothing
+> Started as a fork of [MacRazer by SorcRR](https://github.com/SorcRR/MacRazer). It sends nothing
 > anywhere: no usage stats, no update checks, no report uploads. See [Privacy](#privacy).
 > 
 > <img width="324" height="624" alt="image" src="https://github.com/user-attachments/assets/a7632668-2d12-4d2f-aa84-7b234bad31dc" />
@@ -74,11 +79,11 @@ against it and open an [issue](../../issues) with the output.
 Adding a model is a small change to a registry plus on-hardware verification. See
 [CONTRIBUTING.md](CONTRIBUTING.md).
 
-### Buttons MacRazer cannot see
+### Buttons Serpentine cannot see
 
 Remapping works by watching macOS mouse events, so it can only reach buttons the mouse
 actually reports to the Mac. Some buttons are handled *inside* the mouse and never send
-anything — no app can detect those, MacRazer included.
+anything — no app can detect those, Serpentine included.
 
 The clearest example is the **Basilisk's multi-function trigger** (the third side button),
 which ships assigned to **Razer Hypershift**. Hypershift is a modifier: held down, it
@@ -88,12 +93,12 @@ watching every HID interface the mouse exposes while it was pressed.
 
 To make it remappable, reassign it from Hypershift to a normal key or mouse button in
 Razer Synapse (Windows only — Razer dropped macOS support). The assignment is stored in the
-mouse's onboard memory, so it persists on the Mac afterwards and MacRazer will then see the
+mouse's onboard memory, so it persists on the Mac afterwards and Serpentine will then see the
 button like any other.
 
-The exception is a mouse whose button table MacRazer knows, today the **Basilisk V4 Pro**.
-There MacRazer writes each remap into the mouse's onboard memory itself, the way Synapse
-does, and the remaps keep working with MacRazer closed, on any link and on other computers.
+The exception is a mouse whose button table Serpentine knows, today the **Basilisk V4 Pro**.
+There Serpentine writes each remap into the mouse's onboard memory itself, the way Synapse
+does, and the remaps keep working with Serpentine closed, on any link and on other computers.
 The side trigger is the HyperShift key until you remap it (any other button can take that
 job), and the HyperShift layer is saved in the mouse too. The table was learned from the mouse's own replies, not from Synapse.
 
@@ -113,28 +118,28 @@ macOS 14 or later, on Apple Silicon or Intel.
 **Connect over the 2.4 GHz dongle or a USB-C cable.** That's where Razer exposes its full
 control protocol. The **Cobra HyperSpeed also works over Bluetooth**: battery, DPI stages,
 brightness and a static lighting colour. Polling rate, other lighting effects, custom DPI
-values and profiles still need the dongle or a cable. MacRazer asks for Bluetooth access the
+values and profiles still need the dongle or a cable. Serpentine asks for Bluetooth access the
 first time it finds the mouse there.
 
-Other models are a plain pointer over Bluetooth, so MacRazer can't read or change anything.
-If your mouse has a mode switch, set it to 2.4 GHz. MacRazer tells you when it sees your
+Other models are a plain pointer over Bluetooth, so Serpentine can't read or change anything.
+If your mouse has a mode switch, set it to 2.4 GHz. Serpentine tells you when it sees your
 mouse on Bluetooth.
 
 ## Install
 
-Download `MacRazer.dmg` from the [latest release](../../releases/latest), open it, and drag
-**MacRazer** into Applications. MacRazer doesn't check for updates: new versions are on the Releases page.
+Download `Serpentine.dmg` from the [latest release](../../releases/latest), open it, and drag
+**Serpentine** into Applications. Serpentine doesn't check for updates: new versions are on the Releases page.
 
 This build is unsigned (no paid Apple Developer ID), so on first launch Gatekeeper will say
 the app "cannot be opened because it is from an unidentified developer" or "is damaged and
 can't be opened". Both are the standard unsigned-app warning, not an actual problem. To open
 it anyway, do **one** of:
 
-- Right-click (or Control-click) **MacRazer.app** in Finder, choose **Open**, then confirm
+- Right-click (or Control-click) **Serpentine.app** in Finder, choose **Open**, then confirm
   **Open** in the dialog. (Only needed once.)
 - Or, in System Settings > Privacy & Security, scroll to the bottom and click **Open Anyway**
-  next to the MacRazer warning.
-- Or, from Terminal: `xattr -cr /Applications/MacRazer.app`, then open it normally.
+  next to the Serpentine warning.
+- Or, from Terminal: `xattr -cr /Applications/Serpentine.app`, then open it normally.
 
 After that it launches like any other app. It will then ask for **Input Monitoring**
 permission (and **Accessibility** if you use button remapping); see [Permissions](#permissions)
@@ -146,12 +151,12 @@ To build from source: Xcode 16 / Swift 6.1.
 
 ```sh
 # Run the menu bar app directly (easiest while developing; uses your Terminal's permissions):
-swift run MacRazer
+swift run Serpentine
 
 # Or build a standalone .app:
 ./Scripts/setup-signing.sh      # one-time: a stable self-signed identity (see Permissions)
-./Scripts/build-app.sh          # produces "MacRazer.app"
-open "MacRazer.app"
+./Scripts/build-app.sh          # produces "Serpentine.app"
+open "Serpentine.app"
 ```
 
 ## Permissions
@@ -164,7 +169,7 @@ open "MacRazer.app"
 macOS binds a permission grant to the app's code signature. An ad-hoc build gets a new
 signature on every rebuild, which resets the grant, so either run `Scripts/setup-signing.sh`
 once (it creates a stable self-signed identity that `build-app.sh` then uses) or develop with
-`swift run MacRazer`, which inherits your Terminal's grants.
+`swift run Serpentine`, which inherits your Terminal's grants.
 
 If a build seems to stop dead at the codesigning step, it hasn't crashed: macOS is showing a
 keychain prompt for the signing key (the build script says so once it has been waiting a few
@@ -177,12 +182,12 @@ The same binary runs read-only probes when given a subcommand (handy for verifyi
 mouse). Run these from a terminal:
 
 ```sh
-swift run MacRazer info                 # list the mouse's HID interfaces
-swift run MacRazer battery              # read battery %
-swift run MacRazer dpi [x] [y]          # read or set DPI
-swift run MacRazer poll [125|500|1000]  # read or set polling rate
-swift run MacRazer rgb static ff0000    # static colour (or: spectrum | wave | off)
-swift run MacRazer brightness [0-100]   # read or set LED brightness
+swift run Serpentine info                 # list the mouse's HID interfaces
+swift run Serpentine battery              # read battery %
+swift run Serpentine dpi [x] [y]          # read or set DPI
+swift run Serpentine poll [125|500|1000]  # read or set polling rate
+swift run Serpentine rgb static ff0000    # static colour (or: spectrum | wave | off)
+swift run Serpentine brightness [0-100]   # read or set LED brightness
 ```
 
 ## How it works
@@ -208,7 +213,7 @@ derived from OpenRazer. Full attribution and the trademark notice are in [NOTICE
 
 ## Privacy
 
-MacRazer makes no network requests of its own. It talks to your mouse over USB HID and
+Serpentine makes no network requests of its own. It talks to your mouse over USB HID and
 Bluetooth, and keeps its settings and battery history on your Mac. The links in About and in
 the popover footer open in your browser when you click them, and nothing else leaves the app.
 

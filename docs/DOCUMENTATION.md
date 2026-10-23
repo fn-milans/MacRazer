@@ -1,4 +1,4 @@
-# MacRazer: Documentation
+# Serpentine: Documentation
 
 A native macOS menu bar app to control Razer mice: battery, DPI, polling rate, RGB lighting,
 brightness, and software button remapping. Razer's Synapse does not support macOS, so this
@@ -46,12 +46,12 @@ Requires macOS 14+ (Apple Silicon), Xcode 16 / Swift 6.1.
 
 ```sh
 # Develop (inherits your Terminal's permission grants, easiest loop):
-swift run MacRazer
+swift run Serpentine
 
 # Build a standalone .app:
 ./Scripts/setup-signing.sh # one-time: stable self-signed identity (see §7)
-./Scripts/build-app.sh # to "MacRazer.app"
-open "MacRazer.app"
+./Scripts/build-app.sh # to "Serpentine.app"
+open "Serpentine.app"
 ```
 
 **Permissions** (see §7): the app needs **Input Monitoring** (to send/receive HID reports)
@@ -63,7 +63,7 @@ and, for button remapping, **Accessibility** (for the event tap). Both are reque
 
 ### 3.1 The wire format, `razer_report` (90 bytes)
 Every command is a fixed 90-byte structure sent as a HID **feature report, report id 0**.
-Ported in [`RazerReport.swift`](../Sources/MacRazer/RazerReport.swift):
+Ported in [`RazerReport.swift`](../Sources/Serpentine/RazerReport.swift):
 
 | Offset | Field | Notes |
 |---|---|---|
@@ -84,7 +84,7 @@ Ported in [`RazerReport.swift`](../Sources/MacRazer/RazerReport.swift):
 `0x01` (BUSY) with empty arguments. On BUSY we re-read a few times.
 
 ### 3.3 Command reference (verified on hardware)
-Built in [`RazerCommands.swift`](../Sources/MacRazer/RazerCommands.swift). VID `0x1532`.
+Built in [`RazerCommands.swift`](../Sources/Serpentine/RazerCommands.swift). VID `0x1532`.
 
 | Operation | class / id | data_size | Notes |
 |---|---|---|---|
@@ -104,7 +104,7 @@ Built in [`RazerCommands.swift`](../Sources/MacRazer/RazerCommands.swift). VID `
  only lit zone is the scroll wheel — answers only on `SCROLL_LED` (0x01). Every other group
  returns status `0x03` (failure), so a wrong id is not a silent no-op: the brightness slider
  simply stops working. The id is a registry field (`RazerDevices.brightnessLed`, default
- `LOGO_LED`); `swift run MacRazer brightness` sweeps all four groups to find it on a new
+ `LOGO_LED`); `swift run Serpentine brightness` sweeps all four groups to find it on a new
  model. Both verified live.
 - **Lighting is one group.** The "4 zones" in marketing aren't independently addressable;
  everything is driven together via ZERO_LED.
@@ -195,7 +195,7 @@ the popover is open, `setPopoverVisible(true)` polls DPI/poll every 2 s so on-mo
 (e.g. the DPI-cycle button) reflect live.
 
 ### `BatteryHistory.swift`, time-until-empty estimate
-- Logs `(timestamp, %)` samples to `~/Library/Application Support/MacRazer/battery-history.json`.
+- Logs `(timestamp, %)` samples to `~/Library/Application Support/Serpentine/battery-history.json`.
 - Computes a discharge rate by **linear least-squares fit** over samples (needs >=5 samples,
  >=30 min span, >=3% measured drop before it's trusted, otherwise the coarse reading is
  noise and the estimate drifts).
@@ -293,7 +293,7 @@ page is a `ScrollView` (so long content scrolls without resizing the popover):
 On a mouse whose button function table is known (`RazerDeviceInfo.buttonTable`, today the
 Basilisk V4 Pro), remaps are **written into the mouse** (`OnboardButtons.swift`): each remap
 the mouse can do itself goes in its table and is read back, the HyperShift layer too, and
-clearing a remap puts back the factory function. MacRazer only ever restores entries it wrote
+clearing a remap puts back the factory function. Serpentine only ever restores entries it wrote
 itself (`OnboardOwnership`). The mouse also does Double Click (`0B`), turbo clicks and keys
 (`0E`, `0D`), a DPI clutch (`06 05 05`) and Cycle Scroll Mode (`12`), so these are offered on
 that mouse only. Actions it can't do (a key with no HID usage) stay with the tap.
@@ -317,7 +317,7 @@ buttons are handled onboard and never reach macOS.
  (`RemapWindowController.swift`, opened from the right-click menu).
 
 ### 6.4 Privacy
-MacRazer makes no network requests of its own. There are no usage stats, no update checks
+Serpentine makes no network requests of its own. There are no usage stats, no update checks
 and no report uploads; earlier versions of the original project had all three, and this fork
 removed them. Settings and battery history stay in the app's preferences and its Application
 Support folder. Links in About and in the popover footer open in the browser when clicked.
@@ -336,8 +336,8 @@ build is **ad-hoc signed by default, so every rebuild changes the identity and b
 grant** (the toggle looks on but doesn't apply). Fixes:
 - `Scripts/setup-signing.sh` creates a **stable self-signed identity** ("Razer Cobra
  Self-Signed"); `build-app.sh` auto-uses it. Grant persists across rebuilds.
-- Or just develop with `swift run MacRazer`, which inherits the Terminal's grants.
-- `tccutil reset ListenEvent com.macrazer.menubar` clears a stale Input Monitoring grant.
+- Or just develop with `swift run Serpentine`, which inherits the Terminal's grants.
+- `tccutil reset ListenEvent io.github.fn-milans.serpentine` clears a stale Input Monitoring grant.
 
 For distribution to other users: every user still grants Input Monitoring once (unavoidable
 macOS security). Self-signed = works but Gatekeeper warns ("unidentified developer", one-time
@@ -394,16 +394,16 @@ Run from a terminal (uses the Terminal's permission grant). These were how each 
 verified against hardware:
 
 ```sh
-swift run MacRazer info # list HID interfaces (find the control one)
-swift run MacRazer battery # read battery %
-swift run MacRazer dpi [x] [y] # read / set DPI
-swift run MacRazer poll [125|500|1000]
-swift run MacRazer rgb static ff0000 # or: spectrum | wave | off
-swift run MacRazer brightness [0-100] # sweeps LOGO/SCROLL/ZERO/BACKLIGHT LEDs
-swift run MacRazer icon out.png # render the menu bar icon
-swift run MacRazer render-ui [offline|color|zones|…] out.png # popover (dev)
-swift run MacRazer render-about out.png
-swift run MacRazer render-remap out.png
+swift run Serpentine info # list HID interfaces (find the control one)
+swift run Serpentine battery # read battery %
+swift run Serpentine dpi [x] [y] # read / set DPI
+swift run Serpentine poll [125|500|1000]
+swift run Serpentine rgb static ff0000 # or: spectrum | wave | off
+swift run Serpentine brightness [0-100] # sweeps LOGO/SCROLL/ZERO/BACKLIGHT LEDs
+swift run Serpentine icon out.png # render the menu bar icon
+swift run Serpentine render-ui [offline|color|zones|…] out.png # popover (dev)
+swift run Serpentine render-about out.png
+swift run Serpentine render-remap out.png
 ```
 
 (The `render-*` commands use SwiftUI `ImageRenderer`, which can't rasterize native controls —

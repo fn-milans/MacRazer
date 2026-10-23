@@ -3,15 +3,15 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDisplayName</key>
-	<string>MacRazer</string>
+	<string>Serpentine</string>
 	<key>CFBundleExecutable</key>
-	<string>MacRazer</string>
+	<string>Serpentine</string>
 	<key>CFBundleIconFile</key>
 	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.macrazer.menubar</string>
+	<string>io.github.fn-milans.serpentine</string>
 	<key>CFBundleName</key>
-	<string>MacRazer</string>
+	<string>Serpentine</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -23,7 +23,7 @@
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>MacRazer uses Bluetooth to read the battery and change the settings of a Razer mouse connected over Bluetooth.</string>
+	<string>Serpentine uses Bluetooth to read the battery and change the settings of a Razer mouse connected over Bluetooth.</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Community project. Not affiliated with Razer Inc.</string>
 </dict>
