@@ -108,7 +108,7 @@ struct SettingsView: View {
                 Text("Theme").font(.system(size: 12.5, weight: .medium))
                 Spacer(minLength: 12)
                 Picker("Theme", selection: $appearance.theme) {
-                    ForEach(PopoverTheme.allCases) { Text($0.title).tag($0) }
+                    ForEach(AppearanceTheme.allCases) { Text($0.title).tag($0) }
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()

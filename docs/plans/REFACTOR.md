@@ -23,7 +23,7 @@ with `@testable`.
 | Settings | 11 files | `UserDefaults` read with string-literal keys in eleven files (`"showPercentInMenuBar"`, `"buttonMappings-\(key)"`, …). No single list of what the app stores. |
 | Capabilities | everywhere | "Can this mouse do X" is answered ad hoc: `deviceIsBluetooth`, `RazerDevices.supportsX(pid:)`, `lightingZones.isEmpty`, `activeOnboardSlot != nil`, scattered over the controller and the views. |
 | Test hooks in production | `MouseController` | `setPreviewOffline()`, `setPreviewBluetooth()`, `runUserCommandForTesting` and friends live on the real class. |
-| Naming | — | `PopoverTheme`, `PopoverLook`, `PopoverFocusReturn`, `PopoverBackdropView`, `setPopoverVisible` — names that will be wrong once the main UI is a window. |
+| Naming | — | `AppearanceTheme`, `AppearanceLook`, `PopoverFocusReturn`, `PopoverBackdropView`, `setPopoverVisible` — names that will be wrong once the main UI is a window. |
 | Stale text | — | Comments still describe the removed updater (`AppWindows.swift` explains itself through "an automatic update install"), and the icon carries a Razer triskelion cut-out, which a project that says it is not affiliated with Razer shouldn't ship. |
 
 What is in good shape and should be kept as is: the protocol layer (`RazerReport`,

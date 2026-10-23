@@ -264,9 +264,9 @@ page is a `ScrollView` (so long content scrolls without resizing the popover):
  progress, where Esc cancels that).
  - Swatches, chips and the icon buttons carry VoiceOver labels and tooltips; chips and
  rows get a hover highlight.
-- **Appearance**, `PopoverTheme.swift`: Settings › Appearance has a **Theme** (System, Dark,
+- **Appearance**, `AppearanceTheme.swift`: Settings › Appearance has a **Theme** (System, Dark,
  Light, Razer Green) and a **Glass effect** switch, stored as `appearance.theme` and
- `appearance.glass` in UserDefaults. `PopoverLook.resolve` turns theme, glass and the system's
+ `appearance.glass` in UserDefaults. `AppearanceLook.resolve` turns theme, glass and the system's
  light or dark mode into one of six looks (light, dark or green glass; solid light #F5F5F7,
  dark #1C1C1E or green #0F1A11). Razer Green is always dark.
  - `AppDelegate` re-applies the look when the setting changes or macOS switches mode, including
@@ -429,7 +429,7 @@ buttons and sliders show as placeholders. Pages that need them drawn go through 
 | `RazerDevices.swift` | PID to {name, supported, hasBattery} registry. |
 | `BatteryHistory.swift` | Sample log + learned discharge rate + time estimate. |
 | `PopoverView.swift` | Main popover UI + page navigation. |
-| `PopoverTheme.swift` | Settings › Appearance: theme, glass, the resolved look, the popover and window backdrops. |
+| `AppearanceTheme.swift` | Settings › Appearance: theme, glass, the resolved look, the popover and window backdrops. |
 | `ColorPickerPage.swift` | Inline hue/sat colour wheel page + shared `BackButton`. |
 | `ButtonRemapper.swift` | CGEvent tap, action model, presets, persistence, Accessibility. |
 | `RemapView.swift` | Button-config UI (inline + window), key recorder. |

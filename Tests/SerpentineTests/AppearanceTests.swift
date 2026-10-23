@@ -5,10 +5,10 @@ import XCTest
 import AppKit
 @testable import Serpentine
 
-final class PopoverThemeTests: XCTestCase {
+final class AppearanceTests: XCTestCase {
     /// Every theme × glass × system mode, against the table the mockups were approved from.
     func testEveryCombinationResolvesToTheApprovedLook() {
-        let expected: [(PopoverTheme, Bool, Bool, PopoverLook)] = [
+        let expected: [(AppearanceTheme, Bool, Bool, AppearanceLook)] = [
             (.system, true, false, .lightGlass),
             (.system, true, true, .darkGlass),
             (.system, false, false, .solidLight),
@@ -27,15 +27,15 @@ final class PopoverThemeTests: XCTestCase {
             (.razerGreen, false, false, .solidGreen),
             (.razerGreen, false, true, .solidGreen),
         ]
-        XCTAssertEqual(expected.count, PopoverTheme.allCases.count * 2 * 2)
+        XCTAssertEqual(expected.count, AppearanceTheme.allCases.count * 2 * 2)
         for (theme, glass, systemIsDark, look) in expected {
-            XCTAssertEqual(PopoverLook.resolve(theme: theme, glass: glass, systemIsDark: systemIsDark), look,
+            XCTAssertEqual(AppearanceLook.resolve(theme: theme, glass: glass, systemIsDark: systemIsDark), look,
                            "\(theme), glass \(glass), system dark \(systemIsDark)")
         }
     }
 
     func testLookProperties() {
-        for look in PopoverLook.allCases {
+        for look in AppearanceLook.allCases {
             XCTAssertEqual(look.appearanceName, look.isDark ? .darkAqua : .aqua)
             // Plain glass keeps the native material; everything else paints over it.
             let plainGlass = look == .lightGlass || look == .darkGlass
@@ -43,15 +43,15 @@ final class PopoverThemeTests: XCTestCase {
             // A solid look must actually be solid, or the material shows through.
             if !look.isGlass { XCTAssertEqual(look.backdropColor?.alphaComponent, 1, "\(look)") }
         }
-        XCTAssertEqual(PopoverLook.allCases.filter(\.hasGreenEdge), [.greenGlass])
-        XCTAssertFalse(PopoverLook.lightGlass.isDark)
-        XCTAssertFalse(PopoverLook.solidLight.isDark)
-        XCTAssertTrue(PopoverLook.solidGreen.isDark)
+        XCTAssertEqual(AppearanceLook.allCases.filter(\.hasGreenEdge), [.greenGlass])
+        XCTAssertFalse(AppearanceLook.lightGlass.isDark)
+        XCTAssertFalse(AppearanceLook.solidLight.isDark)
+        XCTAssertTrue(AppearanceLook.solidGreen.isDark)
     }
 
     @MainActor
     func testSettingsDefaultAndPersist() throws {
-        let suite = "PopoverThemeTests.\(UUID().uuidString)"
+        let suite = "AppearanceTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
 
@@ -69,7 +69,7 @@ final class PopoverThemeTests: XCTestCase {
 
     @MainActor
     func testUnknownStoredThemeFallsBackToSystem() throws {
-        let suite = "PopoverThemeTests.\(UUID().uuidString)"
+        let suite = "AppearanceTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
 
@@ -79,7 +79,7 @@ final class PopoverThemeTests: XCTestCase {
 
     @MainActor
     func testTrackedWindowsGetTheFullLook() throws {
-        let suite = "PopoverThemeTests.\(UUID().uuidString)"
+        let suite = "AppearanceTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
 
@@ -93,7 +93,7 @@ final class PopoverThemeTests: XCTestCase {
         settings.track(window)
         XCTAssertEqual(window.appearance?.name, .aqua)
         XCTAssertTrue(window.isOpaque)
-        XCTAssertEqual(window.backgroundColor, PopoverLook.solidLight.backdropColor)
+        XCTAssertEqual(window.backgroundColor, AppearanceLook.solidLight.backdropColor)
 
         settings.applyToWindows(.greenGlass)
         XCTAssertEqual(window.appearance?.name, .darkAqua)
@@ -103,13 +103,13 @@ final class PopoverThemeTests: XCTestCase {
         let glass = try XCTUnwrap(frameView.subviews.compactMap { $0 as? NSVisualEffectView }.first)
         XCTAssertFalse(glass.isHidden)
         let tint = try XCTUnwrap(frameView.subviews.compactMap { $0 as? PopoverBackdropView }.first)
-        XCTAssertEqual(tint.fill, PopoverLook.greenGlass.backdropColor)
+        XCTAssertEqual(tint.fill, AppearanceLook.greenGlass.backdropColor)
 
         // Applying again reuses the same views rather than stacking new ones.
         settings.applyToWindows(.solidDark)
         XCTAssertEqual(frameView.subviews.compactMap { $0 as? NSVisualEffectView }.count, 1)
         XCTAssertTrue(glass.isHidden)
         XCTAssertNil(tint.fill)
-        XCTAssertEqual(window.backgroundColor, PopoverLook.solidDark.backdropColor)
+        XCTAssertEqual(window.backgroundColor, AppearanceLook.solidDark.backdropColor)
     }
 }

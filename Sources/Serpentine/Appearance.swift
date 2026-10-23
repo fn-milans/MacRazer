@@ -5,7 +5,7 @@ import AppKit
 import Combine
 
 /// The theme picked in Settings › Appearance.
-enum PopoverTheme: String, CaseIterable, Identifiable {
+enum AppearanceTheme: String, CaseIterable, Identifiable {
     case system, dark, light, razerGreen
 
     var id: String { rawValue }
@@ -22,13 +22,13 @@ enum PopoverTheme: String, CaseIterable, Identifiable {
 
 /// What the popover and the app's windows actually look like once the theme, the glass switch
 /// and the system's light or dark mode are combined. One case per mockup.
-enum PopoverLook: Equatable, CaseIterable {
+enum AppearanceLook: Equatable, CaseIterable {
     case lightGlass, darkGlass, greenGlass
     case solidLight, solidDark, solidGreen
 
     /// Every combination in one place, so the popover, its arrow and the tests can't disagree.
     /// Razer Green is always dark: a light green tint looks washed out.
-    static func resolve(theme: PopoverTheme, glass: Bool, systemIsDark: Bool) -> PopoverLook {
+    static func resolve(theme: AppearanceTheme, glass: Bool, systemIsDark: Bool) -> AppearanceLook {
         switch theme {
         case .system: return systemIsDark ? (glass ? .darkGlass : .solidDark) : (glass ? .lightGlass : .solidLight)
         case .dark: return glass ? .darkGlass : .solidDark
@@ -82,7 +82,7 @@ final class AppearanceSettings: ObservableObject {
 
     private let defaults: UserDefaults
 
-    @Published var theme: PopoverTheme {
+    @Published var theme: AppearanceTheme {
         didSet { defaults.set(theme.rawValue, forKey: Self.themeKey) }
     }
     @Published var glass: Bool {
@@ -93,19 +93,19 @@ final class AppearanceSettings: ObservableObject {
         self.defaults = defaults
         // An unknown stored value (a theme removed in a later version) falls back to System
         // rather than failing.
-        theme = defaults.string(forKey: Self.themeKey).flatMap(PopoverTheme.init(rawValue:)) ?? .system
+        theme = defaults.string(forKey: Self.themeKey).flatMap(AppearanceTheme.init(rawValue:)) ?? .system
         glass = defaults.object(forKey: Self.glassKey) as? Bool ?? true
     }
 
-    func look(systemIsDark: Bool) -> PopoverLook {
-        PopoverLook.resolve(theme: theme, glass: glass, systemIsDark: systemIsDark)
+    func look(systemIsDark: Bool) -> AppearanceLook {
+        AppearanceLook.resolve(theme: theme, glass: glass, systemIsDark: systemIsDark)
     }
 
     // MARK: Windows
 
     private let windows = NSHashTable<NSWindow>.weakObjects()
     /// The look last given to the windows, so a window opened later matches them.
-    private var windowLook: PopoverLook?
+    private var windowLook: AppearanceLook?
 
     /// Gives a window the current look (glass or solid, light, dark or green) and keeps it
     /// updated when the setting or the system's light or dark mode changes.
@@ -118,13 +118,13 @@ final class AppearanceSettings: ObservableObject {
     /// Re-applies a look to every tracked window. Takes the look rather than working it out
     /// from `theme`, because the owner calls this from a `$theme` subscriber, which runs before
     /// the property itself has changed.
-    func applyToWindows(_ look: PopoverLook) {
+    func applyToWindows(_ look: AppearanceLook) {
         windowLook = look
         for window in windows.allObjects { WindowBackdrop.apply(look, to: window) }
     }
 }
 
-/// Puts a `PopoverLook` on an ordinary window: the same glass, solid colour or green tint as
+/// Puts a `AppearanceLook` on an ordinary window: the same glass, solid colour or green tint as
 /// the popover, so Settings and the other windows match it.
 ///
 /// Like the popover's backdrop, the glass and the tint sit in the window's frame view, just
@@ -134,7 +134,7 @@ enum WindowBackdrop {
     private static let glassID = NSUserInterfaceItemIdentifier("Serpentine.windowGlass")
     private static let tintID = NSUserInterfaceItemIdentifier("Serpentine.windowTint")
 
-    static func apply(_ look: PopoverLook, to window: NSWindow) {
+    static func apply(_ look: AppearanceLook, to window: NSWindow) {
         window.appearance = NSAppearance(named: look.appearanceName)
         // The title bar shows whatever is behind it, so it matches the rest of the window
         // instead of drawing its own grey strip.
