@@ -392,7 +392,7 @@ swift run serpentine-cli brightness [0-100] # sweeps LOGO/SCROLL/ZERO/BACKLIGHT 
 swift run serpentine-cli stages [d1,d2,…] [active] # read / write the DPI stage table
 swift run Serpentine icon out.png [size] [charging] [light] # render the menu bar icon
 swift run Serpentine render-ui [offline|color|zones|…] out.png # a page (scenes in PreviewScene)
-swift run Serpentine render-window [battery|settings] [zones] [light] [width] out.png # the whole window, offscreen
+swift run Serpentine render-window [battery|settings] [zones] [light] [scrolled] [width] out.png # the whole window, offscreen
 swift run Serpentine render-about out.png
 swift run Serpentine render-remap out.png
 ```
