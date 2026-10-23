@@ -13,6 +13,7 @@ swift run MacRazer battery # CLI diagnostics: battery / dpi / poll / rgb / brigh
 swift test # unit tests (protocol codec, battery models, persistence — no hardware needed)
 ./Scripts/build-app.sh # build a standalone .app
 ./Scripts/make-dmg.sh # package the .app into dist/MacRazer.dmg
+./Scripts/make-dmg.sh --adhoc # the same, ad-hoc signed, for a DMG you share
 ./Scripts/release.sh 0.3.0 --dry-run # preview a release (see 'Cutting a release' below)
 ```
 macOS 14+, Swift 6.1 / Xcode 16+. CI runs `swift build && swift test` on pushes to master
@@ -22,6 +23,12 @@ fix logic in the pure layers (anything without live HID in it).
 `make-dmg.sh` produces an unsigned/self-signed DMG (no paid Apple Developer ID), so it
 triggers a Gatekeeper warning on first launch. That's expected; the README's Install section
 has the bypass steps to link in release notes.
+
+`build-app.sh` signs with an Apple Development certificate when the Mac has one, so a local
+build keeps its permissions across rebuilds. That certificate puts your name, email and team
+id in the app's signature, readable by anyone with `codesign -dvv`, and does nothing for
+Gatekeeper on other Macs. Build anything you share with `--adhoc` (`make-dmg.sh --adhoc`,
+or `build-app.sh --adhoc`), which signs ad-hoc and fails if a certificate got in anyway.
 
 ## Cutting a release
 

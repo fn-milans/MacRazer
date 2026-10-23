@@ -3,6 +3,9 @@
 #
 #   ./Scripts/make-dmg.sh            # builds the app, then writes ./dist/MacRazer.dmg
 #                                     # plus a versioned copy, e.g. ./dist/MacRazer-0.1.5.dmg
+#   ./Scripts/make-dmg.sh --adhoc    # the same, with the app ad-hoc signed (`build-app.sh
+#                                     # --adhoc`): for a DMG others download, so it never
+#                                     # carries this Mac's Apple Development certificate
 #
 # Both files have identical contents. "MacRazer.dmg" is the canonical name everything downloads
 # by: the website and README/CONTRIBUTING through GitHub's /releases/latest/download/<name>
@@ -17,6 +20,14 @@
 # one-time bypass instructions to put in the release notes.
 set -euo pipefail
 
+BUILD_ARGS=()
+for arg in "$@"; do
+    case "${arg}" in
+        --adhoc) BUILD_ARGS+=(--adhoc) ;;
+        *) echo "Unknown option: ${arg} (the only one is --adhoc)" >&2; exit 2 ;;
+    esac
+done
+
 cd "$(dirname "$0")/.."
 
 APP="MacRazer.app"
@@ -25,7 +36,7 @@ OUT_DIR="dist"
 OUT_DMG="${OUT_DIR}/MacRazer.dmg"
 
 echo "▸ Building ${APP}…"
-./Scripts/build-app.sh
+./Scripts/build-app.sh ${BUILD_ARGS[@]+"${BUILD_ARGS[@]}"}
 
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' Packaging/Info.plist)"
 VERSIONED_DMG="${OUT_DIR}/MacRazer-${VERSION}.dmg"

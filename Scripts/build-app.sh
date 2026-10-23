@@ -2,6 +2,7 @@
 # Build a standalone "MacRazer.app" menu bar bundle from the SwiftPM executable.
 #
 #   ./Scripts/build-app.sh           # release build → ./MacRazer.app
+#   ./Scripts/build-app.sh --adhoc   # the same, ad-hoc signed whatever certificates exist
 #   open "MacRazer.app"           # launch it
 #
 # Needs Xcode, not just the Command Line Tools: a build for two architectures goes through
@@ -11,6 +12,18 @@
 # remembers the Input Monitoring grant across launches (unsigned binaries get a fresh,
 # unstable TCC identity and re-prompt every time).
 set -euo pipefail
+
+# --adhoc: sign ad-hoc even when a stable identity is available, for a build that leaves this
+# Mac. An Apple Development certificate names its owner (name, email, team id) in the app's
+# signature, where anyone can read it with `codesign -dvv`, and is no use to anyone else:
+# without a Developer ID and notarization Gatekeeper treats the app as unsigned either way.
+ADHOC=0
+for arg in "$@"; do
+    case "${arg}" in
+        --adhoc) ADHOC=1 ;;
+        *) echo "Unknown option: ${arg} (the only one is --adhoc)" >&2; exit 2 ;;
+    esac
+done
 
 cd "$(dirname "$0")/.."
 
@@ -46,10 +59,13 @@ cp Packaging/Info.plist "${APP}/Contents/Info.plist"
 # Personal Team is enough), else the self-signed one from Scripts/setup-signing.sh. Fall back to
 # ad-hoc otherwise. Signing by SHA-1 rather than name, as several Apple Development
 # certificates (one per Mac or team) make the name ambiguous.
-SIGN_ID="$(security find-identity -v -p codesigning 2>/dev/null \
-    | awk '/"Apple Development: / { print $2; exit }')"
+SIGN_ID=""
+if [ "${ADHOC}" -eq 0 ]; then
+    SIGN_ID="$(security find-identity -v -p codesigning 2>/dev/null \
+        | awk '/"Apple Development: / { print $2; exit }')"
+fi
 SIGN_NAME="Apple Development"
-if [ -z "${SIGN_ID}" ]; then
+if [ -z "${SIGN_ID}" ] && [ "${ADHOC}" -eq 0 ]; then
     SIGN_ID="$(security find-identity -p codesigning 2>/dev/null \
         | awk '/"MacRazer Self-Signed"/ { print $2; exit }')"
     SIGN_NAME="MacRazer Self-Signed"
@@ -99,9 +115,23 @@ if [ -n "${SIGN_ID}" ]; then
         echo "✗ codesign failed (status ${CODESIGN_STATUS})" >&2
         exit "${CODESIGN_STATUS}"
     fi
+elif [ "${ADHOC}" -eq 1 ]; then
+    echo "▸ Ad-hoc codesigning (--adhoc)…"
+    codesign --force --sign - --identifier com.macrazer.menubar --timestamp=none "${APP}"
 else
     echo "▸ Ad-hoc codesigning (run Scripts/setup-signing.sh for a stable identity)…"
     codesign --force --sign - --identifier com.macrazer.menubar --timestamp=none "${APP}"
+fi
+
+# An --adhoc build must carry no certificate at all: check the signature, not the branch taken.
+if [ "${ADHOC}" -eq 1 ]; then
+    SIGNATURE="$(codesign -dvv "${APP}" 2>&1)"
+    if ! grep -q '^Signature=adhoc' <<<"${SIGNATURE}" || grep -q '^Authority=' <<<"${SIGNATURE}"; then
+        echo "✗ ${APP} is not ad-hoc signed:" >&2
+        grep -E '^(Signature|Authority|TeamIdentifier)=' <<<"${SIGNATURE}" >&2 || true
+        exit 1
+    fi
+    echo "  Verified: ad-hoc, no certificate in the signature."
 fi
 
 echo "✓ Built ${APP}"
