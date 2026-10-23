@@ -136,30 +136,6 @@ final class HIDDevice {
         return BluetoothMouse(name: name, controllablePID: nil)
     }
 
-    /// Every HID interface the vendor's devices expose, in a stable order, and which one
-    /// `open(vendorId:)` would pick for control. For the device test's report; the order is
-    /// sorted because macOS returns the set in no particular order.
-    static func interfaceSummaries(vendorId: Int) -> (interfaces: [DeviceProbe.Interface], control: Int?) {
-        let devices = matchingDevices(vendorId: vendorId)
-        let summaries = devices.map { dev in
-            DeviceProbe.Interface(
-                productID: intProp(dev, kIOHIDProductIDKey) ?? 0,
-                product: strProp(dev, kIOHIDProductKey) ?? "",
-                usagePage: intProp(dev, kIOHIDPrimaryUsagePageKey) ?? 0,
-                usage: intProp(dev, kIOHIDPrimaryUsageKey) ?? 0,
-                maxFeatureReportSize: intProp(dev, kIOHIDMaxFeatureReportSizeKey) ?? 0,
-                maxInputReportSize: intProp(dev, kIOHIDMaxInputReportSizeKey) ?? 0,
-                transport: strProp(dev, kIOHIDTransportKey) ?? "")
-        }
-        // The same choice `controlInterface(vendorId:)` makes, so the report names the one opened.
-        let chosen = HIDDeviceSelection.controlInterfaceIndex(interfaces: interfaceInfos(devices)).map { summaries[$0] }
-        let sorted = summaries.sorted {
-            ($0.productID, $0.usagePage, $0.usage, $0.maxFeatureReportSize, $0.maxInputReportSize)
-                < ($1.productID, $1.usagePage, $1.usage, $1.maxFeatureReportSize, $1.maxInputReportSize)
-        }
-        return (sorted, chosen.flatMap { sorted.firstIndex(of: $0) })
-    }
-
     /// One-line description of an interface, for the `info` diagnostic.
     static func describe(_ dev: IOHIDDevice) -> String {
         let pid = intProp(dev, kIOHIDProductIDKey) ?? 0
@@ -229,8 +205,8 @@ final class HIDDevice {
         try send(report, transactionId: nil)
     }
 
-    /// `transactionId` overrides the registry's for this one command. Only the device test
-    /// passes one, to find which id an unknown model answers to; everything else passes nil.
+    /// `transactionId` overrides the registry's for this one command, to try which id an
+    /// unknown model answers to; nil uses the registry's.
     func send(_ report: RazerReport, transactionId: UInt8?) throws -> RazerReport {
         var report = report
         // Per-model (and per-command-class) transaction id from the registry, stamped at

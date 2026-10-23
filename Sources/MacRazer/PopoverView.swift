@@ -41,7 +41,6 @@ extension Color {
 struct PopoverView: View {
     @ObservedObject var controller: MouseController
     @ObservedObject var remapper: ButtonRemapper
-    @ObservedObject var updateChecker: UpdateChecker
     @ObservedObject var launchAtLogin: LaunchAtLogin
     /// Settings › Appearance; only the Razer Green glass edge is drawn here. The rest is the
     /// popover's appearance and backdrop, which the app delegate sets.
@@ -52,11 +51,8 @@ struct PopoverView: View {
     /// handler and ship a gear button that depresses and does nothing, with no compiler error.
     /// The preview passes an explicit `{}`.
     var onOpenSettings: () -> Void
-    /// Opens the device test, from the "Help test it" link on a mouse with limited support.
-    /// Not defaulted, for the same reason as `onOpenSettings`.
-    var onOpenDeviceTest: () -> Void
 
-    enum Page { case main, color, buttons, usage, profiles, whatsNew }
+    enum Page { case main, color, buttons, usage, profiles }
     @State private var page: Page = .main
     /// The popover is on screen. Its hosting controller outlives each showing, so views here
     /// stay mounted while it's closed; anything periodic has to check this.
@@ -122,7 +118,6 @@ struct PopoverView: View {
             case .buttons: buttonsPage.transition(.move(edge: .trailing))
             case .usage: usagePage.transition(.move(edge: .trailing))
             case .profiles: profilesPage.transition(.move(edge: .trailing))
-            case .whatsNew: whatsNewPage.transition(.move(edge: .trailing))
             }
         }
         .frame(width: popoverWidth)
@@ -216,10 +211,6 @@ struct PopoverView: View {
     private var mainPage: some View {
         VStack(alignment: .leading, spacing: 10) {
             headerCard
-            if let version = updateChecker.latestVersion { updateCard(version) }
-            // Never both: an update waiting to be installed is the more useful thing to say
-            // than one that already was.
-            else if updateChecker.justUpdatedTo != nil { updatedCard }
             // A Razer mouse on Bluetooth can't be controlled (no control protocol over BT) —
             // explain it instead of just showing "offline".
             if controller.bluetoothMouse != nil && !controller.connected { bluetoothNotice }
@@ -383,19 +374,6 @@ struct PopoverView: View {
                             .font(.system(size: 11))
                             .foregroundStyle(.secondary)
                         if let ct = connectionType { connectionChip(ct) }
-                    }
-                    // Only where it helps: an unverified mouse. A verified one reaches the same
-                    // test from the right-click menu, without the popover asking every time.
-                    if controller.connected && !controller.deviceSupported {
-                        Button(action: onOpenDeviceTest) {
-                            HStack(spacing: 3) {
-                                Text("Help test it")
-                                Image(systemName: "arrow.right").font(.system(size: 9, weight: .semibold))
-                            }
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundStyle(Color.razerGreenText)
-                        }
-                        .buttonStyle(.plain)
                     }
                 }
                 Spacer()
@@ -628,203 +606,6 @@ struct PopoverView: View {
         guard !name.isEmpty else { return }
         controller.saveCurrentAsProfile(name: name, remapper: remapper)
         isAddingProfile = false
-    }
-
-    // MARK: Update notice
-
-    private func updateCard(_ version: String) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .top, spacing: 8) {
-                Image(systemName: "arrow.down.circle.fill")
-                    .foregroundStyle(Color.razerGreenText)
-                    .font(.system(size: 14, weight: .semibold))
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("Update available").font(.system(size: 12, weight: .semibold))
-                    Text("Version \(version) is out. You're on \(appVersion).")
-                        .font(.system(size: 11)).foregroundStyle(.secondary)
-                }
-                Spacer(minLength: 0)
-                // No way out mid-install: dismissing wouldn't stop the swap, it would just
-                // hide the only thing telling the user what's happening.
-                if !updateChecker.isBusy {
-                    Button {
-                        updateChecker.dismiss(version)
-                    } label: {
-                        Image(systemName: "xmark").font(.system(size: 9, weight: .bold))
-                            .frame(width: 16, height: 16)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.tertiary)
-                    .help("Skip this version")
-                    .accessibilityLabel("Skip version \(version)")
-                }
-            }
-            if let error = updateChecker.downloadError {
-                Text(error).font(.system(size: 10.5)).foregroundStyle(Color.batteryLow)
-            }
-            // A row, not the notes. The main page is already at the height a menu bar
-            // popover can use; the notes get their own page rather than competing with the
-            // seven cards above them.
-            if updateChecker.phase == .idle, !updateChecker.latestNotes.isEmpty {
-                Button { page = .whatsNew } label: {
-                    HStack(spacing: 6) {
-                        Text("What's new in \(version)").font(.system(size: 11, weight: .medium))
-                        Spacer(minLength: 0)
-                        Image(systemName: "chevron.right").font(.system(size: 9, weight: .semibold))
-                    }
-                    .foregroundStyle(Color.razerGreenText)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-            }
-            switch updateChecker.phase {
-            case .idle: updateActionButton
-            case .downloading(let fraction): updateProgress(fraction)
-            case .installing: updateBusyLabel("Installing…")
-            case .restarting: updateBusyLabel("Restarting…")
-            case .needsRestart: updateNeedsRestart
-            }
-            // After a failed in-place install the manual route still works — offer it rather
-            // than leaving "install it manually" as advice with no button attached.
-            if updateChecker.downloadError != nil, !updateChecker.isBusy, updateChecker.canInstallInPlace {
-                Button("Download the DMG instead") {
-                    Task { await updateChecker.downloadAndOpenDMG() }
-                }
-                .buttonStyle(.plain)
-                .font(.system(size: 11))
-                .foregroundStyle(Color.razerGreenText)
-            }
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.razerGreen.opacity(0.12), in: RoundedRectangle(cornerRadius: 13))
-    }
-
-    /// One click for the whole thing where that's possible; the old "fetch the DMG and let the
-    /// user drag it across" wording where it isn't, so the button never promises a restart it
-    /// can't deliver.
-    private var updateActionButton: some View {
-        Button {
-            Task { await updateChecker.downloadAndInstall() }
-        } label: {
-            HStack(spacing: 6) {
-                Image(systemName: updateChecker.canInstallInPlace ? "arrow.triangle.2.circlepath" : "arrow.down.to.line")
-                Text(updateChecker.canInstallInPlace ? "Update & Restart" : "Download")
-            }
-            .font(.system(size: 11.5, weight: .medium))
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 5)
-        }
-        .buttonStyle(RazerProminentButtonStyle())
-        .controlSize(.small)
-    }
-
-    /// The release notes, given the whole popover. Reached from the update card's one row.
-    ///
-    /// The empty fallback is unreachable today — the row that navigates here is gated on the
-    /// same `latestNotes` — but it still renders the page rather than nothing, so a future
-    /// call site can at worst produce a thin page with a working back button, never a blank
-    /// dead end.
-    private var whatsNewPage: some View {
-        // Reached from either card, and they are about different releases: one waiting, one
-        // already running. An update on offer wins, matching which card is showing.
-        let pending = updateChecker.latestVersion
-        return WhatsNewPage(version: pending ?? appVersion,
-                            releases: pending != nil ? updateChecker.latestNotes
-                                                     : updateChecker.installedNotes,
-                            canInstallInPlace: updateChecker.canInstallInPlace,
-                            // Nothing to install when the notes are about what's already
-                            // running, so the page shows no button at all rather than one that
-                            // would re-download the version you are reading about.
-                            onBack: { page = .main },
-                            onUpdate: pending == nil ? nil : {
-                                page = .main
-                                Task { await updateChecker.downloadAndInstall() }
-                            })
-    }
-
-    /// Shown after the version changes, until dismissed.
-    ///
-    /// With automatic installs on there is no update card and never was one — this is the only
-    /// place the app says a release happened. It is a row and a dismiss, because it is news
-    /// rather than a decision.
-    ///
-    /// Takes no version: `justUpdatedTo` carries the *comparable* version, which is "0" for an
-    /// unversioned dev build, and "Updated to 0" is not a sentence. It always describes the
-    /// running build, so `appVersion` is both correct and the one worth showing.
-    private var updatedCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .top, spacing: 8) {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(Color.razerGreenText)
-                    .font(.system(size: 14, weight: .semibold))
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("Updated to \(appVersion)").font(.system(size: 12, weight: .semibold))
-                    Text("You're on the latest version.")
-                        .font(.system(size: 11)).foregroundStyle(.secondary)
-                }
-                Spacer(minLength: 0)
-                Button {
-                    updateChecker.dismissAnnouncement()
-                } label: {
-                    Image(systemName: "xmark").font(.system(size: 9, weight: .bold))
-                        .frame(width: 16, height: 16)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.tertiary)
-                .help("Dismiss")
-                .accessibilityLabel("Dismiss")
-            }
-            if !updateChecker.installedNotes.isEmpty {
-                Button { page = .whatsNew } label: {
-                    HStack(spacing: 6) {
-                        Text("What's new in \(appVersion)").font(.system(size: 11, weight: .medium))
-                        Spacer(minLength: 0)
-                        Image(systemName: "chevron.right").font(.system(size: 9, weight: .semibold))
-                    }
-                    .foregroundStyle(Color.razerGreenText)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.razerGreen.opacity(0.12), in: RoundedRectangle(cornerRadius: 13))
-    }
-
-    private func updateProgress(_ fraction: Double) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            ProgressView(value: fraction)
-                .progressViewStyle(.linear)
-                .tint(.razerGreen)
-            Text("Downloading… \(Int(fraction * 100))%")
-                .font(.system(size: 10.5)).foregroundStyle(.secondary).monospacedDigit()
-        }
-    }
-
-    /// The update is on disk but the relaunch didn't take. Say so plainly and give the one
-    /// action that finishes it — not the error-and-retry treatment a failed install gets.
-    private var updateNeedsRestart: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Update installed. Quit and reopen MacRazer to use it.")
-                .font(.system(size: 11)).foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-            Button("Quit MacRazer") { NSApplication.shared.terminate(nil) }
-                .buttonStyle(RazerProminentButtonStyle())
-                .controlSize(.small)
-                .font(.system(size: 11.5, weight: .medium))
-        }
-    }
-
-    private func updateBusyLabel(_ text: String) -> some View {
-        HStack(spacing: 6) {
-            ProgressView().controlSize(.small)
-            Text(text).font(.system(size: 11)).foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: Battery hero
@@ -1767,6 +1548,10 @@ struct PopoverView: View {
         // A failed apply turns this red (see the row) rather than replacing it, so the row
         // still says which profile is actually active; the error text is in the expanded
         // section.
+        // A mouse whose slots are its profiles is always on one of them.
+        if controller.usesSlotProfiles {
+            return controller.activeOnboardSlot.map(controller.slotName) ?? ""
+        }
         if controller.profiles.isEmpty { return "None saved" }
         return controller.profiles.first { $0.id == controller.activeProfileID }?.name ?? "None active"
     }
@@ -1777,7 +1562,7 @@ struct PopoverView: View {
 
     private var footer: some View {
         HStack(spacing: 4) {
-            Link(destination: ProjectLinks.site) {
+            Link(destination: ProjectLinks.releases) {
                 Text(verbatim: "v\(appVersion)")
                     .font(.system(size: 11))
                     // Nothing at rest marks it as a link — the footer should stay quiet — so
@@ -1788,7 +1573,7 @@ struct PopoverView: View {
             }
             .buttonStyle(.plain)
             .onHover { versionHovered = $0 }
-            .help("Open the MacRazer website")
+            .help("Open MacRazer's releases on GitHub")
             Text(verbatim: "· unofficial").font(.system(size: 11)).foregroundStyle(.tertiary)
             Spacer()
             Button(action: onOpenSettings) {

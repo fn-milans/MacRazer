@@ -20,67 +20,17 @@ enum AppInfo {
     static var displayVersion: String { version ?? "dev" }
 
     static var displayBuild: String { build ?? "—" }
-
-    /// For `VersionCompare`. Deliberately **not** `displayVersion`: "0" sorts older than any
-    /// real release, so a dev build always sees an update as available, whereas "dev" parses
-    /// to 0 by accident rather than by intent and reads as a bug when you meet it.
-    static var comparableVersion: String { version ?? "0" }
 }
 
-/// Every URL that identifies this project. Also one place: the repository host appeared in
-/// four files, so a rename would have left the updater polling one place while the About
-/// window linked to another — and nothing would have failed loudly, the update card would
-/// just have quietly stopped finding releases.
-/// Somewhere else entirely. `ProjectLinks` is every URL that identifies *this* project, and
-/// putting an unrelated one in there would make that sentence false for whoever adds the next.
-enum ElsewhereLinks {
-    /// The About window's "For developers" section.
-    static let hiveship = URL(string: "https://hiveship.app/")!
-}
-
+/// Every URL that identifies this project, in one place so a rename can't leave one behind.
+/// MacRazer reaches none of them on its own: each opens in the browser when it is clicked.
 enum ProjectLinks {
-    static let repo = URL(string: "https://github.com/SorcRR/MacRazer")!
-    static let site = URL(string: "https://sorcrr.github.io/MacRazer/")!
-    static let tip = URL(string: "https://ko-fi.com/sorcrr")!
-    static let developer = URL(string: "https://github.com/SorcRR")!
-    /// The homepage's section on usage stats: what's sent, and how to delete it.
-    static let privacy = URL(string: "https://sorcrr.github.io/MacRazer/#privacy")!
-
+    static let repo = URL(string: "https://github.com/fn-milans/MacRazer")!
     static let issues = repo.appendingPathComponent("issues")
-    /// The device test's Send: the Worker in `worker/`, which emails the report to the
-    /// maintainer. Its name and route are set in `worker/wrangler.toml`.
-    static let deviceReports = URL(string: "https://macrazer-reports.sorcrr.workers.dev/v1/device-report")!
-    /// Usage stats, for people who said yes: the same Worker, `worker/src/stats.ts`.
-    static let usageStats = URL(string: "https://macrazer-reports.sorcrr.workers.dev/v1/stats")!
-    /// Where "Full release notes" goes: the popover shows a parsed summary, this is the
-    /// unabridged original.
-    static let latestRelease = repo.appendingPathComponent("releases/latest")
-    /// One release's DMG, by version. The updater fetches the exact release it announced, not
-    /// GitHub's "latest" pointer: the app picks the newest release itself, by version number,
-    /// while GitHub picks "latest" by date or by hand, and the two can disagree (a hotfix for an
-    /// older line published after a newer release). Pinning the download to the announced
-    /// version means the card can never offer one version and install another.
-    ///
-    /// `tag` is the release's tag as GitHub reported it, when the last check recorded one. When
-    /// it did not, the card having been restored from preferences at launch or read from a
-    /// cache older than the field, the tag is rebuilt as `v<version>`, which is how
-    /// `Scripts/release.sh` tags every release. `Scripts/make-dmg.sh` keeps the asset named
-    /// `MacRazer.dmg` on every release.
-    static func dmg(forVersion version: String, tag: String? = nil) -> URL {
-        repo.appendingPathComponent("releases/download/\(tag ?? "v\(version)")/MacRazer.dmg")
-    }
-    /// The list, not `releases/latest`. The app shows the span between the version you are on
-    /// and the one you are getting, and one release cannot describe a span.
-    ///
-    /// 20 because GitHub's JSON is about 6 KB per release once the author and asset objects
-    /// are counted, so this is a ~120 KB ceiling on a once-a-day request. It covers roughly
-    /// five years at this project's rate. Anyone further behind sees the most recent releases
-    /// only, which is already more than anybody reads.
-    ///
-    /// `releases/latest` filtered drafts and prereleases on GitHub's side. The list does not,
-    /// so that rule now lives in `ReleaseSpan` where it can be tested.
-    static let releasesAPI =
-        URL(string: "https://api.github.com/repos/SorcRR/MacRazer/releases?per_page=20")!
+    static let releases = repo.appendingPathComponent("releases")
+
+    /// The project this one was forked from, credited in the About window.
+    static let original = URL(string: "https://github.com/SorcRR/MacRazer")!
 
     // Upstream, credited in the About window and NOTICE.md.
     static let openRazer = URL(string: "https://github.com/openrazer/openrazer")!

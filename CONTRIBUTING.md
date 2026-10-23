@@ -32,22 +32,20 @@ or `build-app.sh --adhoc`), which signs ad-hoc and fails if a certificate got in
 
 The DMG workflow (`.github/workflows/dmg.yml`) does that on GitHub. Each push to master, or
 Run workflow, puts an ad-hoc DMG on the **Latest build** prerelease (tag `latest-build`), at a
-download link that stays the same; the in-app updater never offers prereleases. A pull request
-gets its DMG attached to the run instead.
+download link that stays the same. A pull request gets its DMG attached to the run instead.
 
 ## Cutting a release
 
-Use `./Scripts/release.sh <version>` rather than editing by hand. The version is recorded in
-three places and the changelog in a fourth, and they have to agree: the in-app updater
-compares the GitHub tag against the running bundle's own version, so a release tagged
-`v0.3.0` whose bundle still says `0.2.1` leaves every user with an update badge they can
-never clear. The script bumps all of them, promotes `## [Unreleased]` to a dated version
+Use `./Scripts/release.sh <version>` rather than editing by hand. The version and build
+number are recorded in `Packaging/Info.plist` and the changelog elsewhere, and they have to
+agree with the tag: a release tagged `v0.3.0` whose About window still says `0.2.1` can't be
+told apart from the last one. The script bumps all of them, promotes `## [Unreleased]` to a dated version
 heading, builds both DMGs, and refuses outright if the version isn't newer, the tree is
 dirty, you're not on an up-to-date master, or `[Unreleased]` is empty.
 
 It stops before `git commit`, `git tag` and `gh release create`, printing them — review the
 diff first. `Tests/Scripts/release-test.sh` covers the version comparison and both changelog
-operations; CI runs it. Attach **both** DMGs to the release: the updater fetches the fixed
+operations; CI runs it. Attach **both** DMGs to the release: links point at the fixed
 `MacRazer.dmg` name, and the versioned copy makes the Releases page self-describing.
 `--dry-run` shows what it would do.
 
@@ -58,9 +56,8 @@ finished copy** — it carries every changelog entry verbatim, and the changelog
 contributors. Expect to cut most of it; the published 0.3.0 body was about a fifth the length
 of its changelog section.
 
-The body matters more than it looks: the app fetches it and builds the popover's "What's new"
-page from it, so a release published with no body makes that page quietly not appear. The
-draft fills in the parts that are mechanical and easy to forget:
+The body is what people read on the Releases page. The draft fills in the parts that are
+mechanical and easy to forget:
 
 - every entry in the release, so none is left out by accident
 - **everyone whose PR is in it**, by GitHub handle and PR number, read from the merge commits
@@ -74,8 +71,7 @@ automatically — the script says so on stderr and you add them by hand. Before 
 ```
 
 which refuses a draft still carrying the `TODO:` placeholder or with no summary above its
-first heading — either one would end up as the release's first paragraph, which is exactly
-what the app shows.
+first heading — either one would end up as the release's first paragraph.
 
 ## The most valuable contribution: device profiles
 Detection and naming already work for **any** Razer mouse, via the USB product string. What
@@ -84,18 +80,12 @@ real hardware so far; README's table says which, and what was run on each.
 
 ### 1. Run the probes and paste the output
 
-The easiest way is the app's own test. Right-click the menu bar icon, choose **Help Support
-This Mouse…**, and press **Send** or open a GitHub issue on its last screen. It runs
-everything below, plus transaction id discovery, and puts every setting back. From source,
-`swift run MacRazer devicetest` prints the same report as JSON.
-
-Running the probes by hand works too. Paste the output, not a summary of it. The raw text is
+Run the probes and open an issue with the output. Paste the output, not a summary of it. The raw text is
 what lets a reviewer see the status bytes and the read-backs, and it is what earns a row in
 the README table.
 
 ```sh
 swift run MacRazer info              # confirms detection and the PID it enumerates as
-swift run MacRazer discover          # which transaction ids it answers to
 swift run MacRazer battery
 swift run MacRazer dpi               # then: dpi 3200   (check the read-back matches)
 swift run MacRazer poll              # then: poll 1000  (check the read-back matches)
@@ -120,9 +110,8 @@ most common thing that needs fixing in review:
 
 - **`transactionId` / `matrixTransactionId`** differ per model. Find your PID in the driver's
   switch statements. Class `0x0F` uses `matrixTransactionId`, everything else uses
-  `transactionId`. `discover` (or the report's Identify step) shows which ids your mouse
-  actually answers to. Some receivers answer to several, so prefer OpenRazer's value when
-  it is one of them.
+  `transactionId`. A wrong id makes every probe time out or fail, so if they all do, the
+  id is the first thing to check.
 - **`transactionOverrides`** is only for commands whose id differs from your model's own
   class default. If the override sets the value the default already produces, leave it out.
   It defaults to empty, and empty is usually right.

@@ -4,7 +4,7 @@
 import XCTest
 @testable import MacRazer
 
-/// `DeviceProbe` is what the CLI probes run on, and what the in-app device test will run on.
+/// `DeviceProbe` is what the CLI probes run on.
 /// These drive it with a fake mouse that records every command and answers the way the real
 /// protocol does, so the probes' commands, order and decoding are pinned without hardware.
 final class DeviceProbeTests: XCTestCase {
@@ -28,8 +28,8 @@ final class DeviceProbeTests: XCTestCase {
 
     func testAMouseThatClampsIsNotConfirmed() throws {
         // A request above the model's ceiling is acknowledged and then stored as the ceiling.
-        // Only the read-back shows it, and that difference is how the device test will find
-        // a model's real maximum.
+        // Only the read-back shows it, and that difference is how a probe finds a model's
+        // real maximum.
         let mouse = FakeMouse()
         mouse.clamp = { write in
             guard write.commandId == 0x05, write.commandClass == 0x04 else { return write }
@@ -110,7 +110,7 @@ final class DeviceProbeTests: XCTestCase {
     }
 
     func testErrorsReachTheCaller() {
-        // The CLI prints them and the device test records them; a probe swallowing one would
+        // The CLI prints them; a probe swallowing one would
         // turn "the mouse refused" into "the mouse said zero".
         let mouse = FakeMouse()
         mouse.refuse = { _ in true }

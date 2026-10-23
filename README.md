@@ -12,6 +12,9 @@ Razer mice that use the same HID protocol family, but those are untested, so tre
 "likely to work, not verified" until someone confirms it on real hardware.
 
 > Unofficial. Not affiliated with, authorized by, or endorsed by Razer Inc. See [NOTICE.md](NOTICE.md).
+>
+> A fork of [MacRazer by SorcRR](https://github.com/SorcRR/MacRazer). It sends nothing
+> anywhere: no usage stats, no update checks, no report uploads. See [Privacy](#privacy).
 > 
 > <img width="324" height="624" alt="image" src="https://github.com/user-attachments/assets/a7632668-2d12-4d2f-aa84-7b234bad31dc" />
 > <img width="323" height="290" alt="image" src="https://github.com/user-attachments/assets/c1cf4013-9c1e-40df-ac09-c3e36756df69" />
@@ -39,19 +42,12 @@ Razer mice that use the same HID protocol family, but those are untested, so tre
   the app is not running.
 - **Starts at login** (on by default, switchable in the popover and in System Settings ›
   General › Login Items), so the menu bar item is there after a reboot.
-- **Updates install themselves**: when a new release is out, "Update & Restart" downloads it,
-  checks it, replaces the installed app and relaunches — no dragging a DMG. It falls back to
-  the plain DMG download when MacRazer is somewhere it can't replace itself (still on the disk
-  image, or in a folder you can't write to). The card also links to **what's in the release**,
-  so the choice isn't blind.
-
 Settings persist across app restarts and reconnects, and the menu bar updates on its own when
 the mouse connects, disconnects, or sleeps.
 
 ## Supported mice
 
-"Verified" below means someone ran the CLI probes or the in-app test against the mouse and
-posted the output, not that the protocol tables say it should work. Where nobody has, the row
+"Verified" below means someone ran the CLI probes against the mouse and posted the output, not that the protocol tables say it should work. Where nobody has, the row
 says so.
 
 | Mouse | Verified on hardware | By |
@@ -72,32 +68,8 @@ An unverified mouse is not a broken one. Detection and naming work for any Razer
 the controls are attempted with values taken from OpenRazer's tables — they usually work. The
 column is about who has actually seen it happen.
 
-**Have a mouse that isn't verified?** The quickest way to help is in the app. Right-click the
-menu bar icon and choose **Help Support This Mouse…**. It runs the same probes as the
-commands below, puts every setting back, and builds the report for you. **Send** emails it to
-the maintainer, or you can copy it or open a GitHub issue with it. On a verified mouse the item
-reads **Test This Mouse…**, and a report confirms it still works on your firmware. The test
-needs the dongle or a cable, even on a mouse that also works over Bluetooth.
-
-### What a device report contains
-
-You can read the whole report on the last screen before it goes anywhere.
-
-- The mouse's name, product ID and firmware version, and whether it's on a cable or the dongle.
-- Its USB interfaces: product IDs, usage pages and report sizes.
-- What each step found: which transaction ids the mouse answered to, the battery level, the
-  DPI and polling rate it read and wrote back, and the lighting brightness. Every command the
-  test sent is listed, with the first 8 bytes of each answer.
-- Which extra buttons you pressed during the button step, not when.
-- The app and macOS versions.
-- Only if you fill them in: a comment, a name to credit, and an email address for a reply.
-
-Never in it: the mouse's serial number, or anything else about your Mac.
-
-Where it goes depends on the button. **Copy** puts it on your clipboard. **Open GitHub issue**
-makes it public, so it leaves out your email address. **Send** emails it to the maintainer
-through a small Cloudflare Worker ([worker/](worker/)), which keeps nothing but a count of
-reports per day.
+**Have a mouse that isn't verified?** Run the [command-line probes](#command-line-diagnostics)
+against it and open an [issue](../../issues) with the output.
 
 Adding a model is a small change to a registry plus on-hardware verification. See
 [CONTRIBUTING.md](CONTRIBUTING.md).
@@ -150,8 +122,9 @@ mouse on Bluetooth.
 
 ## Install
 
-Download `MacRazer.dmg` from the [latest release](../../releases/latest), open it, and drag
-**MacRazer** into Applications.
+Download `MacRazer.dmg` from the [latest release](../../releases/latest), or the newest
+[Latest build](../../releases/tag/latest-build) of master, open it, and drag **MacRazer** into
+Applications. MacRazer doesn't check for updates: new versions are on the Releases page.
 
 This build is unsigned (no paid Apple Developer ID), so on first launch Gatekeeper will say
 the app "cannot be opened because it is from an unidentified developer" or "is damaged and
@@ -211,8 +184,6 @@ swift run MacRazer dpi [x] [y]          # read or set DPI
 swift run MacRazer poll [125|500|1000]  # read or set polling rate
 swift run MacRazer rgb static ff0000    # static colour (or: spectrum | wave | off)
 swift run MacRazer brightness [0-100]   # read or set LED brightness
-swift run MacRazer discover             # which transaction ids the mouse answers to
-swift run MacRazer devicetest           # the in-app device test, printed as JSON
 ```
 
 ## How it works
@@ -226,11 +197,6 @@ Full details, including the protocol, the per-device hardware quirks, and a file
 are in [docs/DOCUMENTATION.md](docs/DOCUMENTATION.md). The complete feature history is in
 [CHANGELOG.md](CHANGELOG.md).
 
-## Built with
-
-MacRazer was built with [Hiveship](https://hiveship.app/), an issue tracker for planning work,
-tracking bugs, and handing issues to coding agents as well as the people on your team.
-
 ## Contributing
 
 Pull requests are welcome, especially **device profiles** so this works on more Razer mice.
@@ -241,7 +207,14 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 GPL-2.0-or-later, see [LICENSE](LICENSE). The project is GPL because its HID protocol is
 derived from OpenRazer. Full attribution and the trademark notice are in [NOTICE.md](NOTICE.md).
 
-## Support
+## Privacy
 
-This is a free, unpaid community project. If it is useful to you, you can leave a tip:
-[ko-fi.com/sorcrr](https://ko-fi.com/sorcrr).
+MacRazer makes no network requests of its own. It talks to your mouse over USB HID and
+Bluetooth, and keeps its settings and battery history on your Mac. The links in About and in
+the popover footer open in your browser when you click them, and nothing else leaves the app.
+
+## Credits
+
+Forked from [MacRazer](https://github.com/SorcRR/MacRazer) by SorcRR, whose work this builds
+on. The mouse protocol is ported from [OpenRazer](https://github.com/openrazer/openrazer); see
+[NOTICE.md](NOTICE.md).

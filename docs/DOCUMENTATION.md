@@ -316,45 +316,11 @@ buttons are handled onboard and never reach macOS.
 - Available both inline (popover buttons page) and as a standalone window
  (`RemapWindowController.swift`, opened from the right-click menu).
 
-### 6.4 Device test, `DeviceTest*.swift` + `worker/`
-The right-click menu's **Help Support This Mouse…** (or **Test This Mouse…** on a verified
-model) runs a guided test and builds a report a maintainer can turn into a registry entry.
-
-- `DeviceTest.swift`: the steps (Identify, Battery, DPI, Polling rate, Lighting) as plain
- functions over a channel, the report, and the verdict. Each step puts back what it changes
- before it returns, on every path. Tests drive them against a fake mouse.
-- `DeviceProbeSession.swift`: transaction id discovery (every id OpenRazer uses is tried, and
- each result recorded) and the channel that records every command for the report.
-- `DeviceTestModel.swift` / `DeviceTestView.swift` / `DeviceTestWindowController.swift`: the
- window. Steps run on `MouseController`'s device queue with the app's own reads paused. Quit
- waits for a running step. The test needs USB; a mouse on Bluetooth is told to switch.
-- `DeviceReportOutput.swift`: Copy, the GitHub issue, size fitting, and text limits.
- `DeviceReportSender.swift`: Send, a POST to the Worker.
-- `worker/`: a Cloudflare Worker that checks a report against the app's exact format, emails it
- to the maintainer, and keeps only daily counters. Setup is in `worker/README.md`.
-
-### 6.5 Usage stats, `UsageStats.swift` + `worker/src/stats.ts`
-Opt-in only. Nothing is sent until the person clicks Share.
-
-- **Asking.** A new install gets `UsageStatsConsentView` in its own window, once nothing else is
- on screen (the setup window comes first). Someone updating gets `UsageStatsCard` in the
- Updated window instead. Closing either without answering counts as no, and it isn't asked again.
-- **The ID.** An HMAC-SHA256 of the hardware UUID (`IOPlatformUUID`) with a fixed app key,
- cut to 16 bytes of hex. The same Mac gets the same ID after a reinstall, the UUID never leaves
- it, and the result can't be matched with what another app gets from the same UUID. It's saved
- in the preferences once worked out, so a UUID that changes in a macOS upgrade doesn't make a
- new Mac.
-- **When.** `UsageStatsPolicy`: a `first` ping when nothing was reported yet, `update` when the
- version changed, `mouse` when a mouse connects that this Mac hasn't reported. Launch waits 15 s
- for a mouse, then sends anyway. A failed ping is simply due again, at the next launch or mouse. `swift run` builds never
- send.
-- **What.** `UsagePing`: the ID, the event, app and macOS versions, the chip (from
- `hw.optional.arm64`, so Rosetta still counts as Apple Silicon), and the connected mouse with its
- product ID, link and whether it's supported. Settings › Privacy shows this exact JSON.
-- **Delete My Data.** Turns sharing off and sends `DELETE /v1/stats/<id>`. The Worker moves the
- row to tables without the ID. If the server can't be reached, the delete is kept and retried at
- every launch and whenever a mouse connects, and no ping goes before it succeeds.
-- **Seeing the numbers.** `npm run stats` in `worker/` prints a summary.
+### 6.4 Privacy
+MacRazer makes no network requests of its own. There are no usage stats, no update checks
+and no report uploads; earlier versions of the original project had all three, and this fork
+removed them. Settings and battery history stay in the app's preferences and its Application
+Support folder. Links in About and in the popover footer open in the browser when clicked.
 
 ---
 
@@ -382,8 +348,8 @@ right-click->Open). A clean install needs Developer ID + notarization (paid Appl
 ## 8. Extending to other Razer mice
 
 Detection + name display already work for any Razer mouse (read-only, via the USB product
-string). The device test (§6.4, or `devicetest` in §9) gathers what the steps below need
-in one run. To make the **controls** verified for another model:
+string). The CLI probes (§9) gather what the steps below need. To make the **controls**
+verified for another model:
 1. Add its PID/name to `RazerDevices.known` with `fullySupported: true` and the right
  `hasBattery` / `hasLighting` / `maxDPI`. If its brightness answers on a group other than
  `LOGO_LED`, set `brightnessLed` too.
@@ -434,20 +400,15 @@ swift run MacRazer dpi [x] [y] # read / set DPI
 swift run MacRazer poll [125|500|1000]
 swift run MacRazer rgb static ff0000 # or: spectrum | wave | off
 swift run MacRazer brightness [0-100] # sweeps LOGO/SCROLL/ZERO/BACKLIGHT LEDs
-swift run MacRazer discover # which transaction ids the mouse answers to
-swift run MacRazer devicetest # the device test without its window, as JSON on stdout
-swift run MacRazer render-device-test review ran sent out.png # one test screen (dev)
 swift run MacRazer icon out.png # render the menu bar icon
-swift run MacRazer render-ui [offline|color|update|updated|whatsnew|…] out.png # popover (dev)
-swift run MacRazer render-ui whatsnew installed out.png # the notes without an update to install
-swift run MacRazer render-about [notes] out.png
+swift run MacRazer render-ui [offline|color|zones|…] out.png # popover (dev)
+swift run MacRazer render-about out.png
 swift run MacRazer render-remap out.png
 ```
 
 (The `render-*` commands use SwiftUI `ImageRenderer`, which can't rasterize native controls —
-buttons and sliders show as placeholders. It can't rasterize a `ScrollView` either, so
-`render-ui whatsnew`, whose page *is* a scroll view, goes through an `NSHostingView` instead;
-that path draws the content but needs an explicit size, since there is no window to supply one.)
+buttons and sliders show as placeholders. Pages that need them drawn go through an
+`NSHostingView` instead.)
 
 ---
 
@@ -473,20 +434,9 @@ that path draws the content but needs an explicit size, since there is no window
 | `ButtonRemapper.swift` | CGEvent tap, action model, presets, persistence, Accessibility. |
 | `RemapView.swift` | Button-config UI (inline + window), key recorder. |
 | `RemapWindowController.swift` | Standalone window host for the remap UI. |
-| `DeviceProbe.swift` | The probes shared by the CLI and the device test. |
-| `DeviceProbeSession.swift` | Transaction id discovery and the recording channel. |
-| `DeviceTest.swift` | Device test steps, report and verdict. |
-| `DeviceTestModel.swift` / `DeviceTestView.swift` | Device test window: flow and screens. |
-| `DeviceTestWindowController.swift` | Window host for the device test. |
-| `DeviceReportOutput.swift` | Copy, GitHub issue, size fitting and text limits for reports. |
-| `DeviceReportSender.swift` | Send: posts a report to the Worker. |
-| `UsageStats.swift` | Opt-in usage stats: the ID, when to ping, Delete My Data. |
-| `UsageStatsView.swift` | The consent window, the Updated window's card, the shared summary. |
-| `ButtonCapture.swift` | Listens to the Razer device's buttons during the test. |
+| `DeviceProbe.swift` | The probes the CLI diagnostics run. |
 | `MenuBarIcon.swift` | Vector-drawn menu bar mouse icon (+ triskelion). |
 | `RazerLogo.swift` | Embedded official Razer logo (vector PDF, base64) for the header. |
-
-`worker/` holds the Cloudflare Worker behind Send and the usage stats (TypeScript, tested with vitest).
 
 External: `reference/openrazer/` (cloned driver source, the protocol reference, gitignored)
 and `reference/openrazer-pr-2583.diff` (the Cobra HyperSpeed PR).

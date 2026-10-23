@@ -28,8 +28,8 @@ if args.isEmpty {
 let command = args.first!
 
 /// Status and diagnostics: which device opened, why it didn't, how to fix that. They go to
-/// stderr so stdout carries only a command's results, and `devicetest > report.json` (or
-/// any other redirect) gets the results alone while the person still sees the rest.
+/// stderr so stdout carries only a command's results, and a redirect gets the results alone
+/// while the person still sees the rest.
 func status(_ line: String) {
     FileHandle.standardError.write(Data((line + "\n").utf8))
 }
@@ -199,45 +199,17 @@ case "render-ui":
         controller.setPreviewZonedLighting()
         UserDefaults.standard.set("lighting", forKey: "popoverExpandedSections")
     }
-    let updateChecker = UpdateChecker()
-    if args.contains("update") { updateChecker.loadPreviewState(notes: PreviewNotes.releaseBody) }
-    if args.contains("updated") { updateChecker.loadPreviewUpdated(notes: PreviewNotes.releaseBody) }
-    if args.contains("downloading") { updateChecker.loadPreviewState(phase: .downloading(0.42)) }
     let launchAtLogin = LaunchAtLogin()
     launchAtLogin.loadPreviewState()
-    // The notes page is its own render: it is a scroll view, so it needs the hosted path,
-    // and it is sized to the height the main page renders at — the whole point of checking
-    // it is whether the notes fit there.
-    if args.contains("whatsnew") {
-        // `installed` is the same page reached from the "Updated to …" card: same notes, no
-        // button, because there is nothing left to install.
-        let installed = args.contains("installed")
-        if installed {
-            updateChecker.loadPreviewSpan([
-                RemoteRelease(version: "0.4.1", body: PreviewNotes.previousReleaseBody),
-                RemoteRelease(version: "0.4.0", body: PreviewNotes.releaseBody),
-            ])
-        } else {
-            updateChecker.loadPreviewState(notes: PreviewNotes.releaseBody)
-        }
-        writeHostedPNG(WhatsNewPage(version: updateChecker.latestVersion ?? AppInfo.displayVersion,
-                                    releases: installed ? updateChecker.installedNotes
-                                                        : updateChecker.latestNotes,
-                                    canInstallInPlace: updateChecker.canInstallInPlace,
-                                    onBack: {}, onUpdate: installed ? nil : {}),
-                       size: CGSize(width: 320, height: 748), to: path)
-        break
-    }
     let rootView: AnyView = args.contains("color")
         ? AnyView(ColorPickerPage(color: .constant(.blue), onBack: {}, onApply: { _ in }))
         : args.contains("usage")
         ? AnyView(UsageGraphView(controller: controller, onBack: {}))
         : args.contains("profiles")
         ? AnyView(ProfilesView(controller: controller, remapper: ButtonRemapper(), onBack: {}))
-        : AnyView(PopoverView(controller: controller, remapper: ButtonRemapper(), updateChecker: updateChecker,
+        : AnyView(PopoverView(controller: controller, remapper: ButtonRemapper(),
                               launchAtLogin: launchAtLogin, appearance: AppearanceSettings.shared,
-                              onOpenSettings: {},
-                              onOpenDeviceTest: {})) // no windows in a render
+                              onOpenSettings: {})) // no windows in a render
     // Segmented controls only draw when hosted in a view hierarchy.
     if args.contains("zones") || args.contains("dpi-stages") || args.contains("dpi-single") { writeHostedPNG(rootView, to: path) } else { writeViewPNG(rootView, to: path) }
 
@@ -248,81 +220,15 @@ case "render-settings":
     sc.loadPreviewState()
     let sl = LaunchAtLogin()
     sl.loadPreviewState()
-    let su = UpdateChecker()
-    // `update` shows the Updates section in its available state, which is the only way to see
-    // the Install Now button without waiting for a real release.
-    if args.contains("update") { su.loadPreviewState() }
-    writeViewPNG(SettingsView(controller: sc, launchAtLogin: sl, updateChecker: su, onDone: {},
-                              usageStats: .preview(consent: args.contains("notsharing") ? .declined : .granted)),
-                 to: settingsPath)
-
-case "render-updated":
-    // The window shown on the first launch after an update. `nonotes` shows the fallback
-    // link a release with no cached body gets.
-    _ = NSApplication.shared
-    let updatedPath = outputPath(args.dropFirst(), default: "updated-preview.png")
-    let uc = UpdateChecker()
-    if args.contains("nonotes") {
-        uc.loadPreviewUpdated()
-    } else {
-        uc.loadPreviewSpan([
-            RemoteRelease(version: "0.4.1", body: PreviewNotes.previousReleaseBody),
-            RemoteRelease(version: "0.4.0", body: PreviewNotes.releaseBody),
-        ])
-    }
-    // `asked` leaves out the usage stats card, as for someone who already answered.
-    writeHostedPNG(UpdatedView(updateChecker: uc, onDone: {},
-                               usageStats: .preview(consent: args.contains("asked") ? .granted : .undecided)),
-                   to: updatedPath)
-
-case "render-usage-consent":
-    // The one-time usage stats question a new install gets.
-    _ = NSApplication.shared
-    writeHostedPNG(UsageStatsConsentView(stats: .preview(consent: .undecided), onDone: {}),
-                   to: outputPath(args.dropFirst(), default: "usage-consent-preview.png"))
+    writeViewPNG(SettingsView(controller: sc, launchAtLogin: sl, onDone: {}), to: settingsPath)
 
 case "render-about":
     _ = NSApplication.shared
     let aboutPath = outputPath(args.dropFirst(), default: "about-preview.png")
-    // `notes` shows the "What's new in …" row, which is otherwise only there once the app has
-    // cached a release body.
-    //
     // Hosted rather than `ImageRenderer`: this window is mostly buttons and links, and
     // `ImageRenderer` draws every native control as a yellow placeholder — which is to say it
     // could not show the one thing an About preview is for.
-    writeHostedPNG(AboutView(onDone: {}, // no window to close in a render
-                               notes: args.contains("notes")
-                                 ? [VersionedNotes(version: AppInfo.displayVersion,
-                                                   notes: ReleaseNotes.parse(PreviewNotes.releaseBody))]
-                                 : []),
-                   to: aboutPath)
-
-case "render-device-test":
-    // One screen of the device test, for checking layout and wording without a mouse:
-    // `render-device-test <stage> [unknown] [ran] [sent|failed] [path.png]`, stage one of
-    // intro, permission, identify, battery, dpi, polling, lighting, buttons, review.
-    _ = NSApplication.shared
-    let path = outputPath(args.dropFirst(), default: "device-test-preview.png")
-    let stages: [String: DeviceTestModel.Stage] = [
-        "intro": .intro, "permission": .permission, "identify": .identify, "battery": .battery,
-        "dpi": .dpi, "polling": .polling, "lighting": .lighting, "buttons": .buttons, "review": .review,
-    ]
-    let stage = args.dropFirst().compactMap { stages[$0] }.first ?? .intro
-    let controller = MouseController()
-    controller.loadPreviewState()
-    let model = DeviceTestModel(controller: controller, permissions: PermissionsModel())
-    model.loadPreview(stage, known: !args.contains("unknown"), ranSteps: args.contains("ran"))
-    if args.contains("sent") { model.previewSendState(.sent) }
-    if args.contains("failed") { model.previewSendState(.failed(.tooMany)) }
-    writeViewPNG(DeviceTestView(model: model, onClose: {}), to: path)
-
-case "render-crash-report":
-    // The window shown on the launch after a crash. `sent` shows the thank-you.
-    _ = NSApplication.shared
-    let crashPath = outputPath(args.dropFirst(), default: "crash-report-preview.png")
-    let crashModel = CrashReportModel.preview()
-    if args.contains("sent") { crashModel.loadPreviewSent() }
-    writeHostedPNG(CrashReportView(model: crashModel, onDone: {}, onDontAskAgain: {}), to: crashPath)
+    writeHostedPNG(AboutView(onDone: {}), to: aboutPath) // no window to close in a render
 
 case "render-remap":
     _ = NSApplication.shared
@@ -552,71 +458,6 @@ case "brightness":
         exit(2)
     }
 
-case "discover":
-    // Which transaction ids the mouse answers to: the first thing to find out about a model
-    // the registry doesn't know, since a wrong id makes every other probe fail.
-    guard let dev = openDevice() else { exit(1) }
-    defer { dev.close() }
-    // The device test's own Identify step, so this can't choose differently from it.
-    let registry = RazerDevices.info(pid: dev.productID)
-    let (identify, _) = DeviceTestSteps.identify(dev, registry: registry)
-    guard let found = identify.data else { exit(2) }
-    func hex(_ id: UInt8?) -> String { id.map { String(format: "0x%02x", $0) } ?? "none" }
-    func show(_ results: [DeviceReport.TransactionResult]) {
-        for r in results {
-            let groups = r.groups.map { $0.isEmpty ? "" : " on " + $0.joined(separator: ", ") } ?? ""
-            print("  \(hex(r.id)): " + (r.answered ? "answered" + groups
-                                        : r.refused ? "heard, but refused" : r.error ?? "no group answered"))
-        }
-    }
-    print("Standard commands (firmware read). Registry says \(registry.map { hex($0.transactionId) } ?? "nothing"):")
-    show(found.standardAttempts)
-    if let dpi = found.dpiAttempts {
-        print("No id answered the firmware read, so again with a DPI read:")
-        show(dpi)
-    }
-    print("Lighting (brightness sweep). Registry says \(registry.map { hex($0.matrixTransactionId) } ?? "nothing"):")
-    show(found.lightingAttempts)
-    print("Firmware: \(found.firmware ?? "unknown")")
-    print("Would use: \(hex(found.standardId)) for standard commands, \(hex(found.lightingId)) for lighting")
-
-case "devicetest":
-    // The in-app device test without its window, for contributors running from source. Every
-    // step puts back what it changes. Lighting only dims for a moment: the colour check needs
-    // the app's own lighting setting to return to, which only the app knows.
-    guard let dev = openDevice() else { exit(1) }
-    defer { dev.close() }
-    let info = RazerDevices.info(pid: dev.productID)
-    let (identify, lightSweep) = DeviceTestSteps.identify(dev, registry: info)
-    let standardId = identify.data?.standardId ?? info?.transactionId ?? 0x1F
-    let matrixId = identify.data?.lightingId ?? standardId
-    func step<T>(_ body: (DeviceProbeChannel) -> DeviceReport.StepRecord<T>) -> DeviceReport.StepRecord<T> {
-        DeviceTestSteps.recorded(dev, standard: standardId, matrix: matrixId,
-                                 overrides: info?.transactionOverrides ?? [:], body)
-    }
-    status("Running. The mouse's lights will go dark for two seconds.")
-    let (interfaces, control) = HIDDevice.interfaceSummaries(vendorId: Razer.vendorId)
-    var report = DeviceReport(
-        appVersion: AppInfo.displayVersion,
-        macOSVersion: DeviceReport.currentMacOSVersion,
-        device: .init(vendorID: Razer.vendorId, productID: dev.productID, name: dev.productName,
-                      connection: nil, interfaces: interfaces, controlInterface: control),
-        registry: info.map(DeviceReport.Registry.init),
-        identify: identify,
-        battery: step { DeviceTestSteps.battery($0, expectsBattery: info?.hasBattery) },
-        dpi: step { DeviceTestSteps.dpi($0, maxProbe: false) },
-        polling: step { DeviceTestSteps.polling($0) },
-        lighting: step { DeviceTestSteps.lighting($0, sweep: lightSweep, restoreEffect: nil, seconds: 2) },
-        buttons: .init())
-    report.verdict = report.currentVerdict()
-    // Encoded as the app encodes it, so a pasted CLI report reads like an in-app one.
-    let json = DeviceReportOutput.json(report, forPublic: true)
-    guard !json.isEmpty else {
-        status("✗ The report couldn't be encoded.")
-        exit(2)
-    }
-    print(json)
-
 case "rgb":
     guard let dev = openDevice() else { exit(1) }
     defer { dev.close() }
@@ -657,6 +498,6 @@ case "rgb":
 
 default:
     print("Unknown command: \(command)")
-    print("Available: info, discover, devicetest, battery, dpi [x] [y], poll [hz], stages [d1,d2,…] [active], rgb <static rrggbb|spectrum|wave|off>, brightness [pct], login-item [on|off]")
+    print("Available: info, battery, dpi [x] [y], poll [hz], stages [d1,d2,…] [active], rgb <static rrggbb|spectrum|wave|off>, brightness [pct], login-item [on|off]")
     exit(64)
 }

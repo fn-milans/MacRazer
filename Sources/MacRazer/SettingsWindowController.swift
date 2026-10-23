@@ -11,30 +11,21 @@ final class SettingsWindowController: AppWindowPresenter {
     private var window: NSWindow?
     private let controller: MouseController
     private let launchAtLogin: LaunchAtLogin
-    private let updateChecker: UpdateChecker
 
-    /// Called when the "install automatically" switch is flipped — see `SettingsView`.
-    private let onAutoInstallChanged: () -> Void
-
-    init(controller: MouseController, launchAtLogin: LaunchAtLogin, updateChecker: UpdateChecker,
-         onAutoInstallChanged: @escaping () -> Void) {
+    init(controller: MouseController, launchAtLogin: LaunchAtLogin) {
         self.controller = controller
         self.launchAtLogin = launchAtLogin
-        self.updateChecker = updateChecker
-        self.onAutoInstallChanged = onAutoInstallChanged
     }
 
     /// Whether the window is actually on screen. Reading this builds the controller if it
-    /// hasn't been already, which costs three stored references — the `NSWindow` itself is
+    /// hasn't been already, which costs two stored references — the `NSWindow` itself is
     /// still only created by `show()`.
     var isVisible: Bool { window?.isVisible ?? false }
 
     func show() {
         if window == nil {
             let root = SettingsView(controller: controller, launchAtLogin: launchAtLogin,
-                                    updateChecker: updateChecker,
-                                    onDone: { [weak self] in self?.window?.close() },
-                                    onAutoInstallChanged: onAutoInstallChanged)
+                                    onDone: { [weak self] in self?.window?.close() })
             let hosting = NSHostingController(rootView: root)
             hosting.sizingOptions = [.preferredContentSize]
             let w = NSWindow(contentViewController: hosting)

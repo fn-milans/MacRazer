@@ -4,7 +4,6 @@
 import AppKit
 import SwiftUI
 import Combine
-import Network
 import UserNotifications
 
 /// Menu bar (accessory) app: an NSStatusItem showing battery %, click opens an NSPopover
@@ -21,41 +20,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, UNU
     private lazy var remapWindow = RemapWindowController(remapper: remapper, controller: controller)
     private lazy var permissions = PermissionsModel(remapper: remapper, controller: controller)
     private lazy var permissionsWindow = PermissionsWindowController(model: permissions, controller: controller)
-    private lazy var deviceTestWindow = DeviceTestWindowController(
-        model: DeviceTestModel(controller: controller, permissions: permissions))
-    private let updateChecker = UpdateChecker()
     private let launchAtLogin = LaunchAtLogin()
     private let appearance = AppearanceSettings.shared
     /// The solid colour or green tint behind the popover; see `PopoverBackdropView`.
     private let popoverBackdrop = PopoverBackdropView()
     private lazy var aboutWindow = AboutWindowController()
-    /// Closing it re-asks the auto-install gate. This window opens unfocused after an
-    /// automatic install and can sit unnoticed for days, and while it is open it holds back
-    /// any release found in the meantime. Without the re-ask, that release stayed held until
-    /// the popover next opened and closed.
-    private lazy var updatedWindow = UpdatedWindowController(
-        updateChecker: updateChecker, usageStats: usageStats,
-        onClosed: { [weak self] in self?.autoInstallIfEnabled() })
-    /// Closing it re-asks the auto-install gate, for the same reason as `updatedWindow`.
-    private lazy var crashReportWindow = CrashReportWindowController(
-        onClosed: { [weak self] in self?.autoInstallIfEnabled() })
-    private let usageStats = UsageStats.shared
-    /// Closing it re-asks the auto-install gate, for the same reason as `updatedWindow`.
-    private lazy var usageStatsWindow = UsageStatsWindowController(
-        stats: usageStats, onClosed: { [weak self] in self?.autoInstallIfEnabled() })
-    /// Waits for a clear moment to ask about usage stats; see `askAboutUsageStats`.
-    private var usageStatsAskTimer: Timer?
     private lazy var settingsWindow = SettingsWindowController(
-        controller: controller, launchAtLogin: launchAtLogin, updateChecker: updateChecker,
-        onAutoInstallChanged: { [weak self] in self?.autoInstallSettingChanged() })
-    /// Decides whether an automatic install may start; see `AutoInstallPolicy`.
-    private var autoInstallPolicy = AutoInstallPolicy()
-    private var updateTimer: Timer?
-    private var updateWakeObserver: NSObjectProtocol?
-    private var updatePathMonitor: NWPathMonitor?
-    /// The last connectivity the monitor reported; nil until its first report.
-    private var wasOnline: Bool?
-    private var updateBadgeView: NSView?
+        controller: controller, launchAtLogin: launchAtLogin)
     /// The app the user was in when the popover opened, so closing it can hand focus back.
     /// See `PopoverFocusReturn` for when it does.
     private var appBeforePopover: NSRunningApplication?
@@ -71,6 +42,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, UNU
     private var appMenuOpen = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // What earlier versions kept for the usage stats, the updater and the report windows.
+        LegacyPreferences.remove()
         // Razer HID devices enumerate as a keyboard/mouse, so macOS gates opening them behind
         // Input Monitoring — without it the app can't read anything. Show the setup window
         // whenever that required permission is missing (and stop the moment it's granted), so a
@@ -85,14 +58,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, UNU
         // longer matches whichever profile was last applied — let MouseController know so it
         // can drop the stale "active" highlight.
         remapper.onManualChange = { [weak controller] in controller?.clearActiveProfileIfManuallyChanged() }
-        if DeviceTestModel.takeResumeRequest() {
-            // Relaunched from the device test to apply Input Monitoring: pick the test back up
-            // rather than showing the general setup window it was already past.
-            DispatchQueue.main.async { [weak self] in
-                guard let self else { return }
-                self.present(self.deviceTestWindow)
-            }
-        } else if !permissions.allRequiredGranted {
+        if !permissions.allRequiredGranted {
             DispatchQueue.main.async { [weak self] in
                 guard let self else { return }
                 self.present(self.permissionsWindow)
@@ -124,24 +90,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, UNU
             }
             .store(in: &cancellables)
         let hosting = NSHostingController(rootView: PopoverView(
-            controller: controller, remapper: remapper, updateChecker: updateChecker,
+            controller: controller, remapper: remapper,
             launchAtLogin: launchAtLogin, appearance: appearance,
             onOpenSettings: { [weak self] in
                 // Close first: the popover is transient and would dismiss itself the moment
                 // the window takes focus, which looks like the click did two things.
-                //
-                // Closing here would normally trigger an auto-install, which would relaunch
-                // the app out from under the window the user just asked for. That is handled
-                // in `popoverDidClose` by looking at whether this window came up — see there.
                 guard let self else { return }
                 self.popover.performClose(nil)
                 self.present(self.settingsWindow)
-            },
-            onOpenDeviceTest: { [weak self] in
-                // Closed first for the same reasons as Settings above.
-                guard let self else { return }
-                self.popover.performClose(nil)
-                self.present(self.deviceTestWindow)
             }))
         hosting.sizingOptions = [.preferredContentSize] // popover auto-fits the SwiftUI content
         popover.contentViewController = hosting
@@ -267,112 +223,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, UNU
                 self.controller.setOnboardMappings(self.remapper.mappings, deviceKey: self.remapper.activeDeviceKey)
             }
             .store(in: &cancellables)
-
-        // Update check: straight away on launch, then whenever the last answer is more than
-        // `UpdateChecker.checkInterval` old. See `startUpdateTriggers()` for what asks.
-        updateChecker.$latestVersion
-            // A check republishes the same version every day; without this the auto-install
-            // gate would be re-evaluated on each one.
-            .removeDuplicates()
-            .receive(on: RunLoop.main)
-            .sink { [weak self] version in
-                self?.setUpdateBadge(visible: version != nil)
-                // The published value, not a re-read of the property: `@Published` emits in
-                // `willSet`, so the object still holds the old version at this point. The
-                // `.receive(on:)` above happens to defer past that today, but the gate must
-                // not depend on an operator that looks removable.
-                self?.autoInstallIfEnabled(available: version)
-            }
-            .store(in: &cancellables)
-        // Before the check, and synchronously: this compares the running version against the
-        // last one recorded and then records the new one, so it has to happen exactly once per
-        // launch and before anything else can write that key.
-        updateChecker.loadInstalledVersionState()
-        // First launch on a new version: say the update worked, with what it brought. Only
-        // takes focus when the user asked for the install; an automatic one finishes while
-        // they are doing something else.
-        if updateChecker.justUpdatedTo != nil {
-            updatedWindow.show(activating: !updateChecker.autoInstallEnabled)
-        }
-        startUsageStats()
-        // A crash since the last launch, offered once. Looked for again a little later
-        // because the crash most likely to be waiting is the one in the instance that just
-        // handed over to this one, during a relaunch: macOS writes its report a few seconds
-        // after this instance has already started.
-        crashReportWindow.offerNewCrash()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 30) { [weak self] in
-            self?.crashReportWindow.offerNewCrash()
-        }
-        // Unthrottled: a launch is rare, and it is when someone who just installed or reopened
-        // the app most expects it to know about the latest release.
-        Task { await updateChecker.checkForUpdatesNow() }
-        startUpdateTriggers()
-    }
-
-    /// Everything that asks "is a check due?" after launch. Each only asks: the throttle in
-    /// `UpdateChecker` decides, and a check already running is shared rather than repeated.
-    private func startUpdateTriggers() {
-        // A tick much shorter than the interval, not a timer set to it. A timer of exactly
-        // three hours fires a moment before the throttle opens, because the check it follows
-        // finished a little after it started, and so waited a whole extra period each time.
-        // A timer also stops counting while the Mac sleeps.
-        let timer = Timer(timeInterval: 15 * 60, repeats: true) { [weak self] _ in
-            Task { await self?.updateChecker.checkForUpdatesIfDue() }
-        }
-        timer.tolerance = 60
-        RunLoop.main.add(timer, forMode: .common)
-        updateTimer = timer
-
-        // A Mac that slept past the interval asks the moment it wakes, rather than whenever
-        // the tick above next comes round.
-        updateWakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
-            forName: NSWorkspace.didWakeNotification, object: nil, queue: .main
-        ) { [weak self] _ in
-            MainActor.assumeIsolated {
-                guard let self else { return }
-                Task { await self.updateChecker.checkForUpdatesIfDue() }
-            }
-        }
-
-        // The network is often not back yet at wake, and a failed check is not recorded, so
-        // it stays due. Ask again as soon as a connection appears. The first report is the
-        // state at start, not a change, and is only remembered.
-        let pathMonitor = NWPathMonitor()
-        pathMonitor.pathUpdateHandler = { [weak self] path in
-            let online = path.status == .satisfied
-            MainActor.assumeIsolated {
-                guard let self else { return }
-                defer { self.wasOnline = online }
-                guard self.wasOnline == false, online else { return }
-                Task { await self.updateChecker.checkForUpdatesIfDue() }
-            }
-        }
-        pathMonitor.start(queue: .main)
-        updatePathMonitor = pathMonitor
-    }
-
-    /// Small red dot over the status-item icon when an update is available. A subview rather
-    /// than baking it into the icon image — the icon is a template image that macOS recolors
-    /// automatically for light/dark menu bars, and a baked-in dot would lose its red color to
-    /// that same recoloring.
-    private func setUpdateBadge(visible: Bool) {
-        guard let button = statusItem.button else { return }
-        guard visible else {
-            updateBadgeView?.removeFromSuperview()
-            updateBadgeView = nil
-            return
-        }
-        guard updateBadgeView == nil else { return }
-        let dotSize: CGFloat = 6
-        let dot = NSView(frame: NSRect(
-            x: button.bounds.width - dotSize, y: button.bounds.height - dotSize,
-            width: dotSize, height: dotSize))
-        dot.wantsLayer = true
-        dot.layer?.backgroundColor = NSColor.systemRed.cgColor
-        dot.layer?.cornerRadius = dotSize / 2
-        dot.autoresizingMask = [.minXMargin, .minYMargin]
-        button.addSubview(dot)
-        updateBadgeView = dot
     }
 
     // MARK: - Click handling
@@ -415,9 +265,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, UNU
             NSApp.activate(ignoringOtherApps: true)
             popover.contentViewController?.view.window?.makeKey()
             controller.refreshAll()
-            // Someone looking at the popover is the person an update card is for. Throttled,
-            // so opening it often costs nothing.
-            Task { await updateChecker.checkForUpdatesIfDue() }
         }
     }
 
@@ -457,17 +304,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, UNU
         configure.isEnabled = controller.connected // remapping is for a connected mouse
         menu.addItem(configure)
 
-        // Every connected mouse gets it: on an unverified one it gathers what's needed to
-        // support it, on a verified one it confirms it still works. Enabled whenever a Razer
-        // device is plugged in rather than only once connected, so someone missing Input
-        // Monitoring can still reach the screen that asks for it.
-        let verified = controller.connected && controller.deviceSupported
-        let test = NSMenuItem(title: verified ? "Test This Mouse…" : "Help Support This Mouse…",
-                              action: #selector(openDeviceTest), keyEquivalent: "")
-        test.target = self
-        test.isEnabled = controller.connected || DeviceTestModel.razerMousePresent
-        menu.addItem(test)
-
         let setup = NSMenuItem(title: "Setup & Permissions…", action: #selector(openPermissions), keyEquivalent: "")
         setup.target = self
         menu.addItem(setup)
@@ -475,12 +311,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, UNU
         let settings = NSMenuItem(title: "Settings…", action: #selector(openSettings), keyEquivalent: ",")
         settings.target = self
         menu.addItem(settings)
-
-        // The background check runs every few hours; this is the way to ask for one now, and it
-        // also un-dismisses a version the user waved away earlier.
-        let update = NSMenuItem(title: "Check for Updates…", action: #selector(checkForUpdates), keyEquivalent: "")
-        update.target = self
-        menu.addItem(update)
 
         menu.addItem(.separator())
 
@@ -509,14 +339,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, UNU
     }
 
     @objc private func refreshNow() { controller.refreshAll() }
-    @objc private func checkForUpdates() {
-        Task {
-            await updateChecker.checkForUpdatesNow(userRequested: true)
-            // Open the popover either way: with an update it shows the card, without one it
-            // shows the version in the footer — both answer "am I up to date?".
-            if !popover.isShown { togglePopover() }
-        }
-    }
     @objc private func openRemap() { present(remapWindow) }
     @objc private func openSettings() { present(settingsWindow) }
     @objc private func openAbout() { present(aboutWindow) }
@@ -528,83 +350,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, UNU
         window.show()
     }
 
-    /// Whether the user is currently looking at one of the app's windows.
-    ///
-    /// Touching the lazy controllers here builds the controllers but not their windows — each
-    /// initializer only stores a few references, and the `NSWindow` is still created on the
-    /// first `show()`. So the laziness that matters is intact.
-    private var isShowingAWindow: Bool {
-        // The device test in particular: an install ends in a relaunch, and that must never
-        // happen while a step has a test value on someone's mouse.
-        let windows: [AppWindowPresenter] = [remapWindow, permissionsWindow, aboutWindow, settingsWindow,
-                                             updatedWindow, deviceTestWindow, crashReportWindow,
-                                             usageStatsWindow]
-        return windows.contains { $0.isVisible }
-    }
-
-    // MARK: - Usage stats
-
-    /// Feeds the connected mouse to `UsageStats`, sends whatever is due, and asks once if
-    /// nobody has been asked yet. Nothing goes anywhere without a yes; see `UsageStats`.
-    private func startUsageStats() {
-        // Debounced: the controller publishes a new mouse's fields one at a time, and the
-        // ping should see them all.
-        Publishers.CombineLatest4(controller.$connected, controller.$deviceID,
-                                  controller.$deviceName, controller.$deviceIsBluetooth)
-            .combineLatest(controller.$deviceSupported)
-            .debounce(for: .seconds(2), scheduler: RunLoop.main)
-            .sink { [weak self] device, supported in
-                let (connected, pid, name, bluetooth) = device
-                let mice = connected ? pid.map {
-                    [UsageStatsPolicy.mouse(pid: $0, productName: name, isBluetooth: bluetooth, supported: supported)]
-                } ?? [] : []
-                self?.usageStats.setConnectedMice(mice)
-            }
-            .store(in: &cancellables)
-        // A mouse usually connects within a few seconds of launch and goes with the first
-        // ping. Without one, the ping goes anyway after this, and the mouse follows later.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 15) { [weak self] in
-            guard let self else { return }
-            Task { await self.usageStats.sendIfDue() }
-        }
-        // Someone who just updated is asked in the Updated window instead. A `swift run`
-        // build has no version and would never send, so it doesn't ask either.
-        if usageStats.consent == .undecided, updateChecker.justUpdatedTo == nil, AppInfo.version != nil {
-            askAboutUsageStats()
-        }
-    }
-
-    /// The consent window, once nothing else is in the way: not over the setup window, the
-    /// device test, a crash report or the popover. A new install opens onto the setup window,
-    /// and stats are the last thing anyone wants to be asked before the app even works.
-    private func askAboutUsageStats() {
-        let timer = Timer(timeInterval: 3, repeats: true) { [weak self] _ in
-            MainActor.assumeIsolated { self?.askAboutUsageStatsIfClear() }
-        }
-        // Not straight away even when clear: the menu bar item has only just appeared.
-        timer.fireDate = Date().addingTimeInterval(5)
-        RunLoop.main.add(timer, forMode: .common)
-        usageStatsAskTimer = timer
-    }
-
-    private func askAboutUsageStatsIfClear() {
-        guard usageStats.consent == .undecided else { return stopAskingAboutUsageStats() }
-        guard !isShowingAWindow, !popover.isShown, !appMenuOpen else { return }
-        stopAskingAboutUsageStats()
-        usageStatsWindow.show(activating: false)
-    }
-
-    private func stopAskingAboutUsageStats() {
-        usageStatsAskTimer?.invalidate()
-        usageStatsAskTimer = nil
-    }
-
-    /// Turning the setting on with an update already found is the one moment a user is
-    /// watching for it to act, and neither of the other triggers fires then: `latestVersion`
-    /// hasn't changed (so the deduplicated sink stays quiet) and the popover was never open.
-    private func autoInstallSettingChanged() { autoInstallIfEnabled() }
     @objc private func openPermissions() { present(permissionsWindow) }
-    @objc private func openDeviceTest() { present(deviceTestWindow) }
     @objc private func quit() { NSApplication.shared.terminate(nil) }
 
     // MARK: - Appearance
@@ -633,21 +379,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, UNU
     func popoverDidShow(_ notification: Notification) { controller.setPopoverVisible(true) }
     func popoverDidClose(_ notification: Notification) {
         controller.setPopoverVisible(false)
-        // An update found while the popover was open was deliberately left alone; now that
-        // it's closed, the restart is no longer disruptive — unless the close was on the way
-        // to opening Settings, in which case relaunching would take that window with it.
-        //
-        // Deferred a turn so the answer is a fact rather than a race. Two earlier attempts
-        // used a flag set around `performClose`, which only worked if AppKit delivered this
-        // callback at a particular moment it never promised to. By the next runloop turn the
-        // settings window has either come up or it hasn't, and `autoInstallIfEnabled` reads
-        // that directly.
-        DispatchQueue.main.async { [weak self] in
-            self?.autoInstallIfEnabled()
-            // Same reasoning decides focus: by now the window the close was for has come up,
-            // or it has not.
-            self?.returnFocusAfterPopover()
-        }
+        // Deferred a turn so the answer is a fact rather than a race: by the next runloop turn
+        // the window the close was for has come up, or it has not.
+        DispatchQueue.main.async { [weak self] in self?.returnFocusAfterPopover() }
     }
 
     // MARK: - Popover focus
@@ -682,40 +416,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, UNU
         }
     }
 
-    // MARK: - Automatic updates
-
-    /// Silent install, when the user has switched it on. Deliberately never while the popover
-    /// is open: the install ends in a relaunch, and pulling the window out from under someone
-    /// mid-click is worse than waiting for the next opportunity. A failure falls through to
-    /// the ordinary update card, so a broken auto-install can't quietly strand anyone on an
-    /// old version.
-    private func autoInstallIfEnabled(available: String? = nil) {
-        let conditions = AutoInstallPolicy.Conditions(
-            availableVersion: available ?? updateChecker.latestVersion,
-            enabled: updateChecker.autoInstallEnabled,
-            canInstallInPlace: updateChecker.canInstallInPlace,
-            busy: updateChecker.isBusy,
-            // No surface may be yanked away mid-use: the popover for the reason above, and
-            // any window the app has open, because an install ends in a relaunch. Asked of
-            // every window rather than a named one — enumerating them here is what left the
-            // About window exposed the moment it was added.
-            popoverVisible: popover.isShown || isShowingAWindow)
-        // The policy returns the version it approved rather than a Bool: it records the
-        // attempt as part of deciding, so a caller that had to re-unwrap afterwards could
-        // silently drop a version already marked as spent.
-        guard let version = autoInstallPolicy.versionToInstall(conditions) else { return }
-        Task { [weak self] in
-            guard let self else { return }
-            await self.updateChecker.downloadAndInstall()
-            // A dropped connection must not cost the user automatic updates until they next
-            // relaunch — this app starts at login and can run for weeks.
-            if let error = self.updateChecker.lastInstallError,
-               !self.autoInstallPolicy.isPermanent(error) {
-                self.autoInstallPolicy.retryLater(version)
-            }
-        }
-    }
-
     // MARK: - Foreground
 
     /// Re-check permissions when the app returns to the foreground — e.g. the user just toggled
@@ -735,20 +435,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, UNU
         appBeforePopover = nil
     }
 
-    /// A device test step may have the mouse dark, red, or at a test DPI, and puts it back when
-    /// it finishes, a few seconds at most. Quitting first would leave it that way: the history
-    /// flush below only waits two seconds for the device queue, less than the lighting step.
-    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        let model = deviceTestWindow.model
-        guard model.running else { return .terminateNow }
-        model.whenIdle { NSApp.reply(toApplicationShouldTerminate: true) }
-        return .terminateLater
-    }
-
     func applicationWillTerminate(_ notification: Notification) {
         monitor?.invalidate()
-        updateTimer?.invalidate()
-        updatePathMonitor?.cancel()
         controller.flushHistoryToDisk()
     }
 

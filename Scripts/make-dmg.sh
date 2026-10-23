@@ -7,11 +7,9 @@
 #                                     # --adhoc`): for a DMG others download, so it never
 #                                     # carries this Mac's Apple Development certificate
 #
-# Both files have identical contents. "MacRazer.dmg" is the canonical name everything downloads
-# by: the website and README/CONTRIBUTING through GitHub's /releases/latest/download/<name>
-# shortcut, and the in-app updater from /releases/download/v<version>/<name>, the exact release
-# it announced. Both only work if the filename is the same on every release, so it must keep
-# this exact name. The versioned copy
+# Both files have identical contents. "MacRazer.dmg" is the canonical name links download by,
+# through GitHub's /releases/latest/download/<name> shortcut, which only works if the filename
+# is the same on every release, so it must keep this exact name. The versioned copy
 # is just so the filename is self-describing for anyone browsing the Releases page directly;
 # attach both as separate assets on the GitHub release.
 #

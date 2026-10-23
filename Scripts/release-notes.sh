@@ -5,9 +5,8 @@
 #   ./Scripts/release-notes.sh 0.3.0 --since v0.2.1   # redo a past one
 #
 # The release body and CHANGELOG.md are different documents for different readers, and the
-# body is the one the app shows: `UpdateChecker` fetches it and the popover's "What's new"
-# page is built from it. So a release published with no body makes that page quietly not
-# appear, and a release that forgets a contributor forgets them in the place users read.
+# body is the one users read, on the Releases page. A release that forgets a contributor
+# forgets them in the place users look.
 #
 # This drafts the parts that are mechanical and easy to forget — every changelog entry in the
 # release, everyone whose PR is in it, the install note, the changelog link — and leaves the
@@ -57,10 +56,9 @@ if [ -n "${CHECK}" ]; then
     # nothing but a heading starts a line with a hash anyway.
     SUMMARY="$(awk '/^#/{exit} {print}' "${CHECK}" | tr -d '[:space:]')"
     [ -n "${SUMMARY}" ] \
-        || fail "${CHECK} has nothing above its first heading, so the app would show no summary"
-    # Em dashes read as machine-written, and this text is published three times over: the
-    # releases page, the site, and the app's own What's New. A full stop or a colon almost
-    # always says the same thing.
+        || fail "${CHECK} has nothing above its first heading, so it has no summary"
+    # Em dashes read as machine-written, and this text is published on the Releases page. A
+    # full stop or a colon almost always says the same thing.
     if grep -n '—' "${CHECK}" >&2; then
         fail "${CHECK} has em dashes on the lines above. Use a full stop, a colon or a comma."
     fi
@@ -175,8 +173,8 @@ done | sort -u)"
 # --- The draft -------------------------------------------------------------------------------
 
 cat <<EOF
-TODO: one line saying what this release is about. The app shows everything above the first
-heading as the summary. The entries below are verbatim from the changelog, which is written
+TODO: one line saying what this release is about. Everything above the first heading is the
+summary. The entries below are verbatim from the changelog, which is written
 for contributors: tighten them for users, expect to cut most of it, and delete these lines.
 EOF
 

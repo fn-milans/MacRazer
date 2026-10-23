@@ -18,9 +18,7 @@ protocol DeviceProbeChannel {
 extension HIDDevice: DeviceProbeChannel {}
 
 /// The device side of the diagnostics. The CLI probes (`battery`, `dpi`, `stages`, `poll`,
-/// `brightness`, `rgb`) run on these, and the in-app device test will too, so what a
-/// contributor pastes from a terminal and what the app reports can never describe different
-/// commands.
+/// `brightness`, `rgb`) run on these.
 ///
 /// Each probe returns what it sent and what came back, raw response included, and leaves the
 /// wording to the caller. Arguments are trusted: checking a polling rate or a stage list
@@ -76,18 +74,6 @@ enum DeviceProbe {
         ("LOGO", Razer.logoLed), ("SCROLL", Razer.scrollLed),
         ("ZERO", Razer.zeroLed), ("BACKLIGHT", Razer.backlightLed),
     ]
-
-    /// One HID interface a device exposes, as the device test reports it. No location or
-    /// serial: nothing here identifies a particular unit or Mac.
-    struct Interface: Codable, Equatable {
-        let productID: Int
-        let product: String
-        let usagePage: Int
-        let usage: Int
-        let maxFeatureReportSize: Int
-        let maxInputReportSize: Int
-        let transport: String
-    }
 
     // MARK: - Identity
 
@@ -178,7 +164,7 @@ enum DeviceProbe {
     }
 
     /// Sends a lighting effect. There is no read-back: the protocol has no command for asking
-    /// which effect is showing, which is why the device test asks the person looking at it.
+    /// which effect is showing; only the person looking at the mouse can say.
     static func applyLighting(_ channel: DeviceProbeChannel, _ report: RazerReport) throws -> RazerReport {
         try channel.sendWithRetry(report, attempts: attempts)
     }

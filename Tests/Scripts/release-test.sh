@@ -82,8 +82,7 @@ check "a missing [Unreleased] is an error, not a silent no-op" "1" "$?"
 
 echo "Comparing versions"
 
-# Sourced rather than reimplemented — a copy here could drift from the script exactly as the
-# script could drift from VersionCompare.
+# Sourced rather than reimplemented — a copy here could drift from the script.
 eval "$(awk '/^version_gt\(\)/,/^}/' "${RELEASE}")"
 newer() { version_gt "$1" "$2" && echo yes || echo no; }
 
@@ -94,7 +93,7 @@ check "1.0.0 > 0.9.9"      "yes" "$(newer 1.0.0 0.9.9)"
 check "0.2.1 == 0.2.1"     "no"  "$(newer 0.2.1 0.2.1)"
 check "0.2.0 < 0.2.1"      "no"  "$(newer 0.2.0 0.2.1)"
 check "0.2.9 < 0.2.10"     "no"  "$(newer 0.2.9 0.2.10)"
-check "0.2 == 0.2.0"       "no"  "$(newer 0.2 0.2.0)"      # trailing zero, same as VersionCompare
+check "0.2 == 0.2.0"       "no"  "$(newer 0.2 0.2.0)"      # trailing zero
 check "0.3 > 0.2.9"        "yes" "$(newer 0.3 0.2.9)"
 check "0.2.08 > 0.2.7"     "yes" "$(newer 0.2.08 0.2.7)"   # leading zero isn't octal
 

@@ -7,8 +7,8 @@
 #
 # - A push to master, or Run workflow, puts the DMG on a rolling prerelease, "Latest build"
 #   (tag `latest-build`), whose assets are replaced each time, so its download link stays
-#   the same. The in-app updater offers neither prereleases nor drafts (`ReleaseSpan`), so
-#   this never reaches anyone through an update; releases stay `Scripts/release.sh`'s.
+#   the same. As a prerelease it is never shown as the latest release; releases stay
+#   `Scripts/release.sh`'s.
 # - A pull request builds the DMG and attaches it to the run, for testing; nothing is published.
 name: DMG
 

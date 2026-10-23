@@ -14,35 +14,16 @@ struct AboutView: View {
     /// and does nothing, with no compiler error.
     var onDone: () -> Void
 
-    /// Notes for the version this is the About box of, when the app has them. The popover's
-    /// "Updated to …" card is shown once and then dismissed; this is where they stay
-    /// findable afterwards, next to the version number they belong to.
-    var notes: [VersionedNotes] = []
-
-    @State private var showingNotes = false
-
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             header
             unofficialSection
             openRazerSection
             licenseSection
-            hiveshipSection
             footer
         }
         .padding(22)
         .frame(width: 460)
-        // Content that cannot be empty, rather than an `if let` inside the builder: the row
-        // that sets `showingNotes` is gated on the same notes, but the two gates sit far apart
-        // and a sheet with an empty body is a blank panel with no way out but Escape.
-        .sheet(isPresented: $showingNotes) {
-            WhatsNewPage(version: AppInfo.displayVersion,
-                         releases: notes,
-                         canInstallInPlace: false,
-                         onBack: { showingNotes = false },
-                         onUpdate: nil) // already running it
-                .frame(width: 380, height: 460)
-        }
     }
 
     // MARK: Header
@@ -61,13 +42,13 @@ struct AboutView: View {
                 Text("MacRazer").font(.system(size: 22, weight: .semibold))
                 Text("Version \(AppInfo.displayVersion) (build \(AppInfo.displayBuild))")
                     .font(.system(size: 12)).foregroundStyle(.secondary).monospacedDigit()
+                // The credit for the project this was forked from.
                 HStack(spacing: 4) {
-                    Text("by").font(.system(size: 12)).foregroundStyle(.secondary)
-                    Link("SorcRR", destination: ProjectLinks.developer)
+                    Text("A fork of").font(.system(size: 12)).foregroundStyle(.secondary)
+                    Link("MacRazer by SorcRR", destination: ProjectLinks.original)
                         .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(Color.razerGreenText)
                 }
-                whatsNewRow
             }
             Spacer(minLength: 0)
         }
@@ -117,52 +98,6 @@ struct AboutView: View {
         }
     }
 
-    // MARK: What's new
-
-    /// Sits under the version because that is the question it answers. Shown only when the
-    /// app actually has the notes for the version running — a row that opened an empty page
-    /// would be worse than no row.
-    @ViewBuilder
-    private var whatsNewRow: some View {
-        if !notes.isEmpty {
-            Button { showingNotes = true } label: {
-                HStack(spacing: 4) {
-                    Text("What's new in \(AppInfo.displayVersion)")
-                    Image(systemName: "chevron.right").font(.system(size: 8, weight: .semibold))
-                }
-                .font(.system(size: 11.5, weight: .medium))
-                .foregroundStyle(Color.razerGreenText)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-        }
-    }
-
-    // MARK: For developers
-
-    /// The one piece of this window that is not about MacRazer.
-    ///
-    /// It describes what Hiveship is and stops there. It does not say MacRazer's own work is
-    /// planned or tracked in it — that board is not public, so a reader who clicked on the
-    /// strength of "tracked here" would land on a signup page instead of the thing they were
-    /// promised. Saying what the product does and offering a button asks for the same click
-    /// without setting up that gap.
-    ///
-    /// In About rather than the popover: the popover is opened daily to read a battery
-    /// percentage, and nothing permanent there stays subtle past the third time you see it.
-    private var hiveshipSection: some View {
-        titledSection("For developers") {
-            sectionNote("MacRazer was built with Hiveship. It's an issue tracker for planning "
-                        + "work, tracking bugs, and handing issues to coding agents as well as "
-                        + "the people on your team.")
-            Link(destination: ElsewhereLinks.hiveship) {
-                Label("Go to Hiveship", systemImage: "arrow.up.right")
-            }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
-        }
-    }
-
     // MARK: Footer
 
     /// Issues rather than an email address: reports land somewhere they can be tracked, and
@@ -173,11 +108,6 @@ struct AboutView: View {
                 Label("Report an Issue", systemImage: "exclamationmark.bubble")
             }
             .buttonStyle(.bordered)
-            Link(destination: ProjectLinks.tip) {
-                Label("Leave a Tip", systemImage: "heart")
-            }
-            .buttonStyle(.bordered)
-            .tint(.razerGreenText)
             Spacer(minLength: 0)
             Button("Done") { onDone() }
                 .keyboardShortcut(.defaultAction)

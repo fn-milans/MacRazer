@@ -35,16 +35,8 @@ expect rough edges until 1.0.
   With no mouse plugged in, the popover shows one card explaining how to connect and a
   "Look Again" button, instead of a column of greyed-out controls for a mouse that isn't there.
 
-- **Updates are found within hours, not a day.** The app used to ask GitHub once a day. Now
- it asks every time it starts, and again whenever its last answer is more than three hours
- old. A Mac that slept longer than that asks as soon as it wakes. If the network isn't back
- yet, it asks again the moment a connection appears, instead of waiting for the next
- round. Opening the popover also asks, if a check is due.
-
 - **The CLI probes run on shared code.** `battery`, `dpi`, `stages`, `poll`, `brightness` and
- `rgb` now go through `DeviceProbe`, which the coming in-app device test will use too, so what
- a contributor pastes from a terminal and what the app reports can't describe different
- commands. The output is unchanged: each command was run against a Cobra HyperSpeed before and
+ `rgb` now go through `DeviceProbe`. The output is unchanged: each command was run against a Cobra HyperSpeed before and
  after, including writing DPI, polling rate and brightness back to their current values, and
  printed the same lines. `DeviceProbeTests` cover what each probe sends, in what order, and how
  it reads the answers, using a fake mouse instead of hardware.
@@ -86,14 +78,6 @@ expect rough edges until 1.0.
 - **Runs on Intel Macs.** The app is now a universal build, native on both Apple Silicon and
  Intel. It still needs macOS 14 or later.
 
-- **Optional usage stats, off until you say yes.** MacRazer asks once whether you'd like to
-  share your mouse model, the app and macOS versions, and a scrambled ID so each Mac counts
-  once. New installs get a small window after setup. If you're updating, it's a card in the
-  Updated window. Say no, or just close it, and it never asks again. Nothing is sent before
-  you agree. It tells me which mice people use, so I know what to support next.
-  Settings › Privacy turns it off, shows the exact data that's sent, and has Delete My Data.
-  That removes your Mac's ID from the server straight away. The anonymous counts stay.
-
 - **Settings › Appearance.** Choose the theme for the popover and the app's windows: System
   (the default), Dark, Light or Razer Green, a dark look with a faint green tint. The popover
   also gets a thin green edge. Turn off "Glass effect"
@@ -126,33 +110,16 @@ expect rough edges until 1.0.
 - **The connect and disconnect sounds can be turned off.** Settings → General → Connection
  sounds. Contributed by [@ungrav](https://github.com/ungrav) in #43.
 
-- **Test your mouse from the app.** Right-click the menu bar icon and choose "Help Support
- This Mouse…". A mouse that's already verified shows "Test This Mouse…" instead. The test
- takes a couple of minutes. It finds which transaction ids the mouse answers to, reads the
- battery and firmware, and changes DPI, polling rate and lighting for a moment. It also
- listens for the side buttons. Everything it changes goes back before the next step, and
- quitting waits for a step to finish. Every step can be skipped. At the end, **Send** emails
- the report to the maintainer, with an optional comment, a name to credit, and an address for a
- reply. You can also copy it or open a GitHub issue with it, which leave the address out. If
- your mouse is already fully supported, a sent report confirms it on your firmware. The
- report never includes the mouse's serial number. The test needs the dongle or a cable,
- even on a mouse that also works over Bluetooth. If Input Monitoring isn't granted yet, the
- test asks for it first. A mouse the app doesn't know yet also gets a "Help test it" link in
- the popover.
 
-- **A small Cloudflare Worker receives sent reports** (`worker/`). It checks each report
- against the app's exact format, emails it, and keeps nothing but daily counters. It caps
- reports at 3 a minute and 10 a day per sender, and 200 a day in total. The address reports
- go to lives in a local config file that git ignores, so it never reaches the public repo.
-
-- **Two new CLI commands for contributors.** `discover` shows which transaction ids a mouse
- answers to, and `devicetest` runs the whole test without the window and prints the report.
-
-- **A window confirms an update worked.** After "Update & Restart", the first launch on the
- new version opens a window saying it updated successfully, with the release notes for
- everything you gained. Closing it clears the "Updated to …" card in the popover too, so the
- news isn't repeated. After an automatic install it comes to the front without taking your
- keyboard focus.
+### Removed
+- **MacRazer no longer sends anything anywhere.** This fork is detached from the original
+  project, and it drops everything that reached the network on its own. The updater is gone:
+  no update checks, no update card, no "Update & Restart" and no "What's new" page. New
+  versions are on the [Releases page](https://github.com/fn-milans/MacRazer/releases), and the
+  version in the popover footer links there. The usage stats, the device test with its Send
+  button, the crash report window and the Cloudflare Worker behind them are gone too, as are
+  the `discover` and `devicetest` commands and the project website. The About window credits
+  the original MacRazer by SorcRR.
 
 ### Fixed
 - **The add-profile plus button works anywhere in its circle.** Only the plus sign itself took

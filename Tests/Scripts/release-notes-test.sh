@@ -192,7 +192,7 @@ check "--check refuses the placeholder" "1" \
 check "--check accepts an edited draft" "0" \
     "$( "${DRAFT}" --check "${TMP}/edited.md" >/dev/null 2>&1; echo $? )"
 
-# No summary at all is the other way to lose it: the app shows nothing above the first heading.
+# No summary at all is the other way to lose it: nothing above the first heading.
 echo "${OUT}" | tail -n +4 > "${TMP}/nosummary.md"
 check "--check refuses a draft with no summary" "1" \
     "$( "${DRAFT}" --check "${TMP}/nosummary.md" >/dev/null 2>&1; echo $? )"

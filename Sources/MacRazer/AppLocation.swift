@@ -3,12 +3,10 @@
 
 import Foundation
 
-/// Where the running app bundle lives — the one fact "start at login" and the in-place
-/// updater both have to agree on before they act.
+/// Where the running app bundle lives — the fact "start at login" depends on.
 ///
-/// Each feature writes down (or overwrites) a path that must still mean "MacRazer" later:
-/// after a reboot for the login item, after the swap for the updater. What breaks that
-/// promise:
+/// A login item writes down a path that must still mean "MacRazer" after a reboot. What
+/// breaks that promise:
 ///
 /// - **app translocation** (`…/AppTranslocation/…`) — Gatekeeper's randomized read-only copy
 ///   of a still-quarantined app, discarded when it quits;
@@ -51,10 +49,9 @@ enum AppLocation {
         return url
     }
 
-    /// A read-only volume can't hold an install we could update, and a login item pointing
-    /// into one is pointing at something ejectable. An unreadable resource value is treated as
-    /// writable: failing open keeps a working install working, and the updater checks
-    /// writability again for itself before it touches anything.
+    /// A login item pointing into a read-only volume is pointing at something ejectable. An
+    /// unreadable resource value is treated as writable: failing open keeps a working install
+    /// working.
     private static func isOnReadOnlyVolume(_ url: URL) -> Bool {
         (try? url.resourceValues(forKeys: [.volumeIsReadOnlyKey]))?.volumeIsReadOnly ?? false
     }

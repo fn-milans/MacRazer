@@ -6,7 +6,7 @@
 /// A mouse that remembers the last value written to each setting and answers reads with
 /// it, since the protocol's set and get layouts mirror each other. `refuse` makes chosen
 /// commands answer FAILURE, and `clamp` lets a write land as something else.
-final class FakeMouse: TransactionChannel {
+final class FakeMouse: DeviceProbeChannel {
     enum Call: Equatable {
         case once(UInt8, UInt8)
         case retried(UInt8, UInt8, attempts: Int)
