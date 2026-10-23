@@ -7,13 +7,13 @@ app talks to the mouse directly over USB HID. Four models have been verified on 
 hardware: the Razer Cobra HyperSpeed (the development mouse), the Razer Atheris, the Razer
 Basilisk V3 X HyperSpeed and the Razer Viper Ultimate. By design it detects and tries to
 control any Razer mouse in the same protocol family; the registry carries twelve product ids,
-and README's table says which of them anyone has actually run the probes against.
+and the table in CONTRIBUTING.md says which of them anyone has actually run the probes against.
 
 This document explains how the app is built and how every feature works, so a future Claude
 session or a human can pick it up cold. See also:
 - [`BRIEF.md`](BRIEF.md), the original research/planning brief and device facts.
 - [`../CHANGELOG.md`](../CHANGELOG.md), feature list / history.
-- [`../README.md`](../README.md), quick status + build commands.
+- [`../README.md`](../README.md), what the app does and how to install it.
 
 ---
 

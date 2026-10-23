@@ -79,14 +79,31 @@ first heading — either one would end up as the release's first paragraph.
 
 ## The most valuable contribution: device profiles
 Detection and naming already work for **any** Razer mouse, via the USB product string. What
-has to be verified per model is the **control protocol**. Four models have been checked on
-real hardware so far; README's table says which, and what was run on each.
+has to be verified per model is the **control protocol**. The table below says which models
+have been checked on real hardware, and what was run on each.
+
+"Verified" means someone ran the probes against the mouse and posted the output, not that the
+protocol tables say it should work.
+
+| Mouse | Verified on hardware | By |
+|---|---|---|
+| Razer Cobra HyperSpeed (wired + wireless) | Everything, continuously — the development mouse | maintainer |
+| Razer Atheris | Battery, DPI, polling | maintainer |
+| Razer Basilisk V3 X HyperSpeed | Battery, DPI, DPI stages, polling, lighting, brightness | [@joelday](https://github.com/joelday) |
+| Razer Basilisk V4 Pro (wired, wireless + Bluetooth) | Battery, DPI, DPI stages, polling up to 8000 Hz, lighting per zone, brightness, sleep timer, low-battery level, wheel mode, Smart-Reel and its sensitivity, scroll acceleration, onboard profiles and button remaps. Over Bluetooth everything but polling and the wheel settings | contributor |
+| Razer Viper Ultimate (Wireless) | Battery, DPI, polling, brightness | [@raphaelchenouard](https://github.com/raphaelchenouard) |
+| Razer Orochi 2013 | DPI only | [@raphaelchenouard](https://github.com/raphaelchenouard) |
+| Razer Basilisk V3 | Nothing; reported working by a user | — |
+| Razer Cobra, Cobra Pro (wired + wireless) | Nothing; same protocol family, values from OpenRazer | — |
+| Razer Basilisk X HyperSpeed | Nothing; values from OpenRazer | — |
+| Razer Viper Ultimate (Wired) | Nothing; its wireless sibling is verified | — |
+| Any other Razer mouse | Nothing; detected and named, controls attempted | — |
 
 ### 1. Run the probes and paste the output
 
 Run the probes and open an issue with the output. Paste the output, not a summary of it. The raw text is
 what lets a reviewer see the status bytes and the read-backs, and it is what earns a row in
-the README table.
+the table above.
 
 ```sh
 swift run serpentine-cli info              # confirms detection and the PID it enumerates as

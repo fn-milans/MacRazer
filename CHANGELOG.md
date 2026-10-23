@@ -77,6 +77,10 @@ expect rough edges until 1.0.
  printed the same lines. `DeviceProbeTests` cover what each probe sends, in what order, and how
  it reads the answers, using a fake mouse instead of hardware.
 
+- **A shorter README.** It now says what Serpentine does, how to install it, the permissions
+  it asks for and a few things worth knowing, and nothing else. The verified-mice table moved
+  to CONTRIBUTING.md. Screenshots, build steps and the CLI probes are no longer in the README.
+
 ### Added
 - **Razer Basilisk V4 Pro, on the cable, the HyperSpeed dongle and Bluetooth.** Battery,
   charging, DPI up to 50000, DPI stages with Single and Stages modes, polling up to 8000 Hz,
