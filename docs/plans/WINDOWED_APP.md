@@ -10,6 +10,19 @@ Mockups and icon concepts: [`docs/design/window-design.html`](../design/window-d
 in [`docs/design/icons`](../design/icons). Structural work it depends on:
 [REFACTOR.md](REFACTOR.md), phases 1–4 and 6.
 
+## Status (2026-10-23)
+
+W1-W5 are done, one commit each: the window and its menus (W1), every pane (W2), background
+mode with the menu bar item and login launch (W3), the popover and `LSUIElement` removed (W4),
+and the Go menu, screenshots and docs (W5). Differences from the plan below:
+- The app stays AppKit-driven (`AppDelegate` owns an `NSWindow` hosting the SwiftUI view)
+  rather than a SwiftUI `App` with scenes: the dev commands in `main.swift` keep working, and
+  the activation-policy switching is direct.
+- The menu bar item is an `NSStatusItem` with an `NSMenu` (`MenuBarItem`), not `MenuBarExtra`:
+  it keeps the dynamic charging icon, which needed `NSStatusItem` anyway.
+- About stays a small window rather than the standard About panel, for its credits.
+- Not tried on a mouse yet, like the refactor.
+
 ## What runs where
 
 Every setting is one of two kinds, and the UI says which (`SettingResidency` in the refactor):

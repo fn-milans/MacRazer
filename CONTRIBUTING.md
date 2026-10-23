@@ -8,7 +8,7 @@ the HID protocol, and every feature.
 
 ## Build & run
 ```sh
-swift run Serpentine # menu bar app (uses your Terminal's permission grants)
+swift run Serpentine # the app (uses your Terminal's permission grants)
 swift run serpentine-cli battery # hardware diagnostics: battery / dpi / poll / stages / rgb / brightness / info
 swift test # unit tests (protocol codec, battery models, persistence — no hardware needed)
 SERPENTINE_SNAPSHOTS=/tmp/snaps swift test --filter SnapshotTests # every preview scene as a PNG

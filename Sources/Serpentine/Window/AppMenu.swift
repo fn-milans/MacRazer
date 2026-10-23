@@ -6,13 +6,15 @@ import AppKit
 /// The menu bar menus of a normal Mac app: Serpentine, Edit (text fields need it for copy
 /// and paste), View, Go (the panes, ⌘1 to ⌘8), Window and Help.
 @MainActor
-final class AppMenu: NSObject {
+final class AppMenu: NSObject, NSMenuItemValidation {
     struct Actions {
         var about: () -> Void
         var settings: () -> Void
         var showMainWindow: () -> Void
         var refresh: () -> Void
         var go: (PaneSection) -> Void
+        /// Whether the mouse has the pane; the Go menu greys out the others.
+        var isAvailable: (PaneSection) -> Bool
     }
 
     private let actions: Actions
@@ -127,6 +129,12 @@ final class AppMenu: NSObject {
         guard let raw = sender.representedObject as? String, let section = PaneSection(rawValue: raw) else { return }
         actions.go(section)
     }
+    func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        guard menuItem.action == #selector(go(_:)) else { return true }
+        guard let raw = menuItem.representedObject as? String, let section = PaneSection(rawValue: raw) else { return false }
+        return actions.isAvailable(section)
+    }
+
     @objc private func openRepo() { NSWorkspace.shared.open(ProjectLinks.repo) }
     @objc private func openIssues() { NSWorkspace.shared.open(ProjectLinks.issues) }
 }

@@ -150,9 +150,12 @@ case "render-window":
     if args.contains("offline") { controller.setPreviewOffline() }
     let remapper = ButtonRemapper()
     let navigation = WindowNavigation()
+    // Set up already, unless the setup banner is what's being looked at.
+    let previewPermissions = PermissionsModel()
+    if !args.contains("setup") { previewPermissions.loadPreviewState() }
     navigation.section = PaneSection.allCases.first { args.dropFirst().contains($0.rawValue) } ?? .overview
     let hosting = NSHostingController(rootView: MainWindowView(controller: controller, remapper: remapper,
-                                                               navigation: navigation, permissions: PermissionsModel(),
+                                                               navigation: navigation, permissions: previewPermissions,
                                                                background: BackgroundMode()))
     hosting.sceneBridgingOptions = [.title, .toolbars]
     let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 960, height: 640),

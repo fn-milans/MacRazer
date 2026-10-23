@@ -1,7 +1,8 @@
 # Serpentine: Documentation
 
-A native macOS menu bar app to control Razer mice: battery, DPI, polling rate, RGB lighting,
-brightness, and software button remapping. Razer's Synapse does not support macOS, so this
+A native macOS app to control Razer mice: battery, DPI, polling rate, RGB lighting,
+brightness, power, profiles and button remapping, written into the mouse wherever it can keep
+them. Razer's Synapse does not support macOS, so this
 app talks to the mouse directly over USB HID. Four models have been verified on real
 hardware: the Razer Cobra HyperSpeed (the development mouse), the Razer Atheris, the Razer
 Basilisk V3 X HyperSpeed and the Razer Viper Ultimate. By design it detects and tries to
@@ -32,11 +33,12 @@ Razer mouse  <-- HID feature reports (90-byte razer_report) -->  HIDDevice (IOKi
                                                                        |
                                                   MouseController (poll loop, battery, state)
                                                                        |
-                                                  SwiftUI popover / menu bar (NSStatusItem)
+                                                  SwiftUI window (+ menu bar item in background mode)
 ```
 
 The app is a SwiftPM **executable** (not an Xcode project). With **no arguments** it launches
-the menu bar app; with a subcommand it runs a CLI diagnostic (see §9).
+the app; with a subcommand it runs a development tool (render-*, icons). The hardware
+diagnostics are a separate executable, `serpentine-cli` (see §9).
 
 ---
 
@@ -154,7 +156,7 @@ on the Cobra HyperSpeed (Bluetooth PID `0x00DC`, vendor `0x068E`).
  DPI", so selecting a DPI rewrites the table with a new active stage, then reads it back.
 - `BLEProtocol` translates `RazerReport` requests and replies, so `MouseController` and the
  `RazerCommands` parsers are shared with USB. Commands without a BLE equivalent (polling
- rate, effects other than static) throw `notSupported`, and the popover hides them.
+ rate, effects other than static) throw `notSupported`, and the window hides them.
 - **Link choice** (`MouseController.openTransport`): a cable wins. An idle dongle loses to a
  supported mouse on Bluetooth, because the mouse is on one wireless link at a time and the
  dongle would only time out. Detection runs on IOHID (`HIDDevice.bluetoothRazerMouse`), so
@@ -193,9 +195,9 @@ On a connection-state transition (after the first baseline poll), plays a system
 
 ### 5.3 Writes
 `setDPI`, `setPollRate`, `setBrightness`, `setStatic/Spectrum/Wave/LightingOff`, each
-dispatches a command on the io queue and re-publishes the new value optimistically. While
-the popover is open, `setPopoverVisible(true)` polls DPI/poll every 2 s so on-mouse changes
-(e.g. the DPI-cycle button) reflect live.
+dispatches a command on the device queue and publishes the new value once the mouse took it.
+While the main window is open, `setLiveChecks(true)` re-reads what a button on the mouse
+changes (the active slot and the DPI) every 2 s, so it shows at once.
 
 ### `BatteryHistory.swift`, time-until-empty estimate
 - Logs `(timestamp, %)` samples to `~/Library/Application Support/Serpentine/battery-history.json`.
@@ -218,81 +220,57 @@ its own USB product string** (works for any Razer mouse); the registry only adds
 
 ## 6. The UI
 
-### 6.1 Menu bar, `AppDelegate.swift` + `MenuBarIcon.swift`
-- `NSStatusItem` with the **serpent icon** (Health Icons' `animal-snake`, drawn from its SVG
- path by `SVGPath.swift` in `MenuBarIcon.swift`; a template image that adapts to light/dark and **dims to 60% opacity
- when disconnected**) + the battery % text (hideable via a setting; hidden entirely for
- battery-less mice).
-- **Left-click** opens the popover; **right-click / control-click** shows an `NSMenu`
- (status line, Open Controls, Refresh Now, Configure Buttons..., Input Monitoring Settings,
- Quit). Items that need a connected mouse are disabled when offline.
-- The popover is **dark-appearance forced** (`.darkAqua`) so the Razer green pops, **pre-warmed**
- at launch so it opens instantly, and `animates = false`.
+### 6.1 The window, `Window/`
+A normal Mac app (Dock icon, menus), one main window (`MainWindowController`, frame
+remembered). `MainWindowView` is a `NavigationSplitView`:
 
-### 6.2 Popover, `PopoverView.swift`
-A fixed **320*620** navigable container with three pages and a push/pop slide animation; each
-page is a `ScrollView` (so long content scrolls without resizing the popover):
+- **Sidebar**: the mouse (model mark, link, a battery ring), then its sections
+ (`PaneSection`): Overview, Performance, Lighting, Buttons, Profiles, Scroll, Power, Battery.
+ A section the mouse doesn't have is not listed (`PaneSection.isAvailable`). The selection is
+ kept across launches (`mainWindow.section`). ⌘1-⌘8 in the Go menu.
+- **Title bar**: the pane's title, the mouse and its link as the subtitle; a status mark
+ (whether the mouse holds what was set), the profile switcher (the mouse's slots or the
+ saved profiles) and Refresh (⌘R).
+- **Panes** (`Panes.swift`, `OverviewPane.swift`) are built from the feature views in
+ `Features/`: `BatteryCard`, `DPICard`, `PollingRateControls`, `LightingControls` (the colour
+ wheel, `ColorPickerPage`, in a sheet), `PowerControls`, `QuickProfiles`, plus `RemapView`,
+ `ProfilesView`, `MouseSwitchesSection` (scroll) and `UsageGraphView`. Each pane says where its
+ settings live (`ResidencyBadge`: saved in the mouse, or needs Serpentine running), from
+ `SettingResidency`.
+- Offline, panes keep the last known values, dimmed, and say why their controls are disabled.
+ With no mouse known at all, Overview shows one card that says how to connect.
+- **Setup**: Input Monitoring and Accessibility in a sheet (`PermissionsView`), opened at
+ launch when Input Monitoring is missing, with a banner until it is granted.
+- **Menus** (`AppMenu`): Serpentine (About, Settings ⌘,, Hide, Quit), Edit, View (Refresh,
+ Full Screen), Go (the panes, greyed when the mouse lacks one), Window, Help.
 
-- **Main page**, Control-Center-style frosted cards, each section its own tile:
- - **Header card**: Razer logo (green) in a tinted tile + detected device name +
- connection state + status dot. Shows "No mouse connected" when none.
- - **Battery card**: a custom proportional **battery gauge** (fill tracks the exact %,
- colored green >=40% / orange <40% / red <15%), the big % number, a state-colored level
- bar, the time estimate, and a spinner-animated refresh button. Dims when offline.
- - **DPI card**: green slider (100-26000) + preset chips (400/800/1600/3200/6400) + a
- persisted **custom chip** (drag the slider to any value to save it; green-outlined).
- - **Settings sections**: the rest, each a compact card of its own, Control-Center style. Each
- shows its current value ("1000 Hz", "Static · 80%", "5 min", the active profile) and the
- settings rows expand in place, each on its own; which are open is remembered
- (`popoverExpandedSections` in UserDefaults). Rows a mouse can't use are left out.
- - **Polling rate**: segmented 125/500/1000 Hz, plus what the rate is good for.
- - **Lighting**: brightness slider (☀︎) + effect segmented (Static/Spectrum/Wave/Off)
- + colour swatches (true red...pink) + a rainbow "custom" well that opens the colour wheel.
- - **Power Management** (Basilisk V3 X over Bluetooth): the sleep timer.
- - **Buttons**: opens the buttons page; shows how many buttons are remapped, or "Needs access"
- when saved remaps can't fire without Accessibility permission.
- - Offline, the section rows still open to show last-known settings; their controls and the
- Buttons page are disabled. A failed write turns that row's value red.
- - **Profiles**: quick-switch chips, "+" to save, "Manage Profiles…".
- - Sub-pages that scroll are at least 560 pt tall, so a short (collapsed) main page doesn't squeeze
- them; the colour page keeps the main page's height.
- - **Settings card**: a switch toggle for "Show battery % in menu bar".
- - Live mouse-config sections **grey out + disable when disconnected** (battery stays
- readable; refresh stays active).
- - With **no mouse known at all** (none seen yet, or unplugged), the controls are replaced
- by one card that says how to connect and offers "Look Again" (or the Input Monitoring
- grant, when that's what is missing). A last battery reading is still shown if there is one.
- - Keyboard: **⌘R** refreshes, **⌘,** opens Settings, and **Esc** on any sub-page goes back
- one level instead of closing the popover (except while a key recording or a rename is in
- progress, where Esc cancels that).
- - Swatches, chips and the icon buttons carry VoiceOver labels and tooltips; chips and
- rows get a hover highlight.
-- **Appearance**, `AppearanceTheme.swift`: Settings › Appearance has a **Theme** (System, Dark,
- Light, Razer Green) and a **Glass effect** switch, stored as `appearance.theme` and
- `appearance.glass` in UserDefaults. `AppearanceLook.resolve` turns theme, glass and the system's
- light or dark mode into one of six looks (light, dark or green glass; solid light #F5F5F7,
- dark #1C1C1E or green #0F1A11). Razer Green is always dark.
- - `AppDelegate` re-applies the look when the setting changes or macOS switches mode, including
- while the popover is open. The popover's appearance is always set explicitly: a nil one would
- follow the menu bar, which macOS tints from the wallpaper.
- - Solid colours and the green tint are painted by `PopoverBackdropView`, which sits in
- NSPopover's frame view just under the content. That view clips to the popover's outline, so
- the fill covers the arrow too. A SwiftUI background would leave the arrow glass. The green
- edge is a SwiftUI overlay on the body (radius 10, measured on macOS 26).
- - Windows get the same look (`AppearanceSettings.track`, `WindowBackdrop`): glass is an
- `NSVisualEffectView` with the popover's material, plus the same tint view, both in the
- window's frame view so the title bar matches; solid looks set the window's background colour.
- The title bar is transparent in every look. Only the popover gets the green edge.
- - Colours: `razerGreen` is the fill (the same in both modes); text and icons use
- `razerGreenText` (#23891A on light). Anything on a green fill uses `onRazerGreen`, a dark green,
- because white on #44D62C is only about 1.9:1. `razerGreenBright` (logo) and `bluetoothBlue`
- also adapt.
-- **Colour page**, `ColorPickerPage.swift`: an inline **hue/saturation colour wheel** +
- brightness slider + live preview, applied to the mouse live (throttled). Replaces the old
- system `NSColorPanel`.
-- **Buttons page**, `RemapView.swift` embedded (see §6.3).
+### 6.2 Background mode and the menu bar item
+`BackgroundMode`: Settings › Keep running in the background (`keepRunningInBackground`). Off,
+closing the window quits (`applicationShouldTerminateAfterLastWindowClosed`). On, closing it
+switches the app to `.accessory` (no Dock icon) and leaves `MenuBarItem`: the serpent (Health
+Icons' `animal-snake`, drawn from its SVG path by `SVGPath.swift`; a template image, a bolt
+while charging, dimmed when the mouse is away), no percentage. Its menu shows the mouse and its
+battery, switches the DPI stage and the profile, and opens the window or Settings.
 
-### 6.3 Button remapping, `ButtonRemapper.swift` + `RemapView.swift`
+- Off on a new install; on for an upgrade from the menu bar version (a battery reading or the
+ old login-item flag in the defaults), so nothing it relied on disappears.
+- The first time a driver-mode feature is set up (`DriverModeUsage`: a remap only the app can
+ do, the DPI Cycle action) the app asks once, listing what needs it (`backgroundModeAsked`).
+ While it is off the window lists the same things above its panes.
+- Start at login needs background mode (turning it off unregisters the login item), and a
+ login launch (`keyAELaunchedAsLogInItem`) starts in the menu bar with no window.
+
+### 6.3 Appearance, `Appearance.swift`
+Settings › Appearance has a **Theme** (System, Dark, Light, Razer Green) and a **Glass effect**
+switch (`appearance.theme`, `appearance.glass`). `AppearanceLook.resolve` turns theme, glass
+and the system's light or dark mode into one of six looks. The main window takes the light or
+dark appearance only (`trackAppearance`), keeping the system's sidebar and title bar. Settings
+and About also take the glass or solid backdrop (`WindowBackdrop`, `BackdropTintView`).
+Colours (`Palette.swift`): `razerGreen` is the fill; text and icons use `razerGreenText`
+(#23891A on light); anything on a green fill uses `onRazerGreen`, because white on #44D62C is
+only about 1.9:1.
+
+### 6.4 Button remapping, `ButtonRemapper.swift` + `RemapView.swift`
 On a mouse whose button function table is known (`RazerDeviceInfo.buttonTable`, today the
 Basilisk V4 Pro), remaps are **written into the mouse** (`OnboardButtons.swift`): each remap
 the mouse can do itself goes in its table and is read back, the HyperShift layer too, and
@@ -316,14 +294,13 @@ buttons are handled onboard and never reach macOS.
  captures any combo), **mouse** (middle/double click), **media** (play/next/prev/volume/mute).
 - Mappings persist to UserDefaults. Needs **Accessibility** permission (banner + Open
  Settings / Re-check in the UI).
-- Available both inline (popover buttons page) and as a standalone window
- (`RemapWindowController.swift`, opened from the right-click menu).
+- Shown in the Buttons pane, which says whether the remaps are in the mouse or done by the app.
 
-### 6.4 Privacy
+### 6.5 Privacy
 Serpentine makes no network requests of its own. There are no usage stats, no update checks
 and no report uploads; earlier versions of the original project had all three, and this fork
 removed them. Settings and battery history stay in the app's preferences and its Application
-Support folder. Links in About and in the popover footer open in the browser when clicked.
+Support folder. Links in About and in the Help menu open in the browser when clicked.
 
 ---
 
@@ -383,7 +360,7 @@ on the mouse.
 | `hasScrollAcceleration` | Scroll acceleration on/off (`0x02/0x96`, `0x02/0x16`) and its level (`0x02/0xA2`, `0x02/0x22`, 0-4), shown as Low, Medium and High while it is on. USB only. |
 | `supportsLowBatteryThreshold` | The battery level the mouse goes into low-battery mode at (`0x07/0x82`, `0x07/0x02`). |
 | `hasOnboardSlots` | Onboard profile slots (`OnboardSlots.swift`): the slots are the profiles. Settings go to the active slot, names are kept in the app (`SlotNames`), and a new or reset slot gets the factory bytes (`OnboardSlots.factorySettings`). |
-| `supportsDpiModes` | The popover's Single and Stages DPI modes, set through the stage table on every link. |
+| `supportsDpiModes` | The Single and Stages DPI modes, set through the stage table on every link. |
 | `lightingZones` | Lighting set zone by zone (`ZonedLighting`), with the extra effects. |
 | `buttonTable` | Remaps saved in the mouse, from a table in `OnboardButtons.Table`. |
 | `dpiStagesCountFromOne` | The stage table's active stage and stage numbers count from 1, as OpenRazer writes them. USB only; Bluetooth always counts from 1. |
@@ -407,7 +384,8 @@ swift run serpentine-cli rgb static ff0000 # or: spectrum | wave | off
 swift run serpentine-cli brightness [0-100] # sweeps LOGO/SCROLL/ZERO/BACKLIGHT LEDs
 swift run serpentine-cli stages [d1,d2,…] [active] # read / write the DPI stage table
 swift run Serpentine icon out.png [size] [charging] [light] # render the menu bar icon
-swift run Serpentine render-ui [offline|color|zones|…] out.png # popover (dev; scenes in PreviewScene)
+swift run Serpentine render-ui [offline|color|zones|…] out.png # a pane (scenes in PreviewScene)
+swift run Serpentine render-window [section] [zones] [light] out.png # the whole window, offscreen
 swift run Serpentine render-about out.png
 swift run Serpentine render-remap out.png
 ```
@@ -461,7 +439,9 @@ AppKit; the app and the command-line tool build on them.
 | File | Responsibility |
 |---|---|
 | `main.swift` | Entry point: no arguments launches the app; subcommands are development tools (render-*, icons). |
-| `AppDelegate.swift` | `NSStatusItem`, popover, right-click menu, HIDMonitor wiring, permission request. |
+| `AppDelegate.swift` | App lifecycle: the window, background mode, the menu bar item, HIDMonitor wiring. |
+| `BackgroundMode.swift` | Keep running in the background, and what needs it (`DriverModeUsage`). |
+| `Window/` | The main window (`MainWindowController`, `MainWindowView`, the panes), the menus (`AppMenu`) and the menu bar item (`MenuBarItem`). |
 | `MouseController.swift` | The connected mouse's state, published for the UI. Its work is split by feature into `MouseController+Reads`, `+Writes`, `+Lighting`, `+Slots`, `+OnboardButtons`, `+Profiles`, `+Connection` and `+Preview`. |
 | `DeviceQueue.swift` | The serial device queue, with user commands ahead of background reads. |
 | `BatteryTracker.swift` | Battery history, charge cycles, discharge curve and last readings, per mouse. |
@@ -469,13 +449,12 @@ AppKit; the app and the command-line tool build on them.
 | `ButtonRemapper.swift` | The remap table; the event tap, HyperShift, the DPI Cycle bridge and persistence are in `ButtonRemapper+*`. |
 | `Preferences.swift`, `DeviceSettings.swift` | Every UserDefaults key, and the per-mouse settings store. |
 | `LegacyPreferences.swift` | What older versions kept, and the move from MacRazer. |
-| `PopoverView.swift` | The popover: pages, collapsible rows, footer. |
-| `Features/` | The cards and controls the popover is built from (and the window will be): device status, battery, DPI, polling, lighting, power, quick profiles. |
+| `Features/` | The cards and controls the panes are built from: device status, battery, DPI, polling, lighting, power, quick profiles. |
 | `Appearance.swift`, `Palette.swift` | Settings › Appearance, the backdrops, and the colours. |
 | `ColorPickerPage.swift` | Inline hue/sat colour wheel page + shared `BackButton`. |
 | `RemapView.swift` | Button-config UI (inline + window), key recorder. |
 | `MenuBarIcon.swift`, `SVGPath.swift` | The serpent (menu bar, app icon) and the per-model mouse silhouettes. |
-| `PreviewScenes.swift` | The popover's preview states, for `render-ui` and the snapshot tests. |
+| `PreviewScenes.swift` | The panes' preview states, for `render-ui` and the snapshot tests. |
 
 External: `reference/openrazer/` (cloned driver source, the protocol reference, gitignored)
 and `reference/openrazer-pr-2583.diff` (the Cobra HyperSpeed PR).

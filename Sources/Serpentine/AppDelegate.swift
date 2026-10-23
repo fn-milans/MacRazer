@@ -39,7 +39,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         go: { [weak self] section in
             self?.mainWindow.navigation.section = section
             self?.showMainWindow()
-        }))
+        },
+        isAvailable: { [weak self] section in self.map { section.isAvailable(for: $0.controller) } ?? false }))
     /// macOS started Serpentine as a login item: it starts in the menu bar, with no window.
     private var launchedAsLoginItem = false
 

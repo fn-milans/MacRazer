@@ -1,11 +1,11 @@
 # Serpentine
 
 Razer mouse control for macOS. Serpentine's aim is to put every setting in the mouse's own
-memory, so the mouse behaves the same with the app closed, on any link and on any computer.
-Features that only software can do (the "driver mode" actions) work while the app runs, and it
-can stay in the background for them.
+memory, so the mouse behaves the same with the app closed, on any link and on any computer:
+open it, set the mouse up, quit. What only software can do (the "driver mode" actions) works
+while it runs, and it can keep running in the background, as a small menu bar item, for them.
 
-A native app to control Razer mice on macOS. Razer does ship a Synapse for Mac now,
+A native Mac app with a window: the mouse in the sidebar, each of its settings a pane. Razer does ship a Synapse for Mac now,
 but its [supported-device list](https://mysupport.razer.com/app/answers/detail/a_id/14809/~/razer-synapse-for-mac-supported-and-compatible-devices)
 is short and doesn't include the Cobra HyperSpeed or Atheris — this fills that gap. It talks
 to the mouse directly over USB HID (no kernel extension, no driver install), using a protocol
@@ -21,18 +21,20 @@ Razer mice that use the same HID protocol family, but those are untested, so tre
 > Started as a fork of [MacRazer by SorcRR](https://github.com/SorcRR/MacRazer). It sends nothing
 > anywhere: no usage stats, no update checks, no report uploads. See [Privacy](#privacy).
 > 
-> <img width="324" height="624" alt="image" src="https://github.com/user-attachments/assets/a7632668-2d12-4d2f-aa84-7b234bad31dc" />
-> <img width="323" height="290" alt="image" src="https://github.com/user-attachments/assets/c1cf4013-9c1e-40df-ac09-c3e36756df69" />
-> <img width="323" height="520" alt="image" src="docs/assets/battery-usage.png" />
+
+<img width="720" alt="The Serpentine window, Overview pane" src="docs/assets/window-overview.png" />
+<img width="720" alt="The Lighting pane, zone by zone" src="docs/assets/window-lighting.png" />
 
 
 ## Features
 
-- **Battery** percentage in the menu bar, charging status, and a learned time-until-empty
-  estimate. History and the estimate are kept per physical device (by serial number).
-- **Battery usage graph**: a chart button beside the battery percentage opens the current
-  discharge curve, the discharge rate, time since the last full charge, and a trend chart of
-  past charge cycles with their average length.
+- **A window for the mouse**: the sidebar lists its sections (Overview, Performance, Lighting,
+  Buttons, Profiles, Scroll, Power, Battery), only those it has. Each pane says whether its
+  settings are **saved in the mouse** or **need Serpentine running**.
+- **Battery**, charging status, and a learned time-until-empty estimate. History and the
+  estimate are kept per physical device (by serial number).
+- **Battery usage**: the current discharge curve, the discharge rate, time since the last full
+  charge, and a trend chart of past charge cycles with their average length.
 - **DPI** with a slider (capped at each model's real maximum), the mouse's own preset stages
   read from the device, and a recallable custom value (per device).
 - **Polling rate**: 125 / 500 / 1000 Hz.
@@ -45,9 +47,11 @@ Razer mice that use the same HID protocol family, but those are untested, so tre
   (no lighting on the Atheris, no battery UI on wired-only mice).
 - Settings are written to the mouse's **onboard memory** where supported, so they persist when
   the app is not running.
-- **Starts at login** (on by default, switchable in the popover and in System Settings ›
-  General › Login Items), so the menu bar item is there after a reboot.
-Settings persist across app restarts and reconnects, and the menu bar updates on its own when
+- **Background mode** (Settings): closing the window leaves a small menu bar item, so remaps
+  the mouse can't store, low-battery alerts and battery history keep working. Off by default;
+  Serpentine asks once when you set up something that needs it. It can then **start at login**,
+  in the menu bar with no window.
+Settings persist across app restarts and reconnects, and the window updates on its own when
 the mouse connects, disconnects, or sleeps.
 
 ## Supported mice
@@ -150,7 +154,7 @@ below.
 To build from source: Xcode 16 / Swift 6.1.
 
 ```sh
-# Run the menu bar app directly (easiest while developing; uses your Terminal's permissions):
+# Run the app directly (easiest while developing; uses your Terminal's permissions):
 swift run Serpentine
 
 # Or build a standalone .app:
@@ -215,7 +219,7 @@ derived from OpenRazer. Full attribution and the trademark notice are in [NOTICE
 
 Serpentine makes no network requests of its own. It talks to your mouse over USB HID and
 Bluetooth, and keeps its settings and battery history on your Mac. The links in About and in
-the popover footer open in your browser when you click them, and nothing else leaves the app.
+the Help menu open in your browser when you click them, and nothing else leaves the app.
 
 ## Credits
 
