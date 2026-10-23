@@ -5,7 +5,7 @@ import AppKit
 import RazerProtocol
 
 /// Draws the app's marks: the serpent (menu bar, app icon, About and setup windows) and the
-/// per-model mouse silhouettes (the popover header). The silhouette-per-model mapping lives in
+/// per-model mouse silhouettes (the window's device row). The silhouette-per-model mapping lives in
 /// `RazerDevices`, the registry, so adding a mouse doesn't touch drawing code.
 enum MenuBarIcon {
 
@@ -120,7 +120,7 @@ enum MenuBarIcon {
     /// Same silhouette family, but shaped/detailed to match the specific connected model
     /// (by USB product ID) instead of always drawing the generic Cobra body. Falls back to
     /// the generic Cobra shape for an unknown or absent device.
-    /// No charging variant here on purpose: this is the popover's header mark, and the card
+    /// No charging variant here on purpose: this is the device's mark, and the battery card
     /// directly below it already spells out the charging state in words.
     static func mouseModel(pid: Int?, pointSize: CGFloat = 20) -> NSImage {
         let img = drawMouse(size: pointSize, silhouette: RazerDevices.silhouette(pid: pid))

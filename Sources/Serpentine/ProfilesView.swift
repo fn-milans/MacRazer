@@ -11,9 +11,6 @@ import RazerProtocol
 struct ProfilesView: View {
     @ObservedObject var controller: MouseController
     @ObservedObject var remapper: ButtonRemapper
-    var onBack: (() -> Void)?
-    /// In a pane of the main window, which titles it: no heading of its own, and the pane's width.
-    var embedded = false
 
     @State private var renamingID: UUID?
     @State private var renameText: String = ""
@@ -21,7 +18,6 @@ struct ProfilesView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            if !embedded { header }
             if controller.profiles.isEmpty {
                 emptyState
             } else {
@@ -39,9 +35,8 @@ struct ProfilesView: View {
                 }
             }
         }
-        .padding(embedded ? 0 : 18)
-        .frame(width: embedded ? nil : (onBack == nil ? 440 : 320))
-        .frame(maxWidth: embedded ? .infinity : nil, alignment: .leading)
+        // The Profiles pane titles it and sets the width.
+        .frame(maxWidth: .infinity, alignment: .leading)
         .confirmationDialog("Delete this profile?", isPresented: Binding(
             get: { pendingDeleteID != nil },
             set: { if !$0 { pendingDeleteID = nil } }
@@ -54,23 +49,10 @@ struct ProfilesView: View {
         }
     }
 
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // Esc cancels an in-progress rename (the field's onExitCommand), not the page.
-            if let onBack { BackButton(action: onBack, escapes: renamingID == nil) }
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Profiles").font(.system(size: 16, weight: .semibold))
-                Text("Saved DPI, lighting and button setups you can switch between.")
-                    .font(.system(size: 11)).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-    }
-
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("No profiles yet").font(.system(size: 12, weight: .medium))
-            Text("Use the + button on the main page to save your current setup as a profile.")
+            Text("Use the + button above to save your current setup as a profile.")
                 .font(.system(size: 11)).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }

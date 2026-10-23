@@ -15,14 +15,11 @@ import XCTest
 final class SnapshotTests: XCTestCase {
     func testEveryPreviewSceneRenders() throws {
         _ = NSApplication.shared
-        let suite = "SerpentineTests.\(#function)"
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
-        defer { defaults.removePersistentDomain(forName: suite) }
         let folder = ProcessInfo.processInfo.environment["SERPENTINE_SNAPSHOTS"].map(URL.init(fileURLWithPath:))
         if let folder { try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true) }
 
         for scene in PreviewScene.allCases {
-            let renderer = ImageRenderer(content: scene.makeView(defaults: defaults)
+            let renderer = ImageRenderer(content: scene.makeView()
                 .environment(\.colorScheme, .dark)
                 .background(Color(white: 0.13)))
             renderer.scale = 2

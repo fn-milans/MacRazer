@@ -19,8 +19,8 @@ enum LegacyPreferences {
         "pendingUpdateAnnouncement", "updatedFromVersion",
         // The crash report and device test windows.
         "crashReportsHandledThrough", "offerCrashReports", "deviceTest.resumeAfterRelaunch",
-        // The battery percentage beside the menu bar item, which the windowed app doesn't show.
-        "showPercentInMenuBar",
+        // The menu bar popover: the percentage beside its item, the sections left open.
+        "showPercentInMenuBar", "popoverExpandedSections",
     ]
 
     /// Removes them; cheap enough to run on every launch, so an install that skips a version

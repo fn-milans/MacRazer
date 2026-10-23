@@ -9,7 +9,7 @@ import RazerProtocol
 import RazerDeviceKit
 
 /// A Razer mouse on Bluetooth that Serpentine isn't controlling, and why — drives the
-/// popover's Bluetooth notice.
+/// window's Bluetooth notice.
 enum BluetoothMouseStatus: Equatable {
     /// A model with no Bluetooth control: switch it to the 2.4 GHz dongle or USB-C.
     case needsModeSwitch(name: String)
@@ -34,9 +34,6 @@ enum BluetoothMouseStatus: Equatable {
         }
     }
 }
-
-/// A view of the mouse that wants what a button on the mouse changes shown at once.
-enum LiveViewer: Hashable { case window, popover }
 
 enum BluetoothRecoveryState: Equatable {
     case idle
@@ -187,7 +184,7 @@ final class MouseController: ObservableObject, @unchecked Sendable {
     #if DEBUG
     /// The bookkeeping in `DeviceQueue`, for the test that says it never leaks. A count stuck
     /// above zero would stop every background read for the life of the process, and the
-    /// popover would quietly stop reflecting the mouse.
+    /// window would quietly stop reflecting the mouse.
     var userWorkPendingForTesting: Bool { userWorkPending }
     func runUserCommandForTesting(_ body: @escaping @Sendable () -> Void) { io.user(body) }
     #endif
@@ -356,7 +353,7 @@ final class MouseController: ObservableObject, @unchecked Sendable {
     }
 
     /// Self-rescheduling poll loop. Scheduled on the common run-loop modes so it keeps firing
-    /// even while the menu/popover is being tracked.
+    /// even while a menu is being tracked.
     func scheduleNextPoll(after interval: TimeInterval) {
         pollTimer?.invalidate()
         let t = Timer(timeInterval: interval, repeats: false) { [weak self] _ in
@@ -393,7 +390,7 @@ final class MouseController: ObservableObject, @unchecked Sendable {
         }
     }
 
-    /// Main-thread only (timer/popover callbacks): prevents the 2s popover timer from
+    /// Main-thread only (timer/window callbacks): prevents the 2s live-check timer from
     /// stacking reads while one is still grinding through the retry ladder — with a mouse
     /// that answers slowly (or a dongle answering with stale reports), each read can take
     /// seconds, and unconditionally enqueueing every tick would grow the serial io queue's
@@ -401,8 +398,6 @@ final class MouseController: ObservableObject, @unchecked Sendable {
     var settingsReadQueued = false
 
     var settingsTimer: Timer?
-    /// The views of the mouse open now (`setLiveChecks`). Main thread.
-    var liveViewers: Set<LiveViewer> = []
 
     /// io-queue only. The DPI as the last full read found it (the active stage and the stage
     /// table on a mouse the table drives, else the DPI), for `checkLiveSync` to compare.

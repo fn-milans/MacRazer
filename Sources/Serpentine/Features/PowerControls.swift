@@ -6,7 +6,7 @@ import AppKit
 import RazerProtocol
 import RazerDeviceKit
 
-/// The mouse's sleep timer and its low-battery level. The values are the popover's, which
+/// The mouse's sleep timer and its low-battery level. The values are the owner's, which
 /// shows them in the collapsed row.
 struct PowerControls: View {
     @ObservedObject var controller: MouseController

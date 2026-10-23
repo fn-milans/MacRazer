@@ -56,7 +56,7 @@ struct BatteryCard: View {
             .frame(height: 6)
             // Offline and on screen, re-rendered every 30 s so the "· 2 min. ago" age keeps up:
             // nothing else republishes while the mouse is away. Otherwise no timer at all, so a
-            // closed popover never wakes the app.
+            // closed window never wakes the app.
             if isShown && !controller.connected {
                 TimelineView(.periodic(from: .now, by: 30)) { _ in batterySubtitleText }
             } else {

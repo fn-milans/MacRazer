@@ -7,7 +7,7 @@ import RazerProtocol
 import RazerDeviceKit
 
 /// Brightness, effect and colour, per zone on mice lit zone by zone. The brightness and the
-/// colour are the popover's: the collapsed row shows the one, the colour page edits the other.
+/// colour are the owner's: its heading shows the one, the colour sheet edits the other.
 struct LightingControls: View {
     @ObservedObject var controller: MouseController
     @Binding var brightnessValue: Double

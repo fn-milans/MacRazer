@@ -18,7 +18,7 @@ enum SnapshotDeviceTransition: Equatable {
 }
 
 /// The last trusted battery reading, kept separately from the bounded discharge history so
-/// the popover can still show a useful, explicitly stale reference while the mouse is away.
+/// the window can still show a useful, explicitly stale reference while the mouse is away.
 struct LastBatterySnapshot: Codable, Equatable {
     let deviceKey: String
     let productID: Int

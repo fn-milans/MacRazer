@@ -4,10 +4,10 @@
 import SwiftUI
 import RazerProtocol
 
-/// A clearly-labelled "‹ Back" button used by the popover sub-pages.
+/// A clearly-labelled "‹ Back" button for a page shown in place of another.
 ///
 /// Esc triggers it, so a sub-page backs out one level the way a System Settings pane or a
-/// Control Center module does, rather than Esc dismissing the whole popover. `escapes` is for
+/// Control Center module does, rather than Esc dismissing the whole sheet. `escapes` is for
 /// pages that own Esc for something narrower while it's in progress (cancelling a key
 /// recording or a rename): a navigation there would throw away what the user was doing.
 struct BackButton: View {
@@ -29,7 +29,7 @@ struct BackButton: View {
     }
 }
 
-/// Inline hue/saturation colour wheel + brightness slider, shown as a sub-page of the popover.
+/// Inline hue/saturation colour wheel + brightness slider, shown in a sheet from the Lighting pane.
 /// Applies the colour to the mouse live (throttled) as you drag.
 struct ColorPickerPage: View {
     @Binding var color: Color

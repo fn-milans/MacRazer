@@ -141,7 +141,7 @@ final class MenuBarItem: NSObject, NSMenuDelegate {
     }
 
     /// A mouse with DPI modes makes the stage active; others are set to its value, as the
-    /// popover's stage chips do.
+    /// Performance pane's stage chips do.
     @objc private func selectStage(_ sender: NSMenuItem) {
         guard controller.dpiStages.indices.contains(sender.tag) else { return }
         if controller.supportsDpiModes {

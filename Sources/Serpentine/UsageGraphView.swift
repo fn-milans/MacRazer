@@ -10,8 +10,6 @@ import Charts
 /// which are owned and mutated on the `io` queue.
 struct UsageGraphView: View {
     @ObservedObject var controller: MouseController
-    /// nil in a pane of the main window, which titles it.
-    var onBack: (() -> Void)? = nil
 
     /// Sample/cycle currently under the pointer, used to draw the hover tooltip on each chart.
     @State private var hoveredSample: BatterySample?
@@ -19,13 +17,6 @@ struct UsageGraphView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            if let onBack {
-                HStack(spacing: 10) {
-                    BackButton(action: onBack)
-                    Text("Battery Usage").font(.system(size: 16, weight: .semibold))
-                    Spacer()
-                }
-            }
             currentCycleChart
             statsCard
             trendChart
@@ -156,7 +147,7 @@ struct UsageGraphView: View {
         card {
             VStack(alignment: .leading, spacing: 8) {
                 statRow("Discharge rate", dischargeRateText)
-                // Periodic so an offline reading's age keeps up, like the popover's subtitle.
+                // Periodic so an offline reading's age keeps up, like the battery card's subtitle.
                 TimelineView(.periodic(from: .now, by: controller.connected ? 3600 : 30)) { _ in
                     statRow("Estimated time remaining", remainingText)
                 }

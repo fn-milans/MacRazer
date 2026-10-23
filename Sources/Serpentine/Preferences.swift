@@ -14,8 +14,6 @@ enum Preferences {
     static let appearanceTheme = "appearance.theme"
     static let appearanceGlass = "appearance.glass"
     static let launchAtLoginDefaultApplied = "launchAtLoginDefaultApplied"
-    /// The popover sections left open, comma-separated.
-    static let popoverExpandedSections = "popoverExpandedSections"
     /// The last battery reading of every mouse, so the menu bar has a value before the first poll.
     static let lastBatterySnapshot = "lastBatterySnapshot.v1"
     /// Which onboard button entries Serpentine wrote, per mouse serial (`OnboardOwnership`).

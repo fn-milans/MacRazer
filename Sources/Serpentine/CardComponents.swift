@@ -3,8 +3,8 @@
 
 import SwiftUI
 
-/// Control-Center-style tile: a rounded, lightly-frosted card on the dark popover. Shared by
-/// every popover sub-page so the card style can't drift between them.
+/// Control-Center-style tile: a rounded, lightly-frosted card. Shared by the feature views so
+/// the card style can't drift between them.
 func card<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
     cardSurface(content()
         .padding(12)
@@ -12,7 +12,7 @@ func card<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
 }
 
 /// The card's fill and shape without its padding, for cards that lay out their own insets (the
-/// popover's expandable section rows).
+/// rows that lay out their own insets).
 ///
 /// A free function like `card`, not a `View` extension: an extension method is main-actor
 /// isolated, and `card` (nonisolated) couldn't call it under Swift 6 concurrency checking.
@@ -24,9 +24,9 @@ func cardSurface<Content: View>(_ content: Content) -> some View {
 /// the Settings and About windows so their sections can't drift apart.
 ///
 /// Flatter and tighter-cornered than `card` (0.07 vs 0.10 fill, radius 12 vs 13) but roomier
-/// inside it (14 vs 12): `card` sits on the popover's dark material at popover width, this
-/// sits on a plain window background at more than twice that, where the popover's contrast
-/// reads as heavy and its padding as cramped.
+/// inside it (14 vs 12): `card` is for the main window's panes, this for the narrow Settings and
+/// About windows on their glass, where `card`'s contrast reads as heavy and its padding as
+/// cramped.
 func titledSection<Content: View>(_ title: String, @ViewBuilder _ content: () -> Content) -> some View {
     VStack(alignment: .leading, spacing: 12) {
         Text(title.uppercased())
@@ -119,7 +119,7 @@ func sectionLabel(_ text: String, _ symbol: String) -> some View {
 }
 
 /// The battery-percentage bands, in one place so every consumer agrees: this file's colour
-/// helper, the percent readout in PopoverView, the usage chart's curve bands, and the
+/// helper, the percent readout in `BatteryCard`, the usage chart's curve bands, and the
 /// low-battery alert.
 enum Battery {
     /// Below this the battery reads as "low" — red gauge/readout/curve, and the one
@@ -151,7 +151,7 @@ func batteryLevelColor(forPercent pct: Int) -> Color {
 
 /// Minimal left-aligned flow container: lays subviews in rows, wrapping when the next one
 /// wouldn't fit the proposed width. SwiftUI has no built-in flow layout, and the profile
-/// chips would otherwise overflow the fixed-width popover once a handful of profiles exist.
+/// chips would otherwise overflow a narrow column once a handful of profiles exist.
 struct FlowLayout: Layout {
     var spacing: CGFloat = 6
 

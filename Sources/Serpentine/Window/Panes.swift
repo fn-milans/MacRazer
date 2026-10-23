@@ -153,7 +153,7 @@ struct ButtonsPane: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             PaneIntro(text: intro, residency: residency, keepsRunning: keepsRunning)
-            RemapView(remapper: remapper, controller: controller, embedded: true)
+            RemapView(remapper: remapper, controller: controller)
         }
     }
 
@@ -196,7 +196,7 @@ struct ProfilesPane: View {
                     QuickProfiles(controller: controller, remapper: remapper, isAddingProfile: $adding, onManage: nil)
                 }
                 if !controller.profiles.isEmpty {
-                    ProfilesView(controller: controller, remapper: remapper, embedded: true)
+                    ProfilesView(controller: controller, remapper: remapper)
                 }
             }
         }

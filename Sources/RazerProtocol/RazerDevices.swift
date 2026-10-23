@@ -98,7 +98,7 @@ public struct RazerDeviceInfo: Sendable {
     public var supportsLowBatteryThreshold = false
     /// Onboard profile slots (`OnboardSlots`): every settings command goes to the active slot.
     public var hasOnboardSlots = false
-    /// The popover's Single and Stages DPI modes: DPI is set through the stage table on
+    /// The Single and Stages DPI modes: DPI is set through the stage table on
     /// every link (`MouseController.setDPITable`), so it is kept in the active slot.
     public var supportsDpiModes = false
     /// Lighting set zone by zone (`ZonedLighting`), in the picker's order; empty when the
@@ -202,7 +202,7 @@ public enum RazerDevices: Sendable {
     public static func supportsSleepTimeout(pid: Int) -> Bool { info(pid: pid)?.supportsSleepTimeout ?? false }
     public static func supportsStageEditing(pid: Int) -> Bool { info(pid: pid)?.supportsStageEditing ?? false }
     /// Mice whose stage table holds their DPI in the active onboard slot on every link, so
-    /// the popover offers Single and Stages modes there instead of the slider and presets.
+    /// the app offers Single and Stages modes there instead of the slider and presets.
     public static func supportsDpiModes(pid: Int) -> Bool { info(pid: pid)?.supportsDpiModes ?? false }
     public static func usesPollingRate2(pid: Int) -> Bool { info(pid: pid)?.usesPollingRate2 ?? false }
     public static func hasWheelControls(pid: Int) -> Bool { info(pid: pid)?.hasWheelControls ?? false }

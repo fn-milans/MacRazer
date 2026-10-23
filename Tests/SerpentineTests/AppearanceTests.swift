@@ -43,7 +43,6 @@ final class AppearanceTests: XCTestCase {
             // A solid look must actually be solid, or the material shows through.
             if !look.isGlass { XCTAssertEqual(look.backdropColor?.alphaComponent, 1, "\(look)") }
         }
-        XCTAssertEqual(AppearanceLook.allCases.filter(\.hasGreenEdge), [.greenGlass])
         XCTAssertFalse(AppearanceLook.lightGlass.isDark)
         XCTAssertFalse(AppearanceLook.solidLight.isDark)
         XCTAssertTrue(AppearanceLook.solidGreen.isDark)
@@ -102,7 +101,7 @@ final class AppearanceTests: XCTestCase {
         let frameView = try XCTUnwrap(window.contentView?.superview)
         let glass = try XCTUnwrap(frameView.subviews.compactMap { $0 as? NSVisualEffectView }.first)
         XCTAssertFalse(glass.isHidden)
-        let tint = try XCTUnwrap(frameView.subviews.compactMap { $0 as? PopoverBackdropView }.first)
+        let tint = try XCTUnwrap(frameView.subviews.compactMap { $0 as? BackdropTintView }.first)
         XCTAssertEqual(tint.fill, AppearanceLook.greenGlass.backdropColor)
 
         // Applying again reuses the same views rather than stacking new ones.

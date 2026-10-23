@@ -20,8 +20,6 @@
 	<string>12</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>14.0</string>
-	<key>LSUIElement</key>
-	<true/>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>Serpentine uses Bluetooth to read the battery and change the settings of a Razer mouse connected over Bluetooth.</string>
 	<key>NSHumanReadableCopyright</key>

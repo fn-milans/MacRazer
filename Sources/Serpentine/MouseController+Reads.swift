@@ -22,7 +22,7 @@ extension MouseController {
         }
     }
 
-    /// Main thread. The popover's 2-second check (`checkLiveSync`).
+    /// Main thread. The window's 2-second check (`checkLiveSync`).
     func checkLive() {
         guard !liveCheckQueued, !settingsReadQueued else { return }
         liveCheckQueued = true
@@ -57,25 +57,19 @@ extension MouseController {
         readSettingsSync()
     }
 
-    /// Called as a view of the mouse opens or closes. While one is open what a button on the
-    /// mouse changes (the DPI-cycle button, a profile switch) is re-read every couple of
-    /// seconds so it shows at once.
-    func setLiveChecks(_ on: Bool, for viewer: LiveViewer = .window) {
-        let wasActive = !liveViewers.isEmpty
-        if on { liveViewers.insert(viewer) } else { liveViewers.remove(viewer) }
-        let active = !liveViewers.isEmpty
-        if !active {
-            settingsTimer?.invalidate()
-            settingsTimer = nil
-        }
-        guard active, !wasActive || on else { return }
+    /// Called as the main window opens or closes. While it is open what a button on the mouse
+    /// changes (the DPI-cycle button, a profile switch) is re-read every couple of seconds so
+    /// it shows at once.
+    func setLiveChecks(_ on: Bool) {
+        settingsTimer?.invalidate()
+        settingsTimer = nil
+        guard on else { return }
         // While the mouse is unreachable the poll backs off, so a mouse woken just before the
-        // view opened could otherwise still read offline. Looking is a good moment to check.
+        // window opened could otherwise still read offline. Looking is a good moment to check.
         checkIfOffline()
         refreshSettings()
-        guard settingsTimer == nil else { return }
         // Only what a button on the mouse changes is checked this often (`checkLiveSync`);
-        // everything else is read when the view opens, and again after a change.
+        // everything else is read when the window opens, and again after a change.
         let t = Timer(timeInterval: 2.0, repeats: true) { [weak self] _ in
             self?.checkLive()
         }
@@ -94,7 +88,7 @@ extension MouseController {
     }
 
     /// Checks at once if the mouse is currently offline, for moments that suggest it may be
-    /// back: the popover opening, or a remapped button being pressed. Main thread. Repeated
+    /// back: the window opening, or a remapped button being pressed. Main thread. Repeated
     /// calls while one check is pending are dropped, so clicking away at a button that isn't
     /// answering can't pile reads up on the serial queue.
     func checkIfOffline() {
@@ -224,7 +218,7 @@ extension MouseController {
                 if !snapshot.sameDisplayedState(as: self.lastBatterySnapshot) {
                     self.update(\.lastBatterySnapshot, snapshot)
                 }
-                // Published for display (menu bar bolt, popover badge) off the *observed*
+                // Published for display (menu bar bolt, battery card) off the *observed*
                 // flag, not the debounced one: the debounce exists to guard the destructive
                 // history reset below, and applying it here blinks the bolt off for a full
                 // poll cycle after any transient failure. An unknown read holds the last

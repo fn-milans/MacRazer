@@ -4,10 +4,10 @@
 import Foundation
 import RazerProtocol
 
-/// A named, switchable snapshot of everything the popover lets you configure: DPI, polling rate,
+/// A named, switchable snapshot of everything the window lets you configure: DPI, polling rate,
 /// lighting, and button remaps. The physical "profile" button on the mouse only cycles DPI
 /// stages in firmware — there's no onboard multi-profile storage or button-press notification to
-/// hook into, so switching profiles is an app-side action taken from the popover.
+/// hook into, so switching profiles is an app-side action taken from the window.
 struct MouseProfile: Codable, Identifiable, Equatable {
     let id: UUID
     var name: String

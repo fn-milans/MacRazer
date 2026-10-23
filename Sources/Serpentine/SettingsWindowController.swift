@@ -29,7 +29,7 @@ final class SettingsWindowController: AppWindowPresenter {
             w.title = "Serpentine Settings"
             w.styleMask = [.titled, .closable]
             w.isReleasedWhenClosed = false
-            // Themed like the popover per Settings › Appearance, kept up to date when it changes.
+            // Themed per Settings › Appearance, kept up to date when it changes.
             AppearanceSettings.shared.track(w)
             w.center()
             window = w

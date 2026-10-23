@@ -3,12 +3,9 @@
 
 import SwiftUI
 
-/// App-level settings, in a real window rather than another card in the popover.
-///
-/// The popover is for the *mouse* — DPI, polling, lighting, battery. These are settings for
-/// Serpentine itself, they're set once and rarely revisited, and they need room to explain
-/// themselves (why the login item is unavailable from a mounted disk image). Stacking that on the bottom of a popover that already scrolls
-/// past five cards was the wrong shape for both.
+/// Settings for Serpentine itself, apart from the mouse's, which are in the main window: set
+/// once and rarely revisited, with room to explain themselves (why the login item is
+/// unavailable from a mounted disk image).
 struct SettingsView: View {
     @ObservedObject var controller: MouseController
     var launchAtLogin: LaunchAtLogin

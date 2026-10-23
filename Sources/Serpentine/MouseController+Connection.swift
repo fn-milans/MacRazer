@@ -200,7 +200,7 @@ extension MouseController {
     /// Moves every per-device store from one key to another — files and UserDefaults —
     /// filling holes only (existing destination data is never overwritten). The key
     /// patterns mirror their owners (BatteryHistory, ChargeCycleHistory, ProfileStore,
-    /// ButtonRemapper, PopoverView's custom DPI).
+    /// ButtonRemapper, DeviceSettings' custom DPI).
     static func migratePerDeviceData(from old: String, to new: String) {
         let fm = FileManager.default
         let dir = StoreDirectory.default

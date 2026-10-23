@@ -10,7 +10,7 @@ import RazerDeviceKit
 struct QuickProfiles: View {
     @ObservedObject var controller: MouseController
     @ObservedObject var remapper: ButtonRemapper
-    /// The popover's: it ends adding when the row closes or disappears.
+    /// The owner's: it ends adding when its row closes or disappears.
     @Binding var isAddingProfile: Bool
     /// nil hides "Manage Profiles…", where the management is already on screen.
     var onManage: (() -> Void)?
@@ -41,7 +41,7 @@ struct QuickProfiles: View {
                     addProfileChip
                 }
             } else {
-                // Wraps to new rows — a plain HStack overflows the fixed-width popover
+                // Wraps to new rows — a plain HStack overflows a narrow column
                 // once a handful of profiles exist.
                 FlowLayout(spacing: 6) {
                     ForEach(controller.profiles) { profileChip($0) }

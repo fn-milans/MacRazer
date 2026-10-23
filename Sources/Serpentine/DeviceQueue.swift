@@ -7,7 +7,7 @@ import Foundation
 /// bookkeeping that lets what the user asked for go first.
 ///
 /// A serial queue is right for a device that answers one command at a time, but it means a
-/// tap can sit behind work nobody asked for: opening the popover alone issues six round-trips,
+/// tap can sit behind work nobody asked for: opening the window alone issues six round-trips,
 /// each with a receiver wait, so dragging the DPI slider a moment later waited out the better
 /// part of a second before anything happened.
 ///

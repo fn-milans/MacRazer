@@ -78,7 +78,7 @@ final class LowBatteryNotifier: @unchecked Sendable {
         guard Bundle.main.bundleIdentifier != nil else { return }
         let center = UNUserNotificationCenter.current()
         // Without a delegate, macOS suppresses the banner whenever Serpentine is frontmost —
-        // and clicking the status item activates it, so a low reading while the popover is
+        // and clicking the status item activates it, so a low reading while the window is
         // open would consume the one alert and show nothing.
         center.delegate = delegate
         center.requestAuthorization(options: [.alert, .sound]) { granted, error in

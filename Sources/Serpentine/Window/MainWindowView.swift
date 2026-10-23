@@ -5,7 +5,7 @@ import SwiftUI
 import RazerProtocol
 
 /// The main window: the mouse and its sections in the sidebar, the selected section's
-/// controls beside it. The panes are built from the same feature views as the popover.
+/// controls beside it. The panes are built from the feature views in `Features/`.
 struct MainWindowView: View {
     @ObservedObject var controller: MouseController
     @ObservedObject var remapper: ButtonRemapper

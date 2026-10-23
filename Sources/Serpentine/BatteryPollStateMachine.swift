@@ -69,7 +69,7 @@ struct BatteryPollStateMachine {
         /// trips a day for nothing. The same as `connected`, so a missing mouse is never
         /// polled more often than a working one once the first minute is over. Kept that
         /// short because a woken mouse reads offline, with its button remaps paused, until
-        /// the next poll. Opening the popover or pressing a remapped button checks at once.
+        /// the next poll. Opening the window or pressing a remapped button checks at once.
         static let asleep: TimeInterval = 15
         /// No HID device is enumerated. `HIDMonitor` checks as soon as a device appears, so
         /// this is only a safety net in case its registration failed.

@@ -3,23 +3,21 @@
 
 import SwiftUI
 
-/// The popover's states as previews, with no mouse needed: what `render-ui` draws to a PNG
-/// and what the snapshot tests render. One list, so a state the tests cover is one a person
-/// can look at, and the other way round.
+/// The main window's panes in their preview states, with no mouse needed: what `render-ui`
+/// draws to a PNG and what the snapshot tests render. One list, so a state the tests cover is
+/// one a person can look at, and the other way round. (`render-window` draws the whole window.)
 enum PreviewScene: String, CaseIterable {
     case main, offline, bluetooth
     case bluetoothConnected = "bluetooth-connected"
     case dpiStages = "dpi-stages"
     case dpiSingle = "dpi-single"
-    case zones, usage, profiles, color
+    case zones, buttons, usage, profiles, color
 
     /// Segmented controls only draw when hosted in a view hierarchy.
-    var needsHosting: Bool { [.zones, .dpiStages, .dpiSingle].contains(self) }
+    var needsHosting: Bool { [.zones, .dpiStages, .dpiSingle, .bluetoothConnected].contains(self) }
 
-    /// The scene's view. `zones` opens the Lighting row, which the popover keeps in the user's
-    /// defaults: `defaults` is where that goes.
     @MainActor
-    func makeView(defaults: UserDefaults = .standard) -> AnyView {
+    func makeView() -> AnyView {
         let controller = MouseController()
         controller.loadPreviewState()
         switch self {
@@ -28,25 +26,28 @@ enum PreviewScene: String, CaseIterable {
         case .bluetoothConnected: controller.setPreviewBluetoothConnected()
         case .dpiStages: controller.setPreviewDpiModes(single: false)
         case .dpiSingle: controller.setPreviewDpiModes(single: true)
-        case .zones:
-            // The Basilisk V4 Pro's lighting zones, with the Lighting row open.
-            controller.setPreviewZonedLighting()
-            defaults.set("lighting", forKey: Preferences.popoverExpandedSections)
-        case .main, .usage, .profiles, .color: break
+        case .zones: controller.setPreviewZonedLighting()
+        case .main, .buttons, .usage, .profiles, .color: break
         }
-        let launchAtLogin = LaunchAtLogin()
-        launchAtLogin.loadPreviewState()
+        let remapper = ButtonRemapper()
+        let view: AnyView
         switch self {
-        case .color:
-            return AnyView(ColorPickerPage(color: .constant(.blue), onBack: {}, onApply: { _ in }))
+        case .main, .offline, .bluetooth:
+            view = AnyView(OverviewPane(controller: controller, remapper: remapper, navigation: WindowNavigation()))
+        case .bluetoothConnected, .dpiStages, .dpiSingle:
+            view = AnyView(PerformancePane(controller: controller))
+        case .zones:
+            view = AnyView(LightingPane(controller: controller))
+        case .buttons:
+            view = AnyView(ButtonsPane(controller: controller, remapper: remapper, keepsRunning: false))
         case .usage:
-            return AnyView(UsageGraphView(controller: controller, onBack: {}))
+            view = AnyView(BatteryPane(controller: controller, keepsRunning: true))
         case .profiles:
-            return AnyView(ProfilesView(controller: controller, remapper: ButtonRemapper(), onBack: {}))
-        default:
-            return AnyView(PopoverView(controller: controller, remapper: ButtonRemapper(),
-                                       launchAtLogin: launchAtLogin, appearance: AppearanceSettings.shared,
-                                       onOpenSettings: {})) // no windows in a render
+            view = AnyView(ProfilesPane(controller: controller, remapper: remapper))
+        case .color:
+            return AnyView(ColorPickerPage(color: .constant(.blue), onBack: {}, onApply: { _ in }).frame(width: 320))
         }
+        // A pane at the window's reading width.
+        return AnyView(view.padding(24).frame(width: 640, alignment: .topLeading))
     }
 }

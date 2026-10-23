@@ -103,7 +103,7 @@ case "login-item":
     // Report on (and optionally flip) the "Start Serpentine at login" registration — the one
     // piece of app state that lives in the system rather than in our own defaults, so it can't
     // be checked by reading a file. `on`/`off` drive the same `LaunchAtLogin.setEnabled` the
-    // popover switch calls, which also makes this the repair path when the GUI isn't reachable.
+    // Settings switch calls, which also makes this the repair path when the GUI isn't reachable.
     // Only meaningful from the packaged .app: under `swift run` there is no bundle to register.
     let loginItem = LaunchAtLogin()
     if let arg = args.dropFirst().first {
@@ -131,7 +131,7 @@ case "login-item":
     print("Default applied once: \(UserDefaults.standard.bool(forKey: Preferences.launchAtLoginDefaultApplied))")
 
 case "render-ui":
-    // Render the popover to a PNG for static visual inspection (no device needed).
+    // Render a pane of the main window to a PNG for static visual inspection (no device needed).
     _ = NSApplication.shared
     let path = outputPath(args.dropFirst(), default: "ui-preview.png")
     // The scene named in the arguments, `main` when none is.

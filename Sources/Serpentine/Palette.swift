@@ -6,7 +6,7 @@ import AppKit
 import RazerProtocol
 
 /// A colour with one value for light surfaces and one for dark, picked by whatever the view is
-/// drawn in. The popover and windows can be either, depending on Settings › Appearance.
+/// drawn in. The windows can be either, depending on Settings › Appearance.
 private func adaptive(light: NSColor, dark: NSColor) -> Color {
     Color(nsColor: NSColor(name: nil) { $0.isDark ? dark : light })
 }

@@ -7,9 +7,6 @@ import RazerProtocol
 struct RemapView: View {
     @ObservedObject var remapper: ButtonRemapper
     var controller: MouseController?
-    var onBack: (() -> Void)?
-    /// In a pane of the main window, which titles it: no heading of its own, and the pane's width.
-    var embedded = false
     @State private var recordingButton: Int?
     /// Set while recording a Turbo Keybind: its repeat interval.
     @State private var recordingTurboMs: Int?
@@ -39,7 +36,6 @@ struct RemapView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            if !embedded { header }
             if remapper.needsEventTap && !remapper.remappingPermissionsGranted {
                 accessibilityBanner
                 buttonList
@@ -64,11 +60,8 @@ struct RemapView: View {
             if remapper.isBasiliskV3XHyperSpeed { basiliskButtonLimits }
             footer
         }
-        // 22 in its own window, like Settings and the other 440-wide windows; 18 inside the
-        // popover, like Profiles.
-        .padding(embedded ? 0 : (onBack == nil ? 22 : 18))
-        .frame(width: embedded ? nil : (onBack == nil ? 440 : 320))
-        .frame(maxWidth: embedded ? .infinity : nil, alignment: .leading)
+        // The Buttons pane titles it and sets the width.
+        .frame(maxWidth: .infinity, alignment: .leading)
         .onAppear { remapper.refreshAccessibility(prompt: false) }
         .overlay { if recordingButton != nil || recordingDpiCycleShortcut { recorderOverlay } }
         .overlay { if clutchButton != nil { clutchOverlay } }
@@ -175,20 +168,6 @@ struct RemapView: View {
     private func dpiShortcutBinding(keyCode: UInt16, flags: CGEventFlags) -> BLEProtocol.DPIButtonBinding? {
         guard let usage = BLEProtocol.hidUsage(forMacKeyCode: keyCode) else { return nil }
         return .keyboardShortcut(hidUsage: usage, modifiers: DPIShortcutModifiers.hidValue(from: flags))
-    }
-
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // Esc belongs to the key recorder while it's up: it cancels the recording.
-            if let onBack {
-                BackButton(action: onBack, escapes: recordingButton == nil && !recordingDpiCycleShortcut)
-            }
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Configure Buttons").font(.system(size: 16, weight: .semibold))
-                Text("Remap your mouse's extra buttons.")
-                    .font(.system(size: 11)).foregroundStyle(.secondary)
-            }
-        }
     }
 
     private var accessibilityBanner: some View {
