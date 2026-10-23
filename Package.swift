@@ -9,15 +9,27 @@ let package = Package(
         .macOS(.v14)
     ],
     targets: [
+        // Razer's HID protocol: report framing, command builders and parsers, the Bluetooth
+        // translation, onboard tables, the device registry. Pure; no AppKit, no IOKit.
+        .target(
+            name: "RazerProtocol",
+            path: "Sources/RazerProtocol"
+        ),
         .executableTarget(
             name: "Serpentine",
+            dependencies: ["RazerProtocol"],
             path: "Sources/Serpentine"
         ),
         // Tests import the executable target directly (@testable) — supported by SwiftPM on
         // macOS, and avoids splitting a library target just to gain testability.
         .testTarget(
+            name: "RazerProtocolTests",
+            dependencies: ["RazerProtocol"],
+            path: "Tests/RazerProtocolTests"
+        ),
+        .testTarget(
             name: "SerpentineTests",
-            dependencies: ["Serpentine"],
+            dependencies: ["Serpentine", "RazerProtocol"],
             path: "Tests/SerpentineTests"
         ),
     ]

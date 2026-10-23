@@ -3,6 +3,7 @@
 
 import SwiftUI
 import AppKit
+import RazerProtocol
 
 /// Reports the main page's measured height so the popover can size to it.
 private struct HeightKey: PreferenceKey {

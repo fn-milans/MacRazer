@@ -5,6 +5,7 @@ import Foundation
 import Combine
 import AppKit
 import CoreBluetooth
+import RazerProtocol
 
 /// A Razer mouse on Bluetooth that Serpentine isn't controlling, and why — drives the
 /// popover's Bluetooth notice.

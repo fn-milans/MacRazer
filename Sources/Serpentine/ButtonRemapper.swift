@@ -5,84 +5,7 @@ import AppKit
 import Combine
 import ApplicationServices
 import CoreGraphics
-
-/// What a remapped button does. `.passthrough` lets the original event through; `.keystroke`
-/// suppresses the button and posts a key combo instead.
-enum RemapAction: Codable, Equatable, Sendable {
-    case passthrough
-    case keystroke(keyCode: UInt16, modifiers: UInt64, name: String)
-    case mouseButton(button: Int, name: String)
-    case doubleClick
-    case mediaKey(code: Int, name: String)
-    /// Held, it switches every other button to its HyperShift mapping
-    /// (`ButtonRemapper.hyperShiftKey`), like Synapse's HyperShift. Does nothing by itself.
-    case hyperShift
-    /// Moves the mouse to its next (or previous) onboard profile slot (`OnboardSlots`).
-    /// The mouse does it itself; on mice without slots it is never offered.
-    case cycleProfile(up: Bool)
-    // The rest are done by the mouse itself and only offered on a mouse that keeps its
-    // remaps (`OnboardButtons.nativeBlock`).
-    /// A mouse button (0 left ... 4 forward) clicked over and over while held, every
-    /// `intervalMs`.
-    case turboClick(button: Int, intervalMs: Int, name: String)
-    /// A key or combination pressed over and over while held, every `intervalMs`.
-    case turboKey(keyCode: UInt16, modifiers: UInt64, name: String, intervalMs: Int)
-    /// The mouse runs at `dpi` while held, then goes back (Synapse's Sensitivity Clutch).
-    case dpiClutch(dpi: Int)
-    /// Cycles the wheel's modes, the wheel-mode button's factory job.
-    case cycleScrollMode
-    /// A wheel step, once per press or `repeating` while held. Sideways the mouse only
-    /// repeats (`OnboardButtons.scrollBlock`).
-    case scroll(direction: ScrollDirection, repeating: Bool)
-    /// One DPI stage up or down, stopping at the ends.
-    case dpiStage(up: Bool)
-    /// The button does nothing.
-    case disabled
-
-    var label: String {
-        switch self {
-        case .passthrough: return "None"
-        case .keystroke(_, _, let name), .mouseButton(_, let name), .mediaKey(_, let name): return name
-        case .doubleClick: return "Double Click"
-        case .hyperShift: return "HyperShift"
-        case .cycleProfile(let up): return up ? "Cycle Up Profile" : "Cycle Down Profile"
-        case .turboClick(_, let ms, let name): return "Turbo \(name) (\(Self.perSecond(ms))/s)"
-        case .turboKey(_, _, let name, let ms): return "Turbo \(name) (\(Self.perSecond(ms))/s)"
-        case .dpiClutch(let dpi): return "DPI Clutch \(dpi)"
-        case .cycleScrollMode: return "Cycle Scroll Mode"
-        case .scroll(let direction, let repeating):
-            return (repeating && direction.isVertical ? "Repeat " : "") + direction.label
-        case .dpiStage(let up): return up ? "DPI Stage Up" : "DPI Stage Down"
-        case .disabled: return "Disabled"
-        }
-    }
-
-    /// The turbo rates the remap menu offers, as presses per second.
-    static let turboRates = [5, 10, 20]
-    /// The DPI values the remap menu offers for the clutch.
-    static let clutchDPIs = [400, 800, 1200, 1600]
-
-    static func intervalMs(perSecond rate: Int) -> Int { 1000 / rate }
-    static func perSecond(_ intervalMs: Int) -> Int { intervalMs > 0 ? 1000 / intervalMs : 0 }
-}
-
-/// Which way a `.scroll` remap scrolls.
-enum ScrollDirection: String, Codable, CaseIterable, Sendable {
-    case up, down, left, right
-
-    var label: String { "Scroll " + rawValue.capitalized }
-    var isVertical: Bool { self == .up || self == .down }
-}
-
-/// A curated shortcut a button can be bound to (keeps v1 simple — no key recorder yet).
-struct RemapPreset: Identifiable {
-    let id: String
-    let name: String
-    let keyCode: UInt16
-    let flags: CGEventFlags
-
-    var action: RemapAction { .keystroke(keyCode: keyCode, modifiers: flags.rawValue, name: name) }
-}
+import RazerProtocol
 
 /// Software button remapping via a CGEvent tap. Detects which extra mouse buttons fire and,
 /// for mapped ones, suppresses the original event and posts a key combo instead.
@@ -159,25 +82,7 @@ final class ButtonRemapper: ObservableObject, @unchecked Sendable {
         dpiBridgeRestoreAttempted = false
     }
 
-    static let presets: [RemapPreset] = [
-        .init(id: "copy", name: "Copy  ⌘C", keyCode: 8, flags: .maskCommand),
-        .init(id: "paste", name: "Paste  ⌘V", keyCode: 9, flags: .maskCommand),
-        .init(id: "cut", name: "Cut  ⌘X", keyCode: 7, flags: .maskCommand),
-        .init(id: "undo", name: "Undo  ⌘Z", keyCode: 6, flags: .maskCommand),
-        .init(id: "redo", name: "Redo  ⇧⌘Z", keyCode: 6, flags: [.maskCommand, .maskShift]),
-        .init(id: "selectAll", name: "Select All  ⌘A", keyCode: 0, flags: .maskCommand),
-        .init(id: "save", name: "Save  ⌘S", keyCode: 1, flags: .maskCommand),
-        .init(id: "find", name: "Find  ⌘F", keyCode: 3, flags: .maskCommand),
-        .init(id: "newTab", name: "New Tab  ⌘T", keyCode: 17, flags: .maskCommand),
-        .init(id: "close", name: "Close  ⌘W", keyCode: 13, flags: .maskCommand),
-        .init(id: "back", name: "Back  ⌘[", keyCode: 33, flags: .maskCommand),
-        .init(id: "forward", name: "Forward  ⌘]", keyCode: 30, flags: .maskCommand),
-        .init(id: "missionControl", name: "Mission Control  ⌃↑", keyCode: 126, flags: .maskControl),
-        .init(id: "spaceLeft", name: "Space Left  ⌃←", keyCode: 123, flags: .maskControl),
-        .init(id: "spaceRight", name: "Space Right  ⌃→", keyCode: 124, flags: .maskControl),
-        .init(id: "screenshot", name: "Screenshot  ⇧⌘4", keyCode: 21, flags: [.maskCommand, .maskShift]),
-        .init(id: "switchApp", name: "Switch App  ⌘Tab", keyCode: 48, flags: .maskCommand),
-    ]
+    static var presets: [RemapPreset] { RemapCatalog.presets }
 
     // MARK: - Lifecycle
 
@@ -219,11 +124,7 @@ final class ButtonRemapper: ObservableObject, @unchecked Sendable {
 
     // MARK: - Mappings
 
-    /// Media keys (IOKit NX_KEYTYPE codes).
-    static let mediaOptions: [(code: Int, name: String)] = [
-        (16, "Play / Pause"), (17, "Next Track"), (18, "Previous Track"),
-        (0, "Volume Up"), (1, "Volume Down"), (7, "Mute"),
-    ]
+    static var mediaOptions: [(code: Int, name: String)] { RemapCatalog.mediaOptions }
 
     /// Called after an individual button's mapping changes — lets owners (e.g. profile tracking
     /// in `MouseController`) know the live config has drifted from whatever profile was applied.
@@ -322,12 +223,9 @@ final class ButtonRemapper: ObservableObject, @unchecked Sendable {
 
     // MARK: HyperShift
 
-    /// HyperShift mappings live in `mappings` too, under the button's id plus this offset, so
-    /// they are saved, and captured by profiles, with everything else. Button ids run from
-    /// -18 (`HardwareButton`) to a few dozen (CGEvent numbers), far from it either way.
-    static let hyperShiftOffset = 100_000
-    static func hyperShiftKey(_ button: Int) -> Int { button + hyperShiftOffset }
-    static func isHyperShiftKey(_ key: Int) -> Bool { key >= hyperShiftOffset / 2 }
+    static var hyperShiftOffset: Int { RemapCatalog.hyperShiftOffset }
+    static func hyperShiftKey(_ button: Int) -> Int { RemapCatalog.hyperShiftKey(button) }
+    static func isHyperShiftKey(_ key: Int) -> Bool { RemapCatalog.isHyperShiftKey(key) }
 
     /// A button mapped to `.hyperShift` is held down. Main thread.
     @Published private(set) var hyperShiftHeld = false

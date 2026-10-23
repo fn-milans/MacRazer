@@ -4,6 +4,7 @@
 import Foundation
 import IOKit
 import IOKit.hid
+import RazerProtocol
 
 /// Waits for the mouse itself to say something: a movement, a click, a wheel tick. Those
 /// arrive as HID input reports, and macOS delivers them to any process with Input Monitoring

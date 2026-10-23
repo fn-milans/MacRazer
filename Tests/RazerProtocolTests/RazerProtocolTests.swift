@@ -2,7 +2,7 @@
 // Part of Serpentine, a control app for Razer mice on macOS. See LICENSE and NOTICE.md.
 
 import XCTest
-@testable import Serpentine
+@testable import RazerProtocol
 
 final class RazerReportTests: XCTestCase {
     func testSerializedIs90BytesWithValidCRC() {
@@ -140,18 +140,6 @@ final class RazerCommandsTests: XCTestCase {
         XCTAssertEqual(RazerCommands.parseDPIStages(r), [100, 800, 50000, 1600, 3200],
                        "values clamp to the protocol range; the table caps at 5 stages")
         XCTAssertEqual(RazerCommands.parseActiveDPIStage(r), 4, "active index clamps to the last stage")
-    }
-
-    func testProfileDecodesWithoutDPIStagesField() {
-        // Profiles saved before dpiStages existed must keep decoding (and apply without
-        // touching the stage table).
-        let legacy = """
-        [{"id":"6F1C7C5C-0000-0000-0000-000000000000","name":"Old","dpi":1600,"pollRate":1000,
-        "brightness":80,"effect":"Static","color":{"r":1,"g":2,"b":3},"buttonMappings":{}}]
-        """
-        let decoded = try? JSONDecoder().decode([MouseProfile].self, from: Data(legacy.utf8))
-        XCTAssertEqual(decoded?.count, 1)
-        XCTAssertNil(decoded?[0].dpiStages)
     }
 
     func testParseSerial() {

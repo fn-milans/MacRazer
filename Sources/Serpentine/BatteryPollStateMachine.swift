@@ -2,6 +2,7 @@
 // Part of Serpentine, a control app for Razer mice on macOS. See LICENSE and NOTICE.md.
 
 import Foundation
+import RazerProtocol
 
 /// The pure decision core of the battery poll loop. All the subtle connection-state logic —
 /// the offline debounce, post-reconnect garbage rejection, and the charging two-poll

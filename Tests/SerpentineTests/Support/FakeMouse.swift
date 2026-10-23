@@ -2,6 +2,7 @@
 // Part of Serpentine, a control app for Razer mice on macOS. See LICENSE and NOTICE.md.
 
 @testable import Serpentine
+@testable import RazerProtocol
 
 /// A mouse that remembers the last value written to each setting and answers reads with
 /// it, since the protocol's set and get layouts mirror each other. `refuse` makes chosen

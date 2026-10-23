@@ -9,7 +9,7 @@ import Foundation
 ///
 /// The raw values are the ids the remap table stores them under. They are negative so they
 /// can never collide with a CGEvent button number (-1 is already the Bluetooth DPI Cycle).
-enum HardwareButton: Int, CaseIterable, Sendable {
+public enum HardwareButton: Int, CaseIterable, Sendable {
     case scrollUp = -18
     case scrollDown = -17
     case dpiCycle = -16
@@ -20,7 +20,7 @@ enum HardwareButton: Int, CaseIterable, Sendable {
     case tiltLeft = -11
     case tiltRight = -10
 
-    var label: String {
+    public var label: String {
         switch self {
         case .scrollUp: return "Scroll Up"
         case .scrollDown: return "Scroll Down"

@@ -4,6 +4,7 @@
 import XCTest
 import CoreGraphics
 @testable import Serpentine
+@testable import RazerProtocol
 
 final class DpiCycleSoftwareBridgeTests: XCTestCase {
     private func remapper(_ suite: String = #function) -> (ButtonRemapper, UserDefaults) {

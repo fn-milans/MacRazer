@@ -2,6 +2,7 @@
 // Part of Serpentine, a control app for Razer mice on macOS. See LICENSE and NOTICE.md.
 
 import SwiftUI
+import RazerProtocol
 
 /// A clearly-labelled "‹ Back" button used by the popover sub-pages.
 ///

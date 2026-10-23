@@ -2,7 +2,7 @@
 // Part of Serpentine, a control app for Razer mice on macOS. See LICENSE and NOTICE.md.
 
 import XCTest
-@testable import Serpentine
+@testable import RazerProtocol
 
 /// Fixtures are real notifications captured from a Cobra HyperSpeed over Bluetooth
 /// (PID 0x00DC), so these pin the protocol as the hardware speaks it, not as we guessed.
@@ -57,13 +57,13 @@ final class BLEProtocolTests: XCTestCase {
 
     func testAssemblerMapsStatusBytes() {
         XCTAssertThrowsError(try assemble(0x33, ["33 00 00 00 00 00 00 03"])) {
-            guard case HIDDevice.HIDError.commandFailed = $0 else { return XCTFail("\($0)") }
+            guard case RazerError.commandFailed = $0 else { return XCTFail("\($0)") }
         }
         XCTAssertThrowsError(try assemble(0x36, ["36 00 00 00 00 00 00 05"])) {
-            guard case HIDDevice.HIDError.notSupported = $0 else { return XCTFail("\($0)") }
+            guard case RazerError.notSupported = $0 else { return XCTFail("\($0)") }
         }
         XCTAssertThrowsError(try assemble(0x30, ["30 02 00 00 00 00 00 02", "2c"]), "short payload") {
-            guard case HIDDevice.HIDError.timeout = $0 else { return XCTFail("\($0)") }
+            guard case RazerError.timeout = $0 else { return XCTFail("\($0)") }
         }
     }
 

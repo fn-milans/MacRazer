@@ -2,25 +2,7 @@
 // Part of Serpentine, a control app for Razer mice on macOS. See LICENSE and NOTICE.md.
 
 import Foundation
-
-/// The lighting effects the UI picker and saved profiles share. Raw values are what profiles
-/// persist AND what the picker displays — renaming a case would orphan every saved profile's
-/// effect (it decodes as a plain string and falls back to `.off`), so treat them as frozen.
-enum LightingEffect: String, CaseIterable, Identifiable {
-    case staticColor = "Static"
-    case breathing = "Breathing"
-    case spectrum = "Spectrum"
-    case reactive = "Reactive"
-    case wave = "Wave"
-    case off = "Off"
-    var id: Self { self }
-
-    /// The effects with a colour of their own.
-    var usesColor: Bool { [.staticColor, .breathing, .reactive].contains(self) }
-
-    /// What mice without lighting zones offer (`ZonedLighting.effects` for the others).
-    static let classic: [LightingEffect] = [.staticColor, .spectrum, .wave, .off]
-}
+import RazerProtocol
 
 /// A named, switchable snapshot of everything the popover lets you configure: DPI, polling rate,
 /// lighting, and button remaps. The physical "profile" button on the mouse only cycles DPI

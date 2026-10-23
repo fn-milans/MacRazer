@@ -3,7 +3,7 @@
 
 import AppKit
 import XCTest
-@testable import Serpentine
+@testable import RazerProtocol
 
 final class DPIShortcutModifiersTests: XCTestCase {
     func testMapsCombinedModifiersToHIDBits() {

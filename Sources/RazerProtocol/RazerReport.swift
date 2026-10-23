@@ -17,28 +17,28 @@ import Foundation
 ///   [8..87]  arguments[80]
 ///   [88]     crc (xor of bytes [2..87])
 ///   [89]     reserved (0x00)
-struct RazerReport {
-    var status: UInt8 = 0x00
-    var transactionId: UInt8 = 0x00
-    var remainingPackets: UInt16 = 0x0000
-    var protocolType: UInt8 = 0x00
-    var dataSize: UInt8 = 0x00
-    var commandClass: UInt8 = 0x00
-    var commandId: UInt8 = 0x00
-    var arguments: [UInt8] = Array(repeating: 0x00, count: 80)
+public struct RazerReport: Sendable {
+    public var status: UInt8 = 0x00
+    public var transactionId: UInt8 = 0x00
+    public var remainingPackets: UInt16 = 0x0000
+    public var protocolType: UInt8 = 0x00
+    public var dataSize: UInt8 = 0x00
+    public var commandClass: UInt8 = 0x00
+    public var commandId: UInt8 = 0x00
+    public var arguments: [UInt8] = Array(repeating: 0x00, count: 80)
     // crc + reserved are derived on serialize.
 
-    static let wireSize = 90
+    public static let wireSize = 90
 
     /// Mirror of `get_razer_report(command_class, command_id, data_size)`.
-    init(commandClass: UInt8, commandId: UInt8, dataSize: UInt8) {
+    public init(commandClass: UInt8, commandId: UInt8, dataSize: UInt8) {
         self.commandClass = commandClass
         self.commandId = commandId
         self.dataSize = dataSize
     }
 
     /// Serialize to the 90-byte wire buffer, computing the CRC.
-    func serialized() -> [UInt8] {
+    public func serialized() -> [UInt8] {
         var b = [UInt8](repeating: 0x00, count: RazerReport.wireSize)
         b[0] = status
         b[1] = transactionId
@@ -57,7 +57,7 @@ struct RazerReport {
     }
 
     /// Parse a 90-byte response buffer back into a report.
-    static func parse(_ b: [UInt8]) -> RazerReport? {
+    public static func parse(_ b: [UInt8]) -> RazerReport? {
         guard b.count >= wireSize else { return nil }
         var r = RazerReport(commandClass: b[6], commandId: b[7], dataSize: b[5])
         r.status = b[0]
@@ -77,7 +77,7 @@ struct RazerReport {
     }
 
     /// Mirror of `razer_calculate_crc`: xor of bytes index 2..87 inclusive.
-    static func crc(of buffer: [UInt8]) -> UInt8 {
+    public static func crc(of buffer: [UInt8]) -> UInt8 {
         var crc: UInt8 = 0
         for i in 2..<88 where i < buffer.count {
             crc ^= buffer[i]
@@ -87,7 +87,7 @@ struct RazerReport {
 }
 
 /// Response status codes — razercommon.h "Report Responses".
-enum RazerStatus: UInt8 {
+public enum RazerStatus: UInt8, Sendable {
     case new = 0x00
     case busy = 0x01
     case successful = 0x02

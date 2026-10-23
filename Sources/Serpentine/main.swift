@@ -12,6 +12,7 @@ import Foundation
 import AppKit
 import ServiceManagement
 import SwiftUI
+import RazerProtocol
 
 let args = Array(CommandLine.arguments.dropFirst())
 

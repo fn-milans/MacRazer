@@ -2,7 +2,7 @@
 // Part of Serpentine, a control app for Razer mice on macOS. See LICENSE and NOTICE.md.
 
 import XCTest
-@testable import Serpentine
+@testable import RazerProtocol
 
 /// The Basilisk V4 Pro's per-zone lighting, as the mouse took and reported it (2026-10-19).
 final class LightingZonesTests: XCTestCase {

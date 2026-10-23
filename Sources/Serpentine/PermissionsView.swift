@@ -2,6 +2,7 @@
 // Part of Serpentine, a control app for Razer mice on macOS. See LICENSE and NOTICE.md.
 
 import SwiftUI
+import RazerProtocol
 
 /// First-run setup / permissions screen. Explains the two macOS permissions Serpentine needs,
 /// shows their live status, and grants them with the native prompts. Reachable any time from

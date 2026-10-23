@@ -3,6 +3,7 @@
 
 import XCTest
 @testable import Serpentine
+@testable import RazerProtocol
 
 final class RazerDevicesTests: XCTestCase {
     /// Transaction ids go on the wire for every command (stamped in HIDDevice.send) — pin

@@ -4,6 +4,7 @@
 import Foundation
 import IOKit
 import IOKit.hid
+import RazerProtocol
 
 /// Thin wrapper over IOKit's HID Manager for talking to the Razer dongle.
 ///
@@ -16,30 +17,8 @@ import IOKit.hid
 /// the next thing to try is prefixing a report-id byte — verify against razer-macos.
 final class HIDDevice {
 
-    enum HIDError: Error, CustomStringConvertible {
-        case notFound
-        case openFailed(IOReturn)
-        case setReportFailed(IOReturn)
-        case getReportFailed(IOReturn)
-        case badResponse
-        case timeout
-        case commandFailed
-        case notSupported
-
-        var description: String {
-            func hex(_ r: IOReturn) -> String { String(format: "0x%08x", UInt32(bitPattern: r)) }
-            switch self {
-            case .notFound: return "No Razer mouse found on USB (is the cable or 2.4GHz dongle plugged in?)"
-            case .openFailed(let r): return "IOHIDDeviceOpen failed: \(hex(r))"
-            case .setReportFailed(let r): return "SetReport failed: \(hex(r))"
-            case .getReportFailed(let r): return "GetReport failed: \(hex(r))"
-            case .badResponse: return "Malformed or mismatched response report"
-            case .timeout: return "Device command timed out (known-finicky over the wireless dongle)"
-            case .commandFailed: return "Device reported the command failed (status 0x03)"
-            case .notSupported: return "Device reports the command as not supported (status 0x05)"
-            }
-        }
-    }
+    /// Kept under its old name, which the code throughout uses.
+    typealias HIDError = RazerError
 
     /// Whether an error string from a failed open/read means the macOS Input Monitoring
     /// permission is missing. `HIDError` renders IOReturn codes as hex only, so match

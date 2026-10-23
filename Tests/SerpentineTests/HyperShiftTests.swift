@@ -4,6 +4,7 @@
 import AppKit
 import XCTest
 @testable import Serpentine
+@testable import RazerProtocol
 
 final class HyperShiftTests: XCTestCase {
     private var emitted: [RemapAction] = []

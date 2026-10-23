@@ -2,6 +2,7 @@
 // Part of Serpentine, a control app for Razer mice on macOS. See LICENSE and NOTICE.md.
 
 import Foundation
+import RazerProtocol
 
 /// Anything the probes can talk to. `HIDDevice` already has both calls; the tests drive the
 /// probes with a scripted fake instead, so what they send and how they read the answers is

@@ -15,14 +15,20 @@ import CoreGraphics
 /// Basilisk Mobile that Synapse had configured.
 ///
 /// A block is seven bytes: a function type, the length of its data, then the data.
-enum OnboardButtons {
+public enum OnboardButtons: Sendable {
     /// One remappable control: the id the remap table keys it by (a CGEvent button number or a
     /// `HardwareButton`), its entry in the mouse's table, and what the entry holds from the
     /// factory.
-    struct Control: Equatable, Sendable {
-        let button: Int
-        let tableID: UInt8
-        let factory: [UInt8]
+    public struct Control: Equatable, Sendable {
+        public let button: Int
+        public let tableID: UInt8
+        public let factory: [UInt8]
+
+        public init(button: Int, tableID: UInt8, factory: [UInt8]) {
+            self.button = button
+            self.tableID = tableID
+            self.factory = factory
+        }
     }
 
     /// The controls of a mouse whose table is known, or nil. Left click is left out on
@@ -34,18 +40,18 @@ enum OnboardButtons {
     /// written to each fired from that button alone (2026-10-22). Their factory blocks are the
     /// two functions the Basilisk V3's table documents as HyperShift switching (0C) and wheel
     /// mode switching (12), github.com/geezmolycos/razerqdhid docs/cmd_button-en.md.
-    static func layout(pid: Int) -> [Control]? {
+    public static func layout(pid: Int) -> [Control]? {
         RazerDevices.buttonTable(pid: pid).map(layout)
     }
 
     /// The function tables Serpentine knows, named by the mouse they were read from. A registry
     /// row points at one (`RazerDeviceInfo.buttonTable`), so mice that share a table share it.
-    enum Table: Equatable, Sendable {
+    public enum Table: Equatable, Sendable {
         /// Basilisk V4 Pro: the same table on the cable, the dongle and Bluetooth.
         case basiliskV4Pro
     }
 
-    static func layout(_ table: Table) -> [Control] {
+    public static func layout(_ table: Table) -> [Control] {
         switch table {
         case .basiliskV4Pro:
             return [
@@ -69,7 +75,7 @@ enum OnboardButtons {
     /// What a control does from the factory, in the remap menu's words, for a row with no
     /// remap: Synapse's default map (Left Side cycles profiles up, Side Front is off, the side
     /// trigger is HyperShift).
-    static func factoryLabel(_ control: Control) -> String {
+    public static func factoryLabel(_ control: Control) -> String {
         switch (control.factory[0], control.factory[2]) {
         case (0x00, _): return "Disabled"
         case (0x01, 1): return "Left Click"
@@ -92,13 +98,13 @@ enum OnboardButtons {
 
     /// Whether a control is the HyperShift clutch on its factory function (the side trigger),
     /// so it needs no HyperShift remap to be one.
-    static func isHyperShiftOnFactory(_ control: Control) -> Bool {
+    public static func isHyperShiftOnFactory(_ control: Control) -> Bool {
         control.factory.first == 0x0C
     }
 
     /// The order the remap window lists a mouse's controls in, top to bottom, as they sit on
     /// the mouse. Nil for a mouse without one.
-    static func rowOrder(pid: Int) -> [Int]? {
+    public static func rowOrder(pid: Int) -> [Int]? {
         guard layout(pid: pid) != nil else { return nil }
         return [HardwareButton.leftClickSide.rawValue,
                 1, 2, HardwareButton.scrollUp.rawValue, HardwareButton.scrollDown.rawValue, HardwareButton.tiltLeft.rawValue, HardwareButton.tiltRight.rawValue,
@@ -110,7 +116,7 @@ enum OnboardButtons {
     /// Whether Serpentine sees the control's presses while it holds its factory function: only
     /// the ones that are a mouse button then. Actions only Serpentine can do (Double Click,
     /// HyperShift) work on those alone.
-    static func appSees(_ control: Control) -> Bool {
+    public static func appSees(_ control: Control) -> Bool {
         // Mouse buttons 3-5 only: the tap takes the extra buttons' events, not left or right
         // click, and scroll up and down (01 01 09 / 0A) arrive as wheel steps.
         control.factory.first == 0x01 && (3...5).contains(control.factory[2])
@@ -118,18 +124,18 @@ enum OnboardButtons {
 
     // MARK: Blocks
 
-    static let disabledBlock: [UInt8] = [0x00, 0x01, 0x00, 0, 0, 0, 0]
+    public static let disabledBlock: [UInt8] = [0x00, 0x01, 0x00, 0, 0, 0, 0]
 
     /// A mouse button by its HID number (1 left, 2 right, 3 middle, 4 back, 5 forward).
-    static func mouseBlock(_ hidButton: UInt8) -> [UInt8] { [0x01, 0x01, hidButton, 0, 0, 0, 0] }
+    public static func mouseBlock(_ hidButton: UInt8) -> [UInt8] { [0x01, 0x01, hidButton, 0, 0, 0, 0] }
 
     /// A consumer-control usage (volume, media keys), big-endian.
-    static func consumerBlock(_ usage: UInt16) -> [UInt8] {
+    public static func consumerBlock(_ usage: UInt16) -> [UInt8] {
         [0x0A, 0x02, UInt8(usage >> 8), UInt8(usage & 0xFF), 0, 0, 0]
     }
 
-    /// IOKit NX_KEYTYPE codes (`ButtonRemapper.mediaOptions`) as consumer-control usages.
-    static let consumerUsages: [Int: UInt16] = [
+    /// IOKit NX_KEYTYPE codes (`RemapCatalog.mediaOptions`) as consumer-control usages.
+    public static let consumerUsages: [Int: UInt16] = [
         0: 0x00E9, // Volume Up
         1: 0x00EA, // Volume Down
         7: 0x00E2, // Mute
@@ -141,7 +147,7 @@ enum OnboardButtons {
     /// HyperShift while held: type 0C switches the mouse to its HyperShift layer
     /// (`shiftedPlan`), the job the side trigger has from the factory (0C 01 39). 0C 01 00, 01
     /// and 02 all did it on Side Front (press test with a layer-01 Volume Up, 2026-10-19).
-    static let hyperShiftBlock: [UInt8] = [0x0C, 0x01, 0x01, 0, 0, 0, 0]
+    public static let hyperShiftBlock: [UInt8] = [0x0C, 0x01, 0x01, 0, 0, 0, 0]
 
     // The blocks below were each written to a V4 Pro button and confirmed by pressing it
     // (2026-10-22). Their layouts are the Basilisk V3's, github.com/geezmolycos/razerqdhid
@@ -149,37 +155,37 @@ enum OnboardButtons {
     // the doc gives as 03).
 
     /// Double Click: type 0B repeats a mouse button's click; 01 is left.
-    static let doubleClickBlock: [UInt8] = [0x0B, 0x01, 0x01, 0, 0, 0, 0]
+    public static let doubleClickBlock: [UInt8] = [0x0B, 0x01, 0x01, 0, 0, 0, 0]
 
     /// Turbo: type 0E clicks a mouse button (HID number), 0D presses a key (modifier bits,
     /// HID usage), each followed by the repeat interval in ms, big-endian. The tilt's factory
     /// 0E 01 68 00 14 is the same type, with length 01.
-    static func turboClickBlock(hidButton: UInt8, intervalMs: Int) -> [UInt8] {
+    public static func turboClickBlock(hidButton: UInt8, intervalMs: Int) -> [UInt8] {
         [0x0E, 0x03, hidButton, UInt8(intervalMs >> 8 & 0xFF), UInt8(intervalMs & 0xFF), 0, 0]
     }
 
-    static func turboKeyBlock(modifiers: UInt8, hidUsage: UInt8, intervalMs: Int) -> [UInt8] {
+    public static func turboKeyBlock(modifiers: UInt8, hidUsage: UInt8, intervalMs: Int) -> [UInt8] {
         [0x0D, 0x04, modifiers, hidUsage, UInt8(intervalMs >> 8 & 0xFF), UInt8(intervalMs & 0xFF), 0]
     }
 
     /// DPI Clutch: type 06 with sub-function 05, then X and Y DPI big-endian, held while the
     /// button is.
-    static func dpiClutchBlock(dpi: Int) -> [UInt8] {
+    public static func dpiClutchBlock(dpi: Int) -> [UInt8] {
         let hi = UInt8(dpi >> 8 & 0xFF), lo = UInt8(dpi & 0xFF)
         return [0x06, 0x05, 0x05, hi, lo, hi, lo]
     }
 
     /// Cycle Scroll Mode: the wheel-mode button's factory function, on any button.
-    static let cycleScrollModeBlock: [UInt8] = [0x12, 0x01, 0x01, 0, 0, 0, 0]
+    public static let cycleScrollModeBlock: [UInt8] = [0x12, 0x01, 0x01, 0, 0, 0, 0]
 
     /// The wheel's HID values in a mouse block: up, down, left, right.
-    static let wheelValues: [ScrollDirection: UInt8] = [.up: 0x09, .down: 0x0A, .left: 0x68, .right: 0x69]
+    public static let wheelValues: [ScrollDirection: UInt8] = [.up: 0x09, .down: 0x0A, .left: 0x68, .right: 0x69]
 
     /// A wheel step. Once per press is a mouse block (01 01 09 on any button); while held it
     /// is the tilt's own factory block, type 0E every 20 ms (0E 01 68 00 14). Sideways only
     /// the repeating form works: 01 01 68 and 69 sent nothing (2026-10-22), so a sideways
     /// scroll always repeats, as the tilt does.
-    static func scrollBlock(_ direction: ScrollDirection, repeating: Bool) -> [UInt8]? {
+    public static func scrollBlock(_ direction: ScrollDirection, repeating: Bool) -> [UInt8]? {
         guard let value = wheelValues[direction] else { return nil }
         if direction.isVertical && !repeating { return mouseBlock(value) }
         guard repeating else { return nil }
@@ -188,12 +194,12 @@ enum OnboardButtons {
 
     /// DPI Stage Up or Down: type 06, 01 up and 02 down, stopping at the last stage (the DPI
     /// button's factory 06 wraps around). Both confirmed by pressing (2026-10-22).
-    static func dpiStageBlock(up: Bool) -> [UInt8] { [0x06, 0x01, up ? 0x01 : 0x02, 0, 0, 0, 0] }
+    public static func dpiStageBlock(up: Bool) -> [UInt8] { [0x06, 0x01, up ? 0x01 : 0x02, 0, 0, 0, 0] }
 
     /// What the mouse itself can do for an action, or nil when only Serpentine can (a key the
     /// mouse's keyboard format has no usage for). HyperShift is for the standard layer only
     /// (`shiftedPlan`).
-    static func nativeBlock(for action: RemapAction) -> [UInt8]? {
+    public static func nativeBlock(for action: RemapAction) -> [UInt8]? {
         switch action {
         case .passthrough:
             return nil
@@ -248,7 +254,7 @@ enum OnboardButtons {
     /// `.passthrough` for the control's factory function, nil for a block Serpentine can't
     /// write (a Synapse macro, a key it has no code for). Only blocks that `nativeBlock`
     /// writes back byte for byte are recognised, so reading one and syncing it is no write.
-    static func action(for block: [UInt8], control: Control) -> RemapAction? {
+    public static func action(for block: [UInt8], control: Control) -> RemapAction? {
         if block == control.factory { return .passthrough }
         guard block.count == 7 else { return nil }
         let candidate: RemapAction?
@@ -287,7 +293,7 @@ enum OnboardButtons {
         case 0x0A:
             let usage = UInt16(block[2]) << 8 | UInt16(block[3])
             candidate = consumerUsages.first { $0.value == usage }.flatMap { code, _ in
-                ButtonRemapper.mediaOptions.first { $0.code == code }.map { .mediaKey(code: $0.code, name: $0.name) }
+                RemapCatalog.mediaOptions.first { $0.code == code }.map { .mediaKey(code: $0.code, name: $0.name) }
             }
         case 0x0C:
             candidate = .hyperShift
@@ -303,7 +309,7 @@ enum OnboardButtons {
         if hidUsage == 0 {
             // A lone modifier key, left and right apart.
             guard let keyCode = (0...127).map(UInt16.init).first(where: { BLEProtocol.hidModifierBit(forMacKeyCode: $0) == modifiers }),
-                  let name = RecorderNSView.modifierKeys[keyCode]?.name else { return nil }
+                  let name = RemapCatalog.modifierKeyNames[keyCode] else { return nil }
             return .keystroke(keyCode: keyCode, modifiers: 0, name: name)
         }
         guard let keyCode = (0...127).map(UInt16.init).first(where: { BLEProtocol.hidUsage(forMacKeyCode: $0) == hidUsage })
@@ -313,7 +319,7 @@ enum OnboardButtons {
         if modifiers & 0x02 != 0 { flags.insert(.maskShift) }
         if modifiers & 0x04 != 0 { flags.insert(.maskAlternate) }
         if modifiers & 0x08 != 0 { flags.insert(.maskCommand) }
-        if let preset = ButtonRemapper.presets.first(where: { $0.keyCode == keyCode && $0.flags == flags }) {
+        if let preset = RemapCatalog.presets.first(where: { $0.keyCode == keyCode && $0.flags == flags }) {
             return preset.action
         }
         return .keystroke(keyCode: keyCode, modifiers: flags.rawValue,
@@ -327,7 +333,7 @@ enum OnboardButtons {
     /// function. A control missing from a read keeps its mapping. Kept as they are: a mapping
     /// that already writes what the mouse holds (its name included), and an action only
     /// Serpentine can do (Double Click) on a control the mouse still has on its factory function.
-    static func adopt(pid: Int, mappings: [Int: RemapAction],
+    public static func adopt(pid: Int, mappings: [Int: RemapAction],
                       standard: [UInt8: [UInt8]], shifted: [UInt8: [UInt8]?]) -> [Int: RemapAction] {
         guard let controls = layout(pid: pid) else { return mappings }
         var out = mappings
@@ -353,7 +359,7 @@ enum OnboardButtons {
                 take(control.button, read: read, control: control, shiftedLayer: false)
             }
             if let read = shifted[control.tableID] {
-                take(ButtonRemapper.hyperShiftKey(control.button), read: read ?? control.factory, control: control, shiftedLayer: true)
+                take(RemapCatalog.hyperShiftKey(control.button), read: read ?? control.factory, control: control, shiftedLayer: true)
             }
         }
         return out
@@ -362,7 +368,7 @@ enum OnboardButtons {
     // MARK: Plan
 
     /// Where a control's remap lives.
-    enum Placement: Equatable, Sendable {
+    public enum Placement: Equatable, Sendable {
         /// Nothing remapped: the mouse's own function.
         case factory
         /// Saved in the mouse as this block.
@@ -372,20 +378,25 @@ enum OnboardButtons {
         case app
     }
 
-    struct Entry: Equatable, Sendable {
-        let control: Control
-        let placement: Placement
+    public struct Entry: Equatable, Sendable {
+        public let control: Control
+        public let placement: Placement
+
+        public init(control: Control, placement: Placement) {
+            self.control = control
+            self.placement = placement
+        }
     }
 
     /// Every control's placement for a remap table's standard layer. HyperShift mappings go
     /// to the mouse's own HyperShift layer (`shiftedPlan`), switched by the side trigger and
     /// by any control set to HyperShift (`hyperShiftBlock`).
-    static func plan(pid: Int, mappings: [Int: RemapAction]) -> [Entry] {
+    public static func plan(pid: Int, mappings: [Int: RemapAction]) -> [Entry] {
         guard let controls = layout(pid: pid) else { return [] }
         return controls.map { Entry(control: $0, placement: placement(for: $0, mappings: mappings)) }
     }
 
-    static func placement(for control: Control, mappings: [Int: RemapAction]) -> Placement {
+    public static func placement(for control: Control, mappings: [Int: RemapAction]) -> Placement {
         let action = mappings[control.button] ?? .passthrough
         if isFactory(action, on: control) { return .factory }
         return nativeBlock(for: action).map(Placement.mouse) ?? .app
@@ -394,7 +405,7 @@ enum OnboardButtons {
     /// Whether an action is what the control already does from the factory: no remap, its
     /// own block, or HyperShift on the side trigger (whose 0C 01 39 differs from
     /// `hyperShiftBlock` in its sub-function byte only).
-    static func isFactory(_ action: RemapAction, on control: Control) -> Bool {
+    public static func isFactory(_ action: RemapAction, on control: Control) -> Bool {
         action == .passthrough || nativeBlock(for: action) == control.factory
             || (action == .hyperShift && isHyperShiftOnFactory(control))
     }
@@ -412,10 +423,10 @@ enum OnboardButtons {
     /// A control's HyperShift entry: its remap there, or `.factory` (left as the mouse has
     /// it, which from the factory is the same function as the standard layer). Actions only
     /// Serpentine can do don't exist on this layer, and neither does HyperShift itself.
-    static func shiftedPlan(pid: Int, mappings: [Int: RemapAction]) -> [Entry] {
+    public static func shiftedPlan(pid: Int, mappings: [Int: RemapAction]) -> [Entry] {
         guard let controls = layout(pid: pid) else { return [] }
         return controls.map { control in
-            let action = mappings[ButtonRemapper.hyperShiftKey(control.button)] ?? .passthrough
+            let action = mappings[RemapCatalog.hyperShiftKey(control.button)] ?? .passthrough
             guard action != .hyperShift else { return Entry(control: control, placement: .factory) }
             return Entry(control: control, placement: nativeBlock(for: action).map(Placement.mouse) ?? .factory)
         }
@@ -425,7 +436,7 @@ enum OnboardButtons {
     /// standard layer (`step`). An entry nothing was written to reads as the control's
     /// factory function, which is what the mouse does with it.
     /// `current` is the layer as just read, by table id, which saves reading it again.
-    static func syncShifted(_ table: ButtonFunctionTable, plan: [Entry],
+    public static func syncShifted(_ table: ButtonFunctionTable, plan: [Entry],
                             owned start: [UInt8: Set<[UInt8]>],
                             current: [UInt8: [UInt8]?]? = nil) -> (owned: [UInt8: Set<[UInt8]>], failed: Int) {
         var owned = start
@@ -459,16 +470,22 @@ enum OnboardButtons {
     /// `owned` is the blocks Serpentine may have left in it afterwards, which is what lets it
     /// put the entry back later. A failed write counts the block it tried, since the mouse
     /// may hold it anyway.
-    struct Step: Equatable {
-        let write: [UInt8]?
-        let owned: Set<[UInt8]>
+    public struct Step: Equatable, Sendable {
+        public let write: [UInt8]?
+        public let owned: Set<[UInt8]>
         /// What `owned` becomes when the write fails.
-        let ownedIfFailed: Set<[UInt8]>
+        public let ownedIfFailed: Set<[UInt8]>
+
+        public init(write: [UInt8]?, owned: Set<[UInt8]>, ownedIfFailed: Set<[UInt8]>) {
+            self.write = write
+            self.owned = owned
+            self.ownedIfFailed = ownedIfFailed
+        }
     }
 
     /// One entry's step. Only an entry Serpentine wrote is ever put back: one that holds
     /// something else was set some other way (Synapse on another computer) and is left alone.
-    static func step(_ placement: Placement, current: [UInt8], factory: [UInt8], owned: Set<[UInt8]>) -> Step {
+    public static func step(_ placement: Placement, current: [UInt8], factory: [UInt8], owned: Set<[UInt8]>) -> Step {
         switch placement {
         case .mouse(let block):
             guard current != block else { return Step(write: nil, owned: [block], ownedIfFailed: [block]) }
@@ -484,7 +501,7 @@ enum OnboardButtons {
     /// from `current` when the table was just read; a write is checked by reading it back
     /// (`ButtonFunctionTable.writeButtonBlock`). Returns what Serpentine owns afterwards and
     /// how many entries failed to read or write.
-    static func sync(_ table: ButtonFunctionTable, plan: [Entry],
+    public static func sync(_ table: ButtonFunctionTable, plan: [Entry],
                      owned start: [UInt8: Set<[UInt8]>],
                      current known: [UInt8: [UInt8]]? = nil) -> (owned: [UInt8: Set<[UInt8]>], failed: Int) {
         var owned = start
@@ -503,39 +520,5 @@ enum OnboardButtons {
             owned[id] = step.owned
         }
         return (owned, failed)
-    }
-}
-
-/// Which blocks Serpentine wrote into which mouse's function table, by serial number, so only
-/// those are ever put back (`OnboardButtons.step`).
-struct OnboardOwnership {
-    static let defaultsKey = Preferences.onboardButtonsOwned
-    let defaults: UserDefaults
-
-    /// The record of a mouse's HyperShift layer (`OnboardButtons.shiftedPlan`).
-    static func shiftedKey(serial: String) -> String { serial + "#hypershift" }
-
-    func owned(serial: String) -> [UInt8: Set<[UInt8]>] {
-        guard let all = defaults.dictionary(forKey: Self.defaultsKey),
-              let mouse = all[serial] as? [String: [Data]] else { return [:] }
-        var out: [UInt8: Set<[UInt8]>] = [:]
-        for (id, blocks) in mouse {
-            guard let id = UInt8(id, radix: 16) else { continue }
-            out[id] = Set(blocks.map { Array($0) })
-        }
-        return out
-    }
-
-    func set(_ owned: [UInt8: Set<[UInt8]>], serial: String) {
-        var all = defaults.dictionary(forKey: Self.defaultsKey) ?? [:]
-        let mouse = owned.filter { !$0.value.isEmpty }
-        if mouse.isEmpty {
-            all.removeValue(forKey: serial)
-        } else {
-            all[serial] = Dictionary(uniqueKeysWithValues: mouse.map { id, blocks in
-                (String(format: "%02X", id), blocks.sorted { $0.lexicographicallyPrecedes($1) }.map { Data($0) })
-            })
-        }
-        defaults.set(all, forKey: Self.defaultsKey)
     }
 }

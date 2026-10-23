@@ -14,16 +14,16 @@ import Foundation
 /// equivalent (polling rate, effects other than static) map to `notSupported`.
 ///
 /// Pure functions only. The GATT plumbing lives in `BluetoothDevice`.
-enum BLEProtocol {
-    static let serviceUUID = "52401523-F97C-7F90-0E7F-6C6F4E36DB1C"
-    static let writeUUID = "52401524-F97C-7F90-0E7F-6C6F4E36DB1C"
-    static let notifyUUID = "52401525-F97C-7F90-0E7F-6C6F4E36DB1C"
+public enum BLEProtocol: Sendable {
+    public static let serviceUUID = "52401523-F97C-7F90-0E7F-6C6F4E36DB1C"
+    public static let writeUUID = "52401524-F97C-7F90-0E7F-6C6F4E36DB1C"
+    public static let notifyUUID = "52401525-F97C-7F90-0E7F-6C6F4E36DB1C"
     /// Vendor id the mouse reports over Bluetooth (Device Information PnP ID, and the
     /// IOHID `VendorID`). Not the USB 0x1532.
-    static let vendorId = 0x068E
+    public static let vendorId = 0x068E
 
     /// Status byte at index 7 of a reply header.
-    enum Status: UInt8 {
+    public enum Status: UInt8, Sendable {
         case ok = 0x02
         case failure = 0x03
         case notSupported = 0x05
@@ -31,44 +31,44 @@ enum BLEProtocol {
 
     /// The 4-byte command key. Byte 0 is the class, byte 1 the command (high bit set for
     /// reads, the usual Razer convention); bytes 2–3 are arguments, e.g. the LED id.
-    struct Key: Equatable {
-        let bytes: [UInt8]
-        init(_ a: UInt8, _ b: UInt8, _ c: UInt8, _ d: UInt8) { bytes = [a, b, c, d] }
+    public struct Key: Equatable, Sendable {
+        public let bytes: [UInt8]
+        public init(_ a: UInt8, _ b: UInt8, _ c: UInt8, _ d: UInt8) { bytes = [a, b, c, d] }
 
-        static let battery = Key(0x05, 0x81, 0x00, 0x01)
-        static let serial = Key(0x01, 0x83, 0x00, 0x00)
-        static let dpiStagesGet = Key(0x0B, 0x84, 0x01, 0x00)
-        static let dpiStagesSet = Key(0x0B, 0x04, 0x01, 0x00)
-        static let powerTimeoutGet = Key(0x05, 0x84, 0x00, 0x00)
-        static let powerTimeoutSet = Key(0x05, 0x04, 0x00, 0x00)
-        static func brightnessGet(led: UInt8, slot: UInt8 = 0x01) -> Key { Key(0x10, 0x85, slot, led) }
-        static func brightnessSet(led: UInt8, slot: UInt8 = 0x01) -> Key { Key(0x10, 0x05, slot, led) }
+        public static let battery = Key(0x05, 0x81, 0x00, 0x01)
+        public static let serial = Key(0x01, 0x83, 0x00, 0x00)
+        public static let dpiStagesGet = Key(0x0B, 0x84, 0x01, 0x00)
+        public static let dpiStagesSet = Key(0x0B, 0x04, 0x01, 0x00)
+        public static let powerTimeoutGet = Key(0x05, 0x84, 0x00, 0x00)
+        public static let powerTimeoutSet = Key(0x05, 0x04, 0x00, 0x00)
+        public static func brightnessGet(led: UInt8, slot: UInt8 = 0x01) -> Key { Key(0x10, 0x85, slot, led) }
+        public static func brightnessSet(led: UInt8, slot: UInt8 = 0x01) -> Key { Key(0x10, 0x05, slot, led) }
         /// The stage table of one onboard slot (`OnboardSlots`); `dpiStagesGet`/`Set` are slot 1.
-        static func stagesGet(slot: UInt8) -> Key { Key(0x0B, 0x84, slot, 0x00) }
-        static func stagesSet(slot: UInt8) -> Key { Key(0x0B, 0x04, slot, 0x00) }
-        static let staticColor = Key(0x10, 0x04, 0x00, 0x00)
+        public static func stagesGet(slot: UInt8) -> Key { Key(0x0B, 0x84, slot, 0x00) }
+        public static func stagesSet(slot: UInt8) -> Key { Key(0x0B, 0x04, slot, 0x00) }
+        public static let staticColor = Key(0x10, 0x04, 0x00, 0x00)
         // The Basilisk DPI Cycle assignment lives in the mouse's function table. Reads
         // target the active bank; writes use the projection bank and are read back by the
         // BluetoothDevice helper before the UI reports success.
-        static let dpiButtonGet = Key(0x08, 0x84, 0x00, 0x60)
-        static let dpiButtonSet = Key(0x08, 0x04, 0x01, 0x60)
+        public static let dpiButtonGet = Key(0x08, 0x84, 0x00, 0x60)
+        public static let dpiButtonSet = Key(0x08, 0x04, 0x01, 0x60)
         /// Any entry of that function table, by its id (the DPI Cycle entry is 0x60).
-        static func buttonFunctionGet(_ id: UInt8) -> Key { Key(0x08, 0x84, 0x00, id) }
-        static func buttonFunctionSet(_ id: UInt8, slot: UInt8 = 0x01) -> Key { Key(0x08, 0x04, slot, id) }
+        public static func buttonFunctionGet(_ id: UInt8) -> Key { Key(0x08, 0x84, 0x00, id) }
+        public static func buttonFunctionSet(_ id: UInt8, slot: UInt8 = 0x01) -> Key { Key(0x08, 0x04, slot, id) }
 
         // Basilisk V4 Pro onboard profiles and power, read from the mouse over Bluetooth
         // (2026-10-19). Class 0x03 is USB's 0x05 (`OnboardSlots`), class 0x05 USB's 0x07.
         // The third key byte of a settings command is the slot, like USB's storage byte.
-        static let slotsGet = Key(0x03, 0x80, 0x00, 0x00)        // -> [ids...]
-        static let activeSlotGet = Key(0x03, 0x82, 0x00, 0x00)   // -> [id]
-        static let activeSlotSet = Key(0x03, 0x02, 0x00, 0x00)   // payload [id]
-        static func slotCreate(_ id: UInt8) -> Key { Key(0x03, 0x05, id, 0x00) }
-        static func slotRemove(_ id: UInt8) -> Key { Key(0x03, 0x06, id, 0x00) }
-        static let lowBatteryGet = Key(0x05, 0x82, 0x00, 0x00)   // -> [raw]
-        static let lowBatterySet = Key(0x05, 0x02, 0x00, 0x00)   // payload [raw]
+        public static let slotsGet = Key(0x03, 0x80, 0x00, 0x00)        // -> [ids...]
+        public static let activeSlotGet = Key(0x03, 0x82, 0x00, 0x00)   // -> [id]
+        public static let activeSlotSet = Key(0x03, 0x02, 0x00, 0x00)   // payload [id]
+        public static func slotCreate(_ id: UInt8) -> Key { Key(0x03, 0x05, id, 0x00) }
+        public static func slotRemove(_ id: UInt8) -> Key { Key(0x03, 0x06, id, 0x00) }
+        public static let lowBatteryGet = Key(0x05, 0x82, 0x00, 0x00)   // -> [raw]
+        public static let lowBatterySet = Key(0x05, 0x02, 0x00, 0x00)   // payload [raw]
         /// One lighting zone's effect (`ZonedLighting`): the body after the LED id.
-        static func zoneEffectGet(led: UInt8, slot: UInt8) -> Key { Key(0x10, 0x83, slot, led) }
-        static func zoneEffectSet(led: UInt8, slot: UInt8) -> Key { Key(0x10, 0x03, slot, led) }
+        public static func zoneEffectGet(led: UInt8, slot: UInt8) -> Key { Key(0x10, 0x83, slot, led) }
+        public static func zoneEffectSet(led: UInt8, slot: UInt8) -> Key { Key(0x10, 0x03, slot, led) }
     }
 
     /// One entry of the mouse's function table: what the button does now, and its factory
@@ -76,14 +76,19 @@ enum BLEProtocol {
     /// current first (the DPI Cycle parser below reads only the current one). On the
     /// Basilisk V4 Pro a flag of 01 means the entry's HyperShift layer is set, and the second
     /// block is then that layer instead (`parseShiftedButtonFunction`; bthstest, 2026-10-19).
-    struct ButtonFunction: Equatable {
-        let current: [UInt8]
-        let factory: [UInt8]
+    public struct ButtonFunction: Equatable, Sendable {
+        public let current: [UInt8]
+        public let factory: [UInt8]
+
+        public init(current: [UInt8], factory: [UInt8]) {
+            self.current = current
+            self.factory = factory
+        }
     }
 
-    static func parseButtonFunction(id: UInt8, _ payload: Data) throws -> ButtonFunction {
+    public static func parseButtonFunction(id: UInt8, _ payload: Data) throws -> ButtonFunction {
         let bytes = Array(payload)
-        guard bytes.count >= 16, bytes[0] == id else { throw HIDDevice.HIDError.badResponse }
+        guard bytes.count >= 16, bytes[0] == id else { throw RazerError.badResponse }
         let packed = Array(bytes[2..<16])
         return ButtonFunction(current: stride(from: 0, to: 14, by: 2).map { packed[$0] },
                               factory: stride(from: 1, to: 14, by: 2).map { packed[$0] })
@@ -91,7 +96,7 @@ enum BLEProtocol {
 
     /// The entry's HyperShift layer from a read: its block when the flag says it is set, nil
     /// when nothing was written there.
-    static func parseShiftedButtonFunction(id: UInt8, _ payload: Data) throws -> [UInt8]? {
+    public static func parseShiftedButtonFunction(id: UInt8, _ payload: Data) throws -> [UInt8]? {
         let function = try parseButtonFunction(id: id, payload)
         return Array(payload)[1] == 0x01 ? function.factory : nil
     }
@@ -99,12 +104,12 @@ enum BLEProtocol {
     /// `layer` 01 writes the HyperShift layer, as 02/0C's third argument does over USB. The
     /// first byte is the slot it goes to, as 02/0C's first argument is: sent as 01 while slot 2
     /// was active, a remap landed in slot 1; sent as 02 it stayed in slot 2 (2026-10-22).
-    static func buttonFunctionPayload(id: UInt8, block: [UInt8], layer: UInt8 = 0, slot: UInt8 = 0x01) -> [UInt8] {
+    public static func buttonFunctionPayload(id: UInt8, block: [UInt8], layer: UInt8 = 0, slot: UInt8 = 0x01) -> [UInt8] {
         [slot, id, layer] + block
     }
 
     /// A plain key press as a function block (the same layout `keyboardPayload` writes).
-    static func keyboardBlock(hidUsage: UInt8, modifiers: UInt8 = 0) -> [UInt8] {
+    public static func keyboardBlock(hidUsage: UInt8, modifiers: UInt8 = 0) -> [UInt8] {
         [0x02, 0x02, modifiers, hidUsage, 0, 0, 0]
     }
 
@@ -112,7 +117,7 @@ enum BLEProtocol {
     /// actions and custom shortcuts use `softwareBridge` (the mouse emits F20 and Serpentine
     /// turns that signal into the saved macOS action); no undocumented consumer-control
     /// payload is sent to the mouse.
-    enum DPIButtonBinding: Equatable, Identifiable, Sendable {
+    public enum DPIButtonBinding: Equatable, Identifiable, Sendable {
         case dpiCycle
         case leftClick
         case rightClick
@@ -123,20 +128,20 @@ enum BLEProtocol {
         case scrollDown
         case keyboardShortcut(hidUsage: UInt8, modifiers: UInt8)
 
-        static let allCases: [Self] = [
+        public static let allCases: [Self] = [
             .dpiCycle, .leftClick, .rightClick, .middleClick, .back, .forward, .scrollUp, .scrollDown,
         ]
 
-        static let softwareBridge: Self = .keyboardShortcut(hidUsage: 0x6F, modifiers: 0)
+        public static let softwareBridge: Self = .keyboardShortcut(hidUsage: 0x6F, modifiers: 0)
 
-        var id: String {
+        public var id: String {
             switch self {
             case .keyboardShortcut(let usage, let modifiers): return "keyboard-\(usage)-\(modifiers)"
             default: return label
             }
         }
 
-        var label: String {
+        public var label: String {
             switch self {
             case .dpiCycle: return "DPI Cycle (default)"
             case .leftClick: return "Left Click"
@@ -151,7 +156,7 @@ enum BLEProtocol {
             }
         }
 
-        var buttonID: UInt8? {
+        public var buttonID: UInt8? {
             switch self {
             case .leftClick: return 0x01
             case .rightClick: return 0x02
@@ -164,14 +169,14 @@ enum BLEProtocol {
             }
         }
 
-        var keyboardPayload: [UInt8]? {
+        public var keyboardPayload: [UInt8]? {
             guard case .keyboardShortcut(let usage, let modifiers) = self else { return nil }
             return [0x02, 0x02, modifiers, usage, 0, 0, 0]
         }
     }
 
     /// What a reply's payload means, so `response(to:payload:)` knows how to fold it back.
-    enum Reply: Equatable {
+    public enum Reply: Equatable, Sendable {
         case ack
         case battery
         case serial
@@ -185,19 +190,25 @@ enum BLEProtocol {
     }
 
     /// A request ready for the wire: the key, an optional payload, and how to read the reply.
-    struct Request: Equatable {
-        let key: Key
-        let payload: [UInt8]
-        let reply: Reply
+    public struct Request: Equatable, Sendable {
+        public let key: Key
+        public let payload: [UInt8]
+        public let reply: Reply
+
+        public init(key: Key, payload: [UInt8], reply: Reply) {
+            self.key = key
+            self.payload = payload
+            self.reply = reply
+        }
     }
 
     // MARK: - Framing
 
     /// Largest GATT write the mouse takes in one frame (the default ATT MTU of 23, less 3).
-    static let frameSize = 20
+    public static let frameSize = 20
 
     /// Header frame `[id, payloadLength, 0, 0] + key`, then the payload in 20-byte frames.
-    static func frames(id: UInt8, request: Request) -> [Data] {
+    public static func frames(id: UInt8, request: Request) -> [Data] {
         var frames = [Data([id, UInt8(request.payload.count), 0, 0] + request.key.bytes)]
         var offset = 0
         while offset < request.payload.count {
@@ -208,7 +219,7 @@ enum BLEProtocol {
         return frames
     }
 
-    static func dpiButtonPayload(for binding: DPIButtonBinding) -> Data {
+    public static func dpiButtonPayload(for binding: DPIButtonBinding) -> Data {
         if let keyboard = binding.keyboardPayload {
             return Data([0x01, 0x60, 0x00] + keyboard)
         }
@@ -218,24 +229,24 @@ enum BLEProtocol {
         return Data([0x01, 0x60, 0x00, 0x06, 0x01, 0x06, 0, 0, 0, 0])
     }
 
-    static let sleepTimeoutRange = 60...900
-    static let sleepTimeoutStep = 15
+    public static let sleepTimeoutRange = 60...900
+    public static let sleepTimeoutStep = 15
 
-    static func sleepTimeoutPayload(seconds: Int) -> Data? {
+    public static func sleepTimeoutPayload(seconds: Int) -> Data? {
         guard sleepTimeoutRange.contains(seconds), seconds.isMultiple(of: sleepTimeoutStep) else { return nil }
         return Data([UInt8(seconds & 0xFF), UInt8((seconds >> 8) & 0xFF)])
     }
 
-    static func parseSleepTimeout(_ payload: Data) throws -> Int {
-        guard payload.count >= 2 else { throw HIDDevice.HIDError.badResponse }
+    public static func parseSleepTimeout(_ payload: Data) throws -> Int {
+        guard payload.count >= 2 else { throw RazerError.badResponse }
         let value = Int(payload[0]) | (Int(payload[1]) << 8)
         guard sleepTimeoutRange.contains(value), value.isMultiple(of: sleepTimeoutStep) else {
-            throw HIDDevice.HIDError.badResponse
+            throw RazerError.badResponse
         }
         return value
     }
 
-    static func parseDpiButtonBinding(_ payload: Data) throws -> DPIButtonBinding {
+    public static func parseDpiButtonBinding(_ payload: Data) throws -> DPIButtonBinding {
         let bytes = Array(payload)
         let functionBlock: [UInt8]
         if bytes.count >= 10, bytes[0] == 0x01, bytes[1] == 0x60 {
@@ -246,7 +257,7 @@ enum BLEProtocol {
                 index.isMultiple(of: 2) ? byte : nil
             }.prefix(7))
         } else {
-            throw HIDDevice.HIDError.badResponse
+            throw RazerError.badResponse
         }
 
         if functionBlock == [0x06, 0x01, 0x06, 0, 0, 0, 0] { return .dpiCycle }
@@ -258,14 +269,14 @@ enum BLEProtocol {
               functionBlock[0] == 0x01,
               functionBlock[1] == 0x01,
               let binding = DPIButtonBinding.allCases.first(where: { $0.buttonID == functionBlock[2] }) else {
-            throw HIDDevice.HIDError.notSupported
+            throw RazerError.notSupported
         }
         return binding
     }
 
     /// Translate a macOS virtual key code into the USB HID usage used by the Basilisk
     /// function table. Unknown keys fail closed instead of writing an ambiguous binding.
-    static func hidUsage(forMacKeyCode keyCode: UInt16) -> UInt8? {
+    public static func hidUsage(forMacKeyCode keyCode: UInt16) -> UInt8? {
         let map: [UInt16: UInt8] = [
             0: 0x04, 1: 0x16, 2: 0x07, 3: 0x09, 4: 0x0B, 5: 0x0A,
             6: 0x1D, 7: 0x1B, 8: 0x06, 9: 0x19, 11: 0x05, 12: 0x14,
@@ -284,13 +295,13 @@ enum BLEProtocol {
 
     /// The HID modifier-byte bit of a Mac modifier key, left and right apart (01 left ⌃,
     /// 02 left ⇧, 04 left ⌥, 08 left ⌘, then 10 to 80 the right-hand ones). Nil for any other key.
-    static func hidModifierBit(forMacKeyCode keyCode: UInt16) -> UInt8? {
+    public static func hidModifierBit(forMacKeyCode keyCode: UInt16) -> UInt8? {
         let map: [UInt16: UInt8] = [59: 0x01, 56: 0x02, 58: 0x04, 55: 0x08,
                                     62: 0x10, 60: 0x20, 61: 0x40, 54: 0x80]
         return map[keyCode]
     }
 
-    static func shortcutLabel(hidUsage: UInt8, modifiers: UInt8) -> String {
+    public static func shortcutLabel(hidUsage: UInt8, modifiers: UInt8) -> String {
         var label = ""
         if modifiers & 0x01 != 0 { label += "⌃" }
         if modifiers & 0x04 != 0 { label += "⌥" }
@@ -323,18 +334,18 @@ enum BLEProtocol {
     /// Frames before the matching header are ignored. The mouse sends an unsolicited
     /// `01 … 03` frame when notifications are first enabled, and a reply to an earlier
     /// request that timed out can still be in flight; neither carries this request's id.
-    struct Assembler {
-        let id: UInt8
-        private(set) var status: UInt8?
+    public struct Assembler: Sendable {
+        public let id: UInt8
+        public private(set) var status: UInt8?
         private var expected = 0
-        private(set) var payload = Data()
+        public private(set) var payload = Data()
 
-        init(id: UInt8) { self.id = id }
+        public init(id: UInt8) { self.id = id }
 
         /// The reply is complete: header seen and every payload byte collected.
-        var isComplete: Bool { status != nil && payload.count >= expected }
+        public var isComplete: Bool { status != nil && payload.count >= expected }
 
-        mutating func add(_ frame: Data) {
+        public mutating func add(_ frame: Data) {
             let bytes = Array(frame)
             if status == nil {
                 guard bytes.count >= 8, bytes[0] == id else { return }
@@ -347,12 +358,12 @@ enum BLEProtocol {
         }
 
         /// The finished payload, or the error the status byte stands for.
-        func result() throws -> Data {
-            guard let status, isComplete else { throw HIDDevice.HIDError.timeout }
+        public func result() throws -> Data {
+            guard let status, isComplete else { throw RazerError.timeout }
             switch Status(rawValue: status) {
             case .ok: return payload
-            case .notSupported: throw HIDDevice.HIDError.notSupported
-            case .failure, nil: throw HIDDevice.HIDError.commandFailed
+            case .notSupported: throw RazerError.notSupported
+            case .failure, nil: throw RazerError.commandFailed
             }
         }
     }
@@ -366,7 +377,7 @@ enum BLEProtocol {
     /// `slot` is the onboard slot settings go to on a mouse that has them (`OnboardSlots`), and
     /// 1 on every other mouse, which is the byte these keys always carried.
     /// `zoned` says the mouse sets its lighting zone by zone (`ZonedLighting`).
-    static func request(for report: RazerReport, stages: DPIStageTable?, slot: UInt8 = 0x01,
+    public static func request(for report: RazerReport, stages: DPIStageTable?, slot: UInt8 = 0x01,
                         zoned: Bool = false) -> Request? {
         let args = report.arguments
         switch (report.commandClass, report.commandId) {
@@ -429,7 +440,7 @@ enum BLEProtocol {
 
     /// Fold a BLE reply back into the USB reply layout, so `RazerCommands`' parsers read it
     /// unchanged. The status is set to success; failures were already thrown by `Assembler`.
-    static func response(to report: RazerReport, reply: Reply, payload: Data) throws -> RazerReport {
+    public static func response(to report: RazerReport, reply: Reply, payload: Data) throws -> RazerReport {
         var out = report
         out.status = RazerStatus.successful.rawValue
         let bytes = Array(payload)
@@ -439,7 +450,7 @@ enum BLEProtocol {
         case .battery:
             // 0-255, the same scale as USB. Verified on the Cobra HyperSpeed: 0x61 (97)
             // while the standard Battery Service reported 39%.
-            guard let raw = bytes.first else { throw HIDDevice.HIDError.badResponse }
+            guard let raw = bytes.first else { throw RazerError.badResponse }
             out.arguments[1] = raw
         case .serial:
             for (i, b) in bytes.prefix(22).enumerated() { out.arguments[i] = b }
@@ -463,18 +474,18 @@ enum BLEProtocol {
             out.arguments[3] = UInt8(value >> 8)
             out.arguments[4] = UInt8(value & 0xFF)
         case .brightness:
-            guard let raw = bytes.first else { throw HIDDevice.HIDError.badResponse }
+            guard let raw = bytes.first else { throw RazerError.badResponse }
             out.arguments[2] = raw
         case .slots:
             // USB answers [max, ids...]; Bluetooth the ids alone.
-            guard !bytes.isEmpty, bytes.count < out.arguments.count else { throw HIDDevice.HIDError.badResponse }
+            guard !bytes.isEmpty, bytes.count < out.arguments.count else { throw RazerError.badResponse }
             out.arguments[0] = UInt8(OnboardSlots.maxSlots)
             for (i, id) in bytes.enumerated() { out.arguments[1 + i] = id }
             out.dataSize = UInt8(1 + bytes.count)
         case .zoneEffect:
             for (i, b) in bytes.prefix(ZonedLighting.bodySize).enumerated() { out.arguments[2 + i] = b }
         case .activeSlot, .lowBattery:
-            guard let value = bytes.first else { throw HIDDevice.HIDError.badResponse }
+            guard let value = bytes.first else { throw RazerError.badResponse }
             out.arguments[0] = value
         }
         return out
@@ -486,33 +497,33 @@ enum BLEProtocol {
     /// `[id, x_lo, x_hi, y_lo, y_hi, 0, 0]` with ids from 1 and little-endian DPI. The mouse
     /// leaves the final reserved byte off its replies (36 bytes for five stages, not 37),
     /// so decoding needs only the first five bytes of the last record.
-    struct DPIStageTable: Equatable, Sendable {
+    public struct DPIStageTable: Equatable, Sendable {
         /// 0-based index into `values`.
-        var active: Int
-        var values: [Int]
+        public var active: Int
+        public var values: [Int]
 
-        init(active: Int, values: [Int]) {
+        public init(active: Int, values: [Int]) {
             self.active = active
             self.values = values
         }
 
-        init(decoding bytes: [UInt8]) throws {
-            guard bytes.count >= 2 else { throw HIDDevice.HIDError.badResponse }
+        public init(decoding bytes: [UInt8]) throws {
+            guard bytes.count >= 2 else { throw RazerError.badResponse }
             let count = Int(bytes[1])
-            guard (1...RazerCommands.maxDPIStages).contains(count) else { throw HIDDevice.HIDError.badResponse }
+            guard (1...RazerCommands.maxDPIStages).contains(count) else { throw RazerError.badResponse }
             var ids: [UInt8] = []
             var values: [Int] = []
             for i in 0..<count {
                 let base = 2 + i * 7
-                guard bytes.count >= base + 5 else { throw HIDDevice.HIDError.badResponse }
+                guard bytes.count >= base + 5 else { throw RazerError.badResponse }
                 ids.append(bytes[base])
                 values.append(Int(bytes[base + 1]) | (Int(bytes[base + 2]) << 8))
             }
-            guard let active = ids.firstIndex(of: bytes[0]) else { throw HIDDevice.HIDError.badResponse }
+            guard let active = ids.firstIndex(of: bytes[0]) else { throw RazerError.badResponse }
             self.init(active: active, values: values)
         }
 
-        func encoded() -> [UInt8] {
+        public func encoded() -> [UInt8] {
             var bytes: [UInt8] = [UInt8(active + 1), UInt8(values.count)]
             for (i, value) in values.enumerated() {
                 let v = UInt16(max(100, min(value, RazerCommands.dpiCeiling)))

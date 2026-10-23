@@ -2,17 +2,7 @@
 // Part of Serpentine, a control app for Razer mice on macOS. See LICENSE and NOTICE.md.
 
 import SwiftUI
-
-enum DPIShortcutModifiers {
-    static func hidValue(from flags: CGEventFlags) -> UInt8 {
-        var value: UInt8 = 0
-        if flags.contains(.maskControl) { value |= 0x01 }
-        if flags.contains(.maskShift) { value |= 0x02 }
-        if flags.contains(.maskAlternate) { value |= 0x04 }
-        if flags.contains(.maskCommand) { value |= 0x08 }
-        return value
-    }
-}
+import RazerProtocol
 
 struct RemapView: View {
     @ObservedObject var remapper: ButtonRemapper
@@ -715,23 +705,21 @@ final class RecorderNSView: NSView {
     }
 
     override func flagsChanged(with event: NSEvent) {
-        guard let flag = Self.modifierKeys[event.keyCode]?.flag else { return }
+        guard let flag = Self.modifierKeys[event.keyCode] else { return }
         let held = event.modifierFlags.intersection([.command, .shift, .control, .option])
         if held.contains(flag) {
             // Pressed: a candidate only when it is the one modifier held.
             pendingModifier = held == flag ? event.keyCode : nil
         } else if pendingModifier == event.keyCode {
             pendingModifier = nil
-            onCapture?(event.keyCode, [], Self.modifierKeys[event.keyCode]!.name)
+            onCapture?(event.keyCode, [], RemapCatalog.modifierKeyNames[event.keyCode]!)
         }
     }
 
-    /// The Mac's virtual key codes for the modifier keys, left and right apart.
-    static let modifierKeys: [UInt16: (flag: NSEvent.ModifierFlags, name: String)] = [
-        59: (.control, "Left ⌃"), 62: (.control, "Right ⌃"),
-        56: (.shift, "Left ⇧"), 60: (.shift, "Right ⇧"),
-        58: (.option, "Left ⌥"), 61: (.option, "Right ⌥"),
-        55: (.command, "Left ⌘"), 54: (.command, "Right ⌘"),
+    /// The modifier each modifier key sets; named in `RemapCatalog.modifierKeyNames`.
+    static let modifierKeys: [UInt16: NSEvent.ModifierFlags] = [
+        59: .control, 62: .control, 56: .shift, 60: .shift,
+        58: .option, 61: .option, 55: .command, 54: .command,
     ]
 
     private func capture(_ event: NSEvent) {

@@ -2,6 +2,7 @@
 // Part of Serpentine, a control app for Razer mice on macOS. See LICENSE and NOTICE.md.
 
 import Foundation
+import RazerProtocol
 
 /// The facts about one HID interface that device selection needs — extracted from
 /// `IOHIDDevice` properties into plain values so the ranking logic is unit-testable.

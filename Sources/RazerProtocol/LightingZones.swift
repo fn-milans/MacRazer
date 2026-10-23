@@ -6,14 +6,14 @@ import Foundation
 /// The separately lit parts of a mouse whose zones Serpentine sets one by one, the way Synapse
 /// does. Learned on the Basilisk V4 Pro from its own replies (2026-10-19): it lists the LEDs
 /// 0x04, 0x01 and 0x0A, and each answers the extended-matrix effect read with its own effect.
-enum LightingZone: UInt8, CaseIterable, Identifiable, Codable, Sendable {
+public enum LightingZone: UInt8, CaseIterable, Identifiable, Codable, Sendable {
     case logo = 0x04
     case scrollWheel = 0x01
     case underglow = 0x0A
 
-    var id: Self { self }
+    public var id: Self { self }
 
-    var name: String {
+    public var name: String {
         switch self {
         case .logo: return "Logo"
         case .scrollWheel: return "Wheel"
@@ -22,7 +22,7 @@ enum LightingZone: UInt8, CaseIterable, Identifiable, Codable, Sendable {
     }
 
     /// The key a profile stores the zone's lighting under.
-    var storageKey: String {
+    public var storageKey: String {
         switch self {
         case .logo: return "logo"
         case .scrollWheel: return "scroll"
@@ -32,19 +32,19 @@ enum LightingZone: UInt8, CaseIterable, Identifiable, Codable, Sendable {
 }
 
 /// What one zone shows: its effect, colour and brightness.
-struct ZoneLighting: Codable, Equatable, Sendable {
+public struct ZoneLighting: Codable, Equatable, Sendable {
     /// Raw value of `LightingEffect`, as `MouseProfile.effect` keeps it.
-    var effect: String
-    var color: RGB
-    var brightness: Int // percent
+    public var effect: String
+    public var color: RGB
+    public var brightness: Int // percent
 
-    init(effect: LightingEffect, color: RGB, brightness: Int) {
+    public init(effect: LightingEffect, color: RGB, brightness: Int) {
         self.effect = effect.rawValue
         self.color = color
         self.brightness = brightness
     }
 
-    var lightingEffect: LightingEffect { LightingEffect(rawValue: effect) ?? .off }
+    public var lightingEffect: LightingEffect { LightingEffect(rawValue: effect) ?? .off }
 }
 
 /// The per-zone lighting commands. Each zone takes the extended-matrix effect command with
@@ -58,16 +58,16 @@ struct ZoneLighting: Codable, Equatable, Sendable {
 /// USB: set 0x0F/0x02 [slot, led, body], get 0x0F/0x82 [slot, led] -> [_, led, body].
 /// Bluetooth: set 0x10/0x03 and get 0x10/0x83 with key [slot, led] (`BLEProtocol`).
 /// The mouse also lists effect 0x08, which Serpentine doesn't offer: what it looks like isn't known.
-enum ZonedLighting {
+public enum ZonedLighting: Sendable {
     /// The mouse's zones (`RazerDeviceInfo.lightingZones`); empty when it is lit as one.
-    static func zones(pid: Int?) -> [LightingZone] { RazerDevices.lightingZones(pid: pid) }
+    public static func zones(pid: Int?) -> [LightingZone] { RazerDevices.lightingZones(pid: pid) }
 
     /// The effects these mice offer, in the picker's order.
-    static let effects: [LightingEffect] = [.staticColor, .breathing, .spectrum, .reactive, .off]
+    public static let effects: [LightingEffect] = [.staticColor, .breathing, .spectrum, .reactive, .off]
 
-    static let bodySize = 10
+    public static let bodySize = 10
 
-    static func body(_ effect: LightingEffect, color: RGB) -> [UInt8] {
+    public static func body(_ effect: LightingEffect, color: RGB) -> [UInt8] {
         let rgb = [color.r, color.g, color.b]
         var body: [UInt8]
         switch effect {
@@ -83,7 +83,7 @@ enum ZonedLighting {
 
     /// The effect and colour in a body; nil for an effect Serpentine doesn't know. A colourless
     /// effect reports no colour.
-    static func parse(_ body: ArraySlice<UInt8>) -> (effect: LightingEffect, color: RGB?)? {
+    public static func parse(_ body: ArraySlice<UInt8>) -> (effect: LightingEffect, color: RGB?)? {
         let b = Array(body)
         guard b.count >= 4 else { return nil }
         let effect: LightingEffect
@@ -100,7 +100,7 @@ enum ZonedLighting {
         return (effect, color)
     }
 
-    static func setEffect(_ effect: LightingEffect, color: RGB, zone: LightingZone) -> RazerReport {
+    public static func setEffect(_ effect: LightingEffect, color: RGB, zone: LightingZone) -> RazerReport {
         var r = RazerReport(commandClass: 0x0F, commandId: 0x02, dataSize: 0x0C)
         r.arguments[0] = Razer.varstore
         r.arguments[1] = zone.rawValue
@@ -108,14 +108,14 @@ enum ZonedLighting {
         return r
     }
 
-    static func getEffect(zone: LightingZone) -> RazerReport {
+    public static func getEffect(zone: LightingZone) -> RazerReport {
         var r = RazerReport(commandClass: 0x0F, commandId: 0x82, dataSize: 0x0C)
         r.arguments[0] = Razer.varstore
         r.arguments[1] = zone.rawValue
         return r
     }
 
-    static func parseEffect(_ resp: RazerReport) -> (effect: LightingEffect, color: RGB?)? {
+    public static func parseEffect(_ resp: RazerReport) -> (effect: LightingEffect, color: RGB?)? {
         parse(resp.arguments[2..<(2 + bodySize)])
     }
 }

@@ -2,6 +2,7 @@
 // Part of Serpentine, a control app for Razer mice on macOS. See LICENSE and NOTICE.md.
 
 import SwiftUI
+import RazerProtocol
 
 /// Manage page for saved snapshot profiles: rename, set active, delete. Reached via "Manage…"
 /// on the main page's profiles card; quick-switching itself happens from that card directly,

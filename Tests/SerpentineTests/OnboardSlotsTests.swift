@@ -3,6 +3,7 @@
 
 import XCTest
 @testable import Serpentine
+@testable import RazerProtocol
 
 final class OnboardSlotsTests: XCTestCase {
     func testSettingsCommandsFollowTheSlot() {

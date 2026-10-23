@@ -3,6 +3,7 @@
 
 import Foundation
 import CoreBluetooth
+import RazerProtocol
 
 /// A Razer mouse reached over Bluetooth LE, through the vendor GATT service described in
 /// `BLEProtocol`. Same surface as `HIDDevice`, so `MouseController` doesn't care which.

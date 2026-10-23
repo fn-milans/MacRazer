@@ -2,6 +2,7 @@
 // Part of Serpentine, a control app for Razer mice on macOS. See LICENSE and NOTICE.md.
 
 import AppKit
+import RazerProtocol
 
 /// Draws the app's marks: the serpent (menu bar, app icon, About and setup windows) and the
 /// per-model mouse silhouettes (the popover header). The silhouette-per-model mapping lives in
