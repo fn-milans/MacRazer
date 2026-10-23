@@ -85,6 +85,9 @@ expect rough edges until 1.0.
   window plans and the pre-fork brief are gone, and so is the copied OpenRazer PR diff in
   `reference/` (NOTICE links to the PR). `.github/FUNDING.yml` is gone too, so the repository
   no longer shows a Sponsor button pointing at MacRazer's Ko-fi.
+- **Version numbers start again at 0.1.0.** Serpentine is a new app, not the next MacRazer, so its
+  first release is 0.1.0. MacRazer's releases, 0.1.0 to 0.5.0, are listed under their own name
+  at the end of this file.
 
 ### Added
 - **Razer Basilisk V4 Pro, on the cable, the HyperSpeed dongle and Bluetooth.** Battery,
@@ -170,7 +173,13 @@ expect rough edges until 1.0.
 - **The add-profile plus button works anywhere in its circle.** Only the plus sign itself took
   the click. The rest of the circle did nothing.
 
-## [0.5.0] — 2026-09-23
+## MacRazer
+
+Serpentine started from MacRazer 0.5.0 and restarted its version numbers at 0.1.0. The
+releases below are MacRazer's, by SorcRR, published at
+[SorcRR/MacRazer](https://github.com/SorcRR/MacRazer/releases).
+
+## [MacRazer 0.5.0] — 2026-09-23
 
 ### Changed
 - **A mouse that comes back is noticed as soon as you move it, and one that goes away in
@@ -280,7 +289,7 @@ expect rough edges until 1.0.
  battery read is left alone deliberately: it is shorter, and abandoning it half way would feed
  a partial reading to the low-battery and charging logic.
 
-## [0.4.1] — 2026-09-11
+## [MacRazer 0.4.1] — 2026-09-11
 
 ### Changed
 - **`UpdateChecker` takes the defaults store it reads.** Every decision in it is a pure
@@ -306,7 +315,7 @@ expect rough edges until 1.0.
  way to follow them. Items keep their markdown now and the page renders it, which also means
  bold inside a sentence shows as bold rather than being flattened.
 
-## [0.4.0] — 2026-09-11
+## [MacRazer 0.4.0] — 2026-09-11
 
 ### Changed
 - **CONTRIBUTING says how to verify a device, not just how to add one.** Two contributors this
@@ -472,7 +481,7 @@ expect rough edges until 1.0.
  family's `0x1f`. Nobody has run it against hardware yet, so it stays marked unverified: the
  app will attempt its controls without claiming they work.
 
-## [0.3.0] — 2026-09-07
+## [MacRazer 0.3.0] — 2026-09-07
 
 ### Added
 - **`Scripts/release.sh`** — cutting a release now bumps every place the version is recorded
@@ -673,7 +682,7 @@ expect rough edges until 1.0.
  any home directory derived from a full name. That variable had never been used before this
  change, so nothing had exercised it.
 
-## [0.2.1] — 2026-08-24
+## [MacRazer 0.2.1] — 2026-08-24
 
 ### Added
 - **The menu bar icon shows a lightning bolt while the mouse is charging**, in place of the
@@ -719,7 +728,7 @@ expect rough edges until 1.0.
  the cycle continues. Trade-off: a genuine but tiny top-up (<10 points) during a gap is no
  longer detected as a cycle boundary; it shows as an uptick within the ongoing cycle.
 
-## [0.2.0] — 2026-07-02
+## [MacRazer 0.2.0] — 2026-07-02
 
 ### Added
 - **Learned discharge curve for the Razer Cobra HyperSpeed.** Rather than one flat %/hour rate,
@@ -901,7 +910,7 @@ expect rough edges until 1.0.
  build+tests on pushes to master and on every PR. The data stores take an injectable
  directory/defaults so tests never touch real user data.
 
-## [0.1.5] — 2026-06-29
+## [MacRazer 0.1.5] — 2026-06-29
 
 ### Added
 - **Update check.** The app checks GitHub once a day for a newer release and shows a card in
@@ -921,7 +930,7 @@ expect rough edges until 1.0.
  confirmed on two consecutive polls before it's trusted, since acting on a single bad read
  destructively reset the "time since last charge" timer to ~0.
 
-## [0.1.4] — 2026-06-27
+## [MacRazer 0.1.4] — 2026-06-27
 
 ### Added
 - **Battery usage graph.** A chart-icon button beside the battery percentage opens a new page
@@ -958,7 +967,7 @@ expect rough edges until 1.0.
 - README notes the one known case where two devices share settings: identical mice of the
  same model that don't expose a hardware serial number have no other stable identifier.
 
-## [0.1.3] — 2026-06-24
+## [MacRazer 0.1.3] — 2026-06-24
 
 ### Added
 - **Bluetooth-mode detection.** When a Razer mouse is connected over Bluetooth (where Razer's
@@ -971,7 +980,7 @@ expect rough edges until 1.0.
 - README and the first-run setup screen note that the mouse must be connected over 2.4 GHz or
  USB-C, not Bluetooth.
 
-## [0.1.2] — 2026-06-24
+## [MacRazer 0.1.2] — 2026-06-24
 
 ### Added
 - **First-run setup & permissions screen.** A dedicated window (shown automatically whenever the
@@ -991,7 +1000,7 @@ expect rough edges until 1.0.
  password), so the stable code-signing identity can be created without a "MAC verification
  failed" error.
 
-## [0.1.1] — 2026-06-24
+## [MacRazer 0.1.1] — 2026-06-24
 
 ### Changed
 - **Button-remapping event tap is now scoped to the extra mouse buttons only.** It no longer
@@ -1003,7 +1012,7 @@ expect rough edges until 1.0.
 ### Docs
 - README: added app screenshots.
 
-## [0.1.0] — 2026-06-24
+## [MacRazer 0.1.0] — 2026-06-24
 
 Native macOS menu bar app to control a Razer Cobra HyperSpeed (and, by design, any Razer
 mouse), a feature Razer's Synapse doesn't provide on macOS. Built by porting OpenRazer's

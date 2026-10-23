@@ -19,7 +19,7 @@ Other documents:
 - [`../DOCUMENTATION.md`](../DOCUMENTATION.md): the reference: the HID protocol, hardware
   quirks, every capability field, the file map. Keep its file map current.
 - [`../../CHANGELOG.md`](../../CHANGELOG.md): user-facing history; the Unreleased section is
-  everything since 0.5.0.
+  everything since the last release.
 
 ## The project in one paragraph
 

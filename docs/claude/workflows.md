@@ -76,11 +76,11 @@ user tests; ask them, don't claim it works.
 
 Ask the user first, every time. A release publishes a DMG people download.
 
-1. `./Scripts/release.sh 0.6.0` (or `--dry-run`): bumps the version and build number in
+1. `./Scripts/release.sh 0.2.0` (or `--dry-run`): bumps the version and build number in
    `Packaging/Info.plist`, closes the Unreleased section of the changelog, builds the DMGs and
    checks the built app agrees, and drafts release notes in `dist/`. It stops before
    committing, tagging or publishing, and prints the commands for those.
-2. Review the diff, commit `Release v0.6.0`, push.
+2. Review the diff, commit `Release v0.2.0`, push.
 3. Actions → Release → Run workflow (`gh workflow run release.yml`): tests, builds the
    ad-hoc DMGs, checks the signature and version inside, puts them on a draft release.
 4. Edit the notes, `./Scripts/release-notes.sh --check`, `gh release edit`, then the user
