@@ -108,12 +108,12 @@ version_gt "${VERSION}" "${CURRENT}" \
     || fail "working tree is dirty — commit or stash first, so the release diff is only the release"
 
 BRANCH="$(git rev-parse --abbrev-ref HEAD)"
-[ "${BRANCH}" = "master" ] \
-    || fail "on '${BRANCH}', not master — releases are cut from master"
+[ "${BRANCH}" = "main" ] \
+    || fail "on '${BRANCH}', not main — releases are cut from main"
 
-git fetch -q origin master
-[ "$(git rev-parse HEAD)" = "$(git rev-parse origin/master)" ] \
-    || fail "master is not in sync with origin/master — pull or push first"
+git fetch -q origin main
+[ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ] \
+    || fail "main is not in sync with origin/main — pull or push first"
 
 # One literal, matched exactly, used by both the check below and the rewrite later.
 #
@@ -180,7 +180,9 @@ NOTES="dist/RELEASE_NOTES-${VERSION}.md"
 NOTES_CREATED=1
 
 step "Building the DMGs…"
-./Scripts/make-dmg.sh
+# Ad-hoc, like the Release workflow's: this checks the build, and a DMG built here without it
+# would carry this Mac's Apple Development certificate.
+./Scripts/make-dmg.sh --adhoc
 
 # --- Verify -------------------------------------------------------------------------------
 # The point of the whole script: prove the artifact actually carries the version being tagged.
@@ -200,15 +202,13 @@ echo "  Review, then:"
 echo "    git diff"
 echo "    git commit -am 'Release v${VERSION}'"
 echo "    git push"
-echo "    git tag v${VERSION} && git push origin v${VERSION}"
+echo "    gh workflow run release.yml        # or Actions → Release → Run workflow"
 echo "    \$EDITOR ${NOTES}"
 echo "    ./Scripts/release-notes.sh --check ${NOTES}"
-echo "    gh release create v${VERSION} \\"
-echo "      dist/MacRazer.dmg dist/MacRazer-${VERSION}.dmg \\"
-echo "      --title 'v${VERSION}' --notes-file ${NOTES}"
+echo "    gh release edit v${VERSION} --notes-file ${NOTES}"
 echo
-echo "  Attach BOTH assets: links point at the fixed 'MacRazer.dmg' name, and the versioned"
-echo "  copy is what makes the Releases page self-describing."
+echo "  The workflow tests, builds both DMGs ad-hoc and puts them on a draft release v${VERSION}."
+echo "  Publish it from the Releases page once the notes are right; that creates the tag."
 echo
 echo "  Edit ${NOTES} first — it is a draft of the mechanical parts (every entry, everyone"
 echo "  credited, the install note), not the finished copy."

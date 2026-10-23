@@ -150,7 +150,7 @@ for url in "git@github.com:theowner/Thing.git" \
            "https://github.com/theowner/Thing"; do
     ( cd "${REPO}" && git remote set-url origin "${url}" )
     check "reads owner/repo from ${url}" "1" \
-        "$(run 0.3.0 --since v0.2.1 | grep -c 'github.com/theowner/Thing/blob/master/CHANGELOG.md')"
+        "$(run 0.3.0 --since v0.2.1 | grep -c 'github.com/theowner/Thing/blob/main/CHANGELOG.md')"
 done
 ( cd "${REPO}" && git remote set-url origin "git@github.com:theowner/Thing.git" )
 
@@ -162,7 +162,7 @@ echo "The parts that must always be there"
 check "leaves a placeholder for the summary" "1" "$(echo "${OUT}" | grep -c '^TODO:')"
 check "includes the install note" "1" "$(echo "${OUT}" | grep -c '^### Install')"
 check "links the full changelog at the repo it was run in" "1" \
-    "$(echo "${OUT}" | grep -c 'github.com/theowner/Thing/blob/master/CHANGELOG.md')"
+    "$(echo "${OUT}" | grep -c 'github.com/theowner/Thing/blob/main/CHANGELOG.md')"
 
 echo "The shape ReleaseNotes.swift is written against"
 

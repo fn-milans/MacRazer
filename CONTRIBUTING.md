@@ -16,7 +16,7 @@ swift test # unit tests (protocol codec, battery models, persistence — no hard
 ./Scripts/make-dmg.sh --adhoc # the same, ad-hoc signed, for a DMG you share
 ./Scripts/release.sh 0.3.0 --dry-run # preview a release (see 'Cutting a release' below)
 ```
-macOS 14+, Swift 6.1 / Xcode 16+. CI runs `swift build && swift test` on pushes to master
+macOS 14+, Swift 6.1 / Xcode 16+. CI runs `swift build && swift test` on pushes to main
 and on every PR; please run the tests locally before opening a PR, and add a test when you
 fix logic in the pure layers (anything without live HID in it).
 
@@ -30,9 +30,11 @@ id in the app's signature, readable by anyone with `codesign -dvv`, and does not
 Gatekeeper on other Macs. Build anything you share with `--adhoc` (`make-dmg.sh --adhoc`,
 or `build-app.sh --adhoc`), which signs ad-hoc and fails if a certificate got in anyway.
 
-The DMG workflow (`.github/workflows/dmg.yml`) does that on GitHub. Each push to master, or
-Run workflow, puts an ad-hoc DMG on the **Latest build** prerelease (tag `latest-build`), at a
-download link that stays the same. A pull request gets its DMG attached to the run instead.
+The Release workflow (`.github/workflows/release.yml`) does that on GitHub, and only when you
+run it (Actions → Release → Run workflow). It runs the tests, builds both DMGs ad-hoc, checks
+the app inside carries no certificate, and attaches them to the run. With **Draft release**
+on, it also puts them on a draft release for the version in `Packaging/Info.plist`, which you
+review and publish; it refuses a version that is already released.
 
 ## Cutting a release
 
@@ -41,13 +43,14 @@ number are recorded in `Packaging/Info.plist` and the changelog elsewhere, and t
 agree with the tag: a release tagged `v0.3.0` whose About window still says `0.2.1` can't be
 told apart from the last one. The script bumps all of them, promotes `## [Unreleased]` to a dated version
 heading, builds both DMGs, and refuses outright if the version isn't newer, the tree is
-dirty, you're not on an up-to-date master, or `[Unreleased]` is empty.
+dirty, you're not on an up-to-date main, or `[Unreleased]` is empty.
 
-It stops before `git commit`, `git tag` and `gh release create`, printing them — review the
-diff first. `Tests/Scripts/release-test.sh` covers the version comparison and both changelog
-operations; CI runs it. Attach **both** DMGs to the release: links point at the fixed
-`MacRazer.dmg` name, and the versioned copy makes the Releases page self-describing.
-`--dry-run` shows what it would do.
+It stops before `git commit`, printing the rest — review the diff first. Then commit, push,
+and run the Release workflow, which puts both DMGs on a draft release `v<version>`: the fixed
+`MacRazer.dmg` name that links point at, and a versioned copy that makes the Releases page
+self-describing. Replace the draft's notes with yours and publish it, which creates the tag.
+`Tests/Scripts/release-test.sh` covers the version comparison and both changelog operations;
+CI runs it. `--dry-run` shows what it would do.
 
 ### The release body
 

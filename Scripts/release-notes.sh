@@ -195,7 +195,7 @@ This build is unsigned (no paid Apple Developer ID), so first launch shows the s
 Gatekeeper warning. Right-click **MacRazer.app** in Finder → **Open** → **Open**. Only needed
 once. See the README for details.
 
-**Full changelog:** https://github.com/${REPO}/blob/master/${CHANGELOG}
+**Full changelog:** https://github.com/${REPO}/blob/main/${CHANGELOG}
 EOF
 
 # --- What the person running this needs to know ----------------------------------------------

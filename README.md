@@ -122,9 +122,8 @@ mouse on Bluetooth.
 
 ## Install
 
-Download `MacRazer.dmg` from the [latest release](../../releases/latest), or the newest
-[Latest build](../../releases/tag/latest-build) of master, open it, and drag **MacRazer** into
-Applications. MacRazer doesn't check for updates: new versions are on the Releases page.
+Download `MacRazer.dmg` from the [latest release](../../releases/latest), open it, and drag
+**MacRazer** into Applications. MacRazer doesn't check for updates: new versions are on the Releases page.
 
 This build is unsigned (no paid Apple Developer ID), so on first launch Gatekeeper will say
 the app "cannot be opened because it is from an unidentified developer" or "is damaged and
