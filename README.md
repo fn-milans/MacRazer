@@ -212,7 +212,8 @@ are in [docs/DOCUMENTATION.md](docs/DOCUMENTATION.md). The complete feature hist
 ## Contributing
 
 Pull requests are welcome, especially **device profiles** so this works on more Razer mice.
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md). The architecture, the design decisions and where the
+work stands are in [docs/claude/](docs/claude/README.md).
 
 ## License
 

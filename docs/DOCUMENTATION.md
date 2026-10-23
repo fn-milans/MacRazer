@@ -448,7 +448,7 @@ AppKit; the app and the command-line tool build on them.
 | `main.swift` | Entry point: no arguments launches the app; subcommands are development tools (render-*, icons). |
 | `AppDelegate.swift` | App lifecycle: the window, background mode, the menu bar item, HIDMonitor wiring. |
 | `BackgroundMode.swift` | Keep running in the background, and what needs it (`DriverModeUsage`). |
-| `Window/` | The main window (`MainWindowController`, `MainWindowView`, `Dashboard`, `Tile`, `WindowRoute`), the menus (`AppMenu`) and the menu bar item (`MenuBarItem`). |
+| `Window/` | The main window (`MainWindowController`, `MainWindowView`, `Dashboard`, `Tile`, `WindowRoute`), the menus (`AppMenu`, `ProfileMenu`) and the menu bar item (`MenuBarItem`). |
 | `MouseController.swift` | The connected mouse's state, published for the UI. Its work is split by feature into `MouseController+Reads`, `+Writes`, `+Lighting`, `+Slots`, `+OnboardButtons`, `+Profiles`, `+Connection` and `+Preview`. |
 | `DeviceQueue.swift` | The serial device queue, with user commands ahead of background reads. |
 | `BatteryTracker.swift` | Battery history, charge cycles, discharge curve and last readings, per mouse. |
@@ -457,7 +457,7 @@ AppKit; the app and the command-line tool build on them.
 | `SettingsView.swift` | Serpentine's own settings, the sheet behind the cog. |
 | `Preferences.swift`, `DeviceSettings.swift` | Every UserDefaults key, and the per-mouse settings store. |
 | `LegacyPreferences.swift` | What older versions kept, and the move from MacRazer. |
-| `Features/` | The controls the dashboard's tiles are built from: device status, battery, DPI, polling, lighting, power, quick profiles. |
+| `Features/` | The controls the dashboard's tiles are built from: device status and notices, DPI, polling, lighting, power, quick profiles. |
 | `Appearance.swift`, `Palette.swift` | Settings › Appearance, the backdrops, and the colours. |
 | `ColorPickerPage.swift` | Inline hue/sat colour wheel page + shared `BackButton`. |
 | `RemapView.swift` | Button-config UI (inline + window), key recorder. |
