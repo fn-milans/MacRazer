@@ -7,17 +7,17 @@ import RazerProtocol
 
 /// The menu bar item, there only while Serpentine keeps running in the background. The serpent
 /// alone, no percentage; the bolt while the mouse charges, dimmed while it's away. Its menu
-/// says how the mouse is, then Settings (the window, with its settings) and Quit.
+/// says how the mouse is, then Open (the window) and Quit.
 @MainActor
 final class MenuBarItem: NSObject, NSMenuDelegate {
     private let controller: MouseController
-    private let openSettings: () -> Void
+    private let openWindow: () -> Void
     private var item: NSStatusItem?
     private var cancellables = Set<AnyCancellable>()
 
-    init(controller: MouseController, openSettings: @escaping () -> Void) {
+    init(controller: MouseController, openWindow: @escaping () -> Void) {
         self.controller = controller
-        self.openSettings = openSettings
+        self.openWindow = openWindow
     }
 
     var isShown: Bool { item != nil }
@@ -66,9 +66,9 @@ final class MenuBarItem: NSObject, NSMenuDelegate {
             menu.addItem(item)
         }
         menu.addItem(.separator())
-        let settings = NSMenuItem(title: "Settings…", action: #selector(showSettings), keyEquivalent: ",")
-        settings.target = self
-        menu.addItem(settings)
+        let open = NSMenuItem(title: "Open", action: #selector(openSerpentine), keyEquivalent: "o")
+        open.target = self
+        menu.addItem(open)
         let quit = NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         quit.target = NSApp
         menu.addItem(quit)
@@ -86,5 +86,5 @@ final class MenuBarItem: NSObject, NSMenuDelegate {
         return controller.timeEstimate
     }
 
-    @objc private func showSettings() { openSettings() }
+    @objc private func openSerpentine() { openWindow() }
 }

@@ -25,7 +25,7 @@ and the Go menu, screenshots and docs (W5). Differences from the plan below:
   row, on the popover's glass, with the buttons unfolded in a third column (the layout follows
   the window's width), Battery History opened from the mouse's tile (back button) and Settings
   behind a cog. The title bar keeps the title on the left and everything
-  else on the right. The menu bar item's menu is only the status, Settings and Quit.
+  else on the right. The menu bar item's menu is only the status, Open and Quit.
 - Not tried on a mouse yet, like the refactor.
 
 ## What runs where

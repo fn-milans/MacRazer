@@ -27,7 +27,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
                                                        permissions: permissions, background: background,
                                                        launchAtLogin: launchAtLogin)
     private lazy var menuBarItem = MenuBarItem(
-        controller: controller, openSettings: { [weak self] in self?.showSettings() })
+        controller: controller, openWindow: { [weak self] in self?.showMainWindow() })
     private lazy var appMenu = AppMenu(actions: .init(
         about: { [weak self] in self.map { $0.present($0.aboutWindow) } },
         settings: { [weak self] in self?.showSettings() },

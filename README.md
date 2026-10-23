@@ -51,7 +51,7 @@ Razer mice that use the same HID protocol family, but those are untested, so tre
 - Settings are written to the mouse's **onboard memory** where supported, so they persist when
   the app is not running.
 - **Background mode** (Settings): closing the window leaves a small menu bar item (the mouse's
-  status, Settings, Quit), so remaps
+  status, Open, Quit), so remaps
   the mouse can't store, low-battery alerts and battery history keep working. Off by default;
   Serpentine asks once when you set up something that needs it. It can then **start at login**,
   in the menu bar with no window.

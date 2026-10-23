@@ -257,7 +257,7 @@ closing the window quits (`applicationShouldTerminateAfterLastWindowClosed`). On
 switches the app to `.accessory` (no Dock icon) and leaves `MenuBarItem`: the serpent (Health
 Icons' `animal-snake`, drawn from its SVG path by `SVGPath.swift`; a template image, a bolt while
 charging, dimmed when the mouse is away), no percentage. Its menu is the mouse's status,
-Settings… (the window with its settings sheet) and Quit.
+Open (the window) and Quit.
 
 - Off on a new install; on for an upgrade from the menu bar version (a battery reading or the
  old login-item flag in the defaults), so nothing it relied on disappears.

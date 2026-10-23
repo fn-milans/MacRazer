@@ -21,7 +21,7 @@ expect rough edges until 1.0.
 
 - **Background mode replaces the menu bar app.** Closing the window quits, unless Settings ›
   Keep running in the background is on: then Serpentine stays as a small menu bar item, the
-  serpent alone with no percentage, whose menu shows the mouse's status, Settings and Quit. It is off on a new install and on if you are upgrading from
+  serpent alone with no percentage, whose menu shows the mouse's status, Open and Quit. It is off on a new install and on if you are upgrading from
   the menu bar version. Setting up something only the app can do (a remap the mouse can't store,
   the DPI Cycle action) asks once whether to turn it on. Start at login now needs background
   mode, and starts Serpentine in the menu bar with no window. The "Show battery % in menu bar"
