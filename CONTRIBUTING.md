@@ -171,8 +171,7 @@ introduce, and to `DeviceCapabilitiesTests.swift` for what the row promises on e
 ## How the code is laid out
 `Sources/RazerProtocol` is the protocol, pure and AppKit-free; `Sources/RazerDeviceKit` talks
 to the hardware; `Sources/SerpentineCLI` is `serpentine-cli`; `Sources/Serpentine` is the app.
-[DOCUMENTATION.md §10](docs/DOCUMENTATION.md#10-file-map) maps the files, and
-[docs/plans](docs/plans) has the refactor and window plans.
+[DOCUMENTATION.md §10](docs/DOCUMENTATION.md#10-file-map) maps the files.
 
 ## Other contributions
 Bug fixes, UI polish, and docs are all welcome. Keep new code in the style of the surrounding

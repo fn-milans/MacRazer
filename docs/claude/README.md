@@ -14,16 +14,10 @@ Read in this order:
    signing, releasing, CI.
 6. [conventions.md](conventions.md): code, comments, commits, docs, and how the user works.
 
-Other documents, older or wider:
+Other documents:
 
 - [`../DOCUMENTATION.md`](../DOCUMENTATION.md): the reference: the HID protocol, hardware
   quirks, every capability field, the file map. Keep its file map current.
-- [`../plans/REFACTOR.md`](../plans/REFACTOR.md) and
-  [`../plans/WINDOWED_APP.md`](../plans/WINDOWED_APP.md): the two plans this round of work
-  followed, each with a status section saying what was done and where it differed.
-- [`../design/window-design.html`](../design/window-design.html): the first design proposal
-  (a sidebar window). Superseded by the dashboard; kept for its icon concepts.
-- [`../BRIEF.md`](../BRIEF.md): the original project brief, from before the fork.
 - [`../../CHANGELOG.md`](../../CHANGELOG.md): user-facing history; the Unreleased section is
   everything since 0.5.0.
 

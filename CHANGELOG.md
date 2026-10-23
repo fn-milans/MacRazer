@@ -80,6 +80,11 @@ expect rough edges until 1.0.
 - **A shorter README.** It now says what Serpentine does, how to install it, the permissions
   it asks for and a few things worth knowing, and nothing else. The verified-mice table moved
   to CONTRIBUTING.md. Screenshots, build steps and the CLI probes are no longer in the README.
+- **The repository keeps only what it uses.** `docs/` now holds documentation only: the
+  unused screenshots, the icon concepts, the first window design, the finished refactor and
+  window plans and the pre-fork brief are gone, and so is the copied OpenRazer PR diff in
+  `reference/` (NOTICE links to the PR). `.github/FUNDING.yml` is gone too, so the repository
+  no longer shows a Sponsor button pointing at MacRazer's Ko-fi.
 
 ### Added
 - **Razer Basilisk V4 Pro, on the cable, the HyperSpeed dongle and Bluetooth.** Battery,

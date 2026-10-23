@@ -11,7 +11,6 @@ and the table in CONTRIBUTING.md says which of them anyone has actually run the 
 
 This document explains how the app is built and how every feature works, so a future Claude
 session or a human can pick it up cold. See also:
-- [`BRIEF.md`](BRIEF.md), the original research/planning brief and device facts.
 - [`../CHANGELOG.md`](../CHANGELOG.md), feature list / history.
 - [`../README.md`](../README.md), what the app does and how to install it.
 
@@ -464,5 +463,4 @@ AppKit; the app and the command-line tool build on them.
 | `MenuBarIcon.swift`, `SVGPath.swift` | The serpent (menu bar, app icon) and the per-model mouse silhouettes. |
 | `PreviewScenes.swift` | The pages' preview states, for `render-ui` and the snapshot tests. |
 
-External: `reference/openrazer/` (cloned driver source, the protocol reference, gitignored)
-and `reference/openrazer-pr-2583.diff` (the Cobra HyperSpeed PR).
+External: `reference/openrazer/` (cloned driver source, the protocol reference, gitignored).

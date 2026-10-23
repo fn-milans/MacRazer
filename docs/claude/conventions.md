@@ -46,7 +46,6 @@ running"), not how it's implemented. No battery percentage in the menu bar.
 | Add, move, rename, delete a source file | the file map in `docs/DOCUMENTATION.md` |
 | Architecture, a decision, the UI rules | `docs/claude/` (add a decision rather than rewriting one) |
 | What's done or left | `docs/claude/status.md` |
-| Something on screen, a lot | the screenshots in `docs/assets/` (from `render-window`) |
 
 ## How the user works
 

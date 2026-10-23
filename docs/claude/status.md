@@ -11,12 +11,11 @@ released.
    moves `Application Support/MacRazer` on first launch. Credits to SorcRR stay.
 2. **Icons**: Health Icons' `animal-snake` (MIT) for the app and the menu bar, drawn from its
    SVG path (`SVGPath`, `MenuBarIcon.serpentPathData`). A stand-in; the user may replace it.
-3. **Refactor**, phases 0-8 of [REFACTOR.md](../plans/REFACTOR.md): `RazerProtocol` and
+3. **Refactor**, in phases 0-8: `RazerProtocol` and
    `RazerDeviceKit` libraries, `serpentine-cli`, `DeviceCapabilities`, `SettingResidency`,
    `Preferences`, `DeviceQueue`, `BatteryTracker`, the controller and remapper split into
-   feature files, feature views in `Features/`, snapshot tests. Its status table says where
-   it differs from the plan.
-4. **Windowed app**, W1-W5 of [WINDOWED_APP.md](../plans/WINDOWED_APP.md), then redesigned
+   feature files, feature views in `Features/`, snapshot tests.
+4. **Windowed app**, in phases W1-W5, then redesigned
    with the user over several rounds into the current dashboard (see
    [ui-design.md](ui-design.md) and decisions D10-D17).
 
@@ -56,7 +55,5 @@ dongle and over Bluetooth:
 - **Preview data**: `render-window zones` shows "Couldn't read the profiles" because the V4 Pro
   preview has no slots loaded. Give `setPreviewZonedLighting` slots if that matters.
 - **About** is still the small glass window; it could become the standard About panel.
-- **The original design proposal** (`docs/design/window-design.html`, published privately as
-  an artifact) shows a sidebar layout that was abandoned. Don't build from it.
 - **Release**: when it's time, `./Scripts/release.sh 0.6.0`, review, commit, then run the
   Release workflow (Actions → Release). See [workflows.md](workflows.md).
