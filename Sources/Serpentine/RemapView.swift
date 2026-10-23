@@ -225,21 +225,12 @@ struct RemapView: View {
     /// Standard / HyperShift, once a button is the HyperShift key.
     @ViewBuilder private var layerPicker: some View {
         if remapper.hasHyperShiftKey {
-            VStack(alignment: .leading, spacing: 4) {
-                Picker("", selection: $editingHyperShift) {
-                    Text("Standard").tag(false)
-                    Text("HyperShift").tag(true)
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                if editingHyperShift {
-                    Text(remapper.mappingsLiveInMouse
-                         ? "What each button does while you hold the Side Trigger, saved in the mouse. Buttons left at Default do their standard job."
-                         : "What each button does while you hold the HyperShift button. Buttons left at Default do their standard job.")
-                        .font(.system(size: 10)).foregroundStyle(.tertiary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+            Picker("", selection: $editingHyperShift) {
+                Text("Standard").tag(false)
+                Text("HyperShift").tag(true)
             }
+            .pickerStyle(.segmented)
+            .labelsHidden()
         }
     }
 
