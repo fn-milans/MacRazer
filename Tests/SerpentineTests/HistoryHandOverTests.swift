@@ -4,7 +4,7 @@
 import XCTest
 @testable import Serpentine
 
-/// `MouseController.handOverHistory` runs when the connected mouse changes identity: a
+/// `BatteryTracker.handOverHistory` runs when the connected mouse changes identity: a
 /// different unit, or the same one whose serial number resolved after a PID fallback. Its
 /// history holds minutes of samples in memory between throttled writes, so the order of
 /// save, migrate and reopen decides whether they survive.
@@ -46,7 +46,7 @@ final class HistoryHandOverTests: XCTestCase {
         let outgoing = historyWithUnsavedTail(key: "00db")
         XCTAssertEqual(onDisk("00db"), 1, "precondition: most samples only in memory")
         var seenByMigrate: Int?
-        _ = MouseController.handOverHistory(
+        _ = BatteryTracker.handOverHistory(
             outgoing, outgoingKey: "00db",
             migrate: { old in seenByMigrate = self.onDisk(old) },
             makeIncoming: { BatteryHistory(deviceKey: "SERIAL", directory: self.dir, defaults: self.defaults) })
@@ -57,7 +57,7 @@ final class HistoryHandOverTests: XCTestCase {
         // Opening first would load the new key before the old data was moved to it.
         let outgoing = historyWithUnsavedTail(key: "00db")
         var order: [String] = []
-        _ = MouseController.handOverHistory(
+        _ = BatteryTracker.handOverHistory(
             outgoing, outgoingKey: "00db",
             migrate: { _ in order.append("migrate") },
             makeIncoming: {
@@ -72,7 +72,7 @@ final class HistoryHandOverTests: XCTestCase {
         // empty file behind on every launch.
         let placeholder = BatteryHistory(deviceKey: "default", directory: dir, defaults: defaults)
         var migrated = false
-        _ = MouseController.handOverHistory(
+        _ = BatteryTracker.handOverHistory(
             placeholder, outgoingKey: nil,
             migrate: { _ in migrated = true },
             makeIncoming: { BatteryHistory(deviceKey: "SERIAL", directory: self.dir, defaults: self.defaults) })
