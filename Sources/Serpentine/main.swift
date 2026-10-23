@@ -22,7 +22,7 @@ if args.isEmpty {
     let app = NSApplication.shared
     let delegate = AppDelegate()
     app.delegate = delegate
-    app.setActivationPolicy(.accessory) // menu bar only, no Dock icon
+    app.setActivationPolicy(.regular) // a normal app: Dock icon, menus, a window
     app.run()
     exit(0)
 }
@@ -138,6 +138,38 @@ case "render-ui":
     let scene = PreviewScene.allCases.first { args.dropFirst().contains($0.rawValue) } ?? .main
     let rootView = scene.makeView()
     if scene.needsHosting { writeHostedPNG(rootView, to: path) } else { writeViewPNG(rootView, to: path) }
+
+case "render-window":
+    // The main window, offscreen, on a given pane: render-window [section] [light] out.png
+    let app = NSApplication.shared
+    app.setActivationPolicy(.accessory)
+    let path = outputPath(args.dropFirst(), default: "window-preview.png")
+    let controller = MouseController()
+    controller.loadPreviewState()
+    if args.contains("zones") { controller.setPreviewZonedLighting() }
+    if args.contains("offline") { controller.setPreviewOffline() }
+    let remapper = ButtonRemapper()
+    let navigation = WindowNavigation()
+    navigation.section = PaneSection.allCases.first { args.dropFirst().contains($0.rawValue) } ?? .overview
+    let hosting = NSHostingController(rootView: MainWindowView(controller: controller, remapper: remapper,
+                                                               navigation: navigation))
+    hosting.sceneBridgingOptions = [.title, .toolbars]
+    let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 960, height: 640),
+                          styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
+                          backing: .buffered, defer: false)
+    window.contentViewController = hosting
+    window.toolbarStyle = .unified
+    window.appearance = NSAppearance(named: args.contains("light") ? .aqua : .darkAqua)
+    window.setContentSize(NSSize(width: 960, height: 640))
+    // Off screen, but ordered in, so the split view and the toolbar lay out as in the app.
+    window.setFrameOrigin(NSPoint(x: -20000, y: -20000))
+    window.orderFrontRegardless()
+    RunLoop.main.run(until: Date().addingTimeInterval(1.0))
+    let frameView = window.contentView!.superview!
+    guard let rep = frameView.bitmapImageRepForCachingDisplay(in: frameView.bounds) else { print("Render failed"); exit(1) }
+    frameView.cacheDisplay(in: frameView.bounds, to: rep)
+    try? rep.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: path))
+    print("Wrote \(path)")
 
 case "render-settings":
     _ = NSApplication.shared

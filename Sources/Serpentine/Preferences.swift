@@ -22,6 +22,8 @@ enum Preferences {
     /// Which onboard button entries Serpentine wrote, per mouse serial (`OnboardOwnership`).
     static let onboardButtonsOwned = "onboardButtonsOwned"
     static let migratedFromLegacyInstall = "migratedFromLegacyInstall"
+    /// The main window's selected pane (`PaneSection`).
+    static let mainWindowSection = "mainWindow.section"
 
     // MARK: Per mouse
 

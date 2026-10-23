@@ -27,6 +27,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, UNU
     /// The solid colour or green tint behind the popover; see `PopoverBackdropView`.
     private let popoverBackdrop = PopoverBackdropView()
     private lazy var aboutWindow = AboutWindowController()
+    private lazy var mainWindow = MainWindowController(controller: controller, remapper: remapper)
+    private lazy var appMenu = AppMenu(actions: .init(
+        about: { [weak self] in self.map { $0.present($0.aboutWindow) } },
+        settings: { [weak self] in self.map { $0.present($0.settingsWindow) } },
+        showMainWindow: { [weak self] in self?.showMainWindow() },
+        refresh: { [weak self] in self?.controller.refreshAll() },
+        go: { [weak self] section in
+            self?.mainWindow.navigation.section = section
+            self?.showMainWindow()
+        }))
     private lazy var settingsWindow = SettingsWindowController(
         controller: controller, launchAtLogin: launchAtLogin)
     /// The app the user was in when the popover opened, so closing it can hand focus back.
@@ -145,6 +155,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, UNU
             .store(in: &cancellables)
 
         controller.start()
+        appMenu.install()
+        showMainWindow()
 
         // Instant plug/unplug detection via IOKit; polling remains the fallback for the
         // wireless-sleep case where the dongle stays present.
@@ -225,6 +237,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, UNU
                 self.controller.setOnboardMappings(self.remapper.mappings, deviceKey: self.remapper.activeDeviceKey)
             }
             .store(in: &cancellables)
+    }
+
+    // MARK: - Main window
+
+    @objc func showMainWindow() { present(mainWindow) }
+
+    /// Clicking the Dock icon with no window open brings the main window back.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if !mainWindow.isVisible { showMainWindow() }
+        return true
     }
 
     // MARK: - Click handling
@@ -378,9 +400,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, UNU
 
     // MARK: - NSPopoverDelegate
 
-    func popoverDidShow(_ notification: Notification) { controller.setPopoverVisible(true) }
+    func popoverDidShow(_ notification: Notification) { controller.setLiveChecks(true, for: .popover) }
     func popoverDidClose(_ notification: Notification) {
-        controller.setPopoverVisible(false)
+        controller.setLiveChecks(false, for: .popover)
         // Deferred a turn so the answer is a fact rather than a race: by the next runloop turn
         // the window the close was for has come up, or it has not.
         DispatchQueue.main.async { [weak self] in self?.returnFocusAfterPopover() }

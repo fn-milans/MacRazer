@@ -35,6 +35,9 @@ enum BluetoothMouseStatus: Equatable {
     }
 }
 
+/// A view of the mouse that wants what a button on the mouse changes shown at once.
+enum LiveViewer: Hashable { case window, popover }
+
 enum BluetoothRecoveryState: Equatable {
     case idle
     case reconnecting
@@ -406,6 +409,8 @@ final class MouseController: ObservableObject, @unchecked Sendable {
     var settingsReadQueued = false
 
     var settingsTimer: Timer?
+    /// The views of the mouse open now (`setLiveChecks`). Main thread.
+    var liveViewers: Set<LiveViewer> = []
 
     /// io-queue only. The DPI as the last full read found it (the active stage and the stage
     /// table on a mouse the table drives, else the DPI), for `checkLiveSync` to compare.

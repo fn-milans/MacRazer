@@ -115,12 +115,23 @@ final class AppearanceSettings: ObservableObject {
         WindowBackdrop.apply(look, to: window)
     }
 
+    private let appearanceOnlyWindows = NSHashTable<NSWindow>.weakObjects()
+
+    /// Gives a window the theme's light or dark appearance and nothing else, for the main
+    /// window, whose sidebar and title bar keep the system's own materials.
+    func trackAppearance(_ window: NSWindow) {
+        appearanceOnlyWindows.add(window)
+        let look = windowLook ?? look(systemIsDark: NSApplication.shared.effectiveAppearance.isDark)
+        window.appearance = NSAppearance(named: look.appearanceName)
+    }
+
     /// Re-applies a look to every tracked window. Takes the look rather than working it out
     /// from `theme`, because the owner calls this from a `$theme` subscriber, which runs before
     /// the property itself has changed.
     func applyToWindows(_ look: AppearanceLook) {
         windowLook = look
         for window in windows.allObjects { WindowBackdrop.apply(look, to: window) }
+        for window in appearanceOnlyWindows.allObjects { window.appearance = NSAppearance(named: look.appearanceName) }
     }
 }
 

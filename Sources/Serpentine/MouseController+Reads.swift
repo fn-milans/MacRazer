@@ -57,19 +57,25 @@ extension MouseController {
         readSettingsSync()
     }
 
-    /// Called when the popover shows/hides. While it's open we re-read DPI/polling every
-    /// couple of seconds so on-mouse changes (e.g. the DPI-cycle button) reflect live.
-    func setPopoverVisible(_ visible: Bool) {
-        settingsTimer?.invalidate()
-        settingsTimer = nil
-        guard visible else { return }
-        // While the mouse is unreachable the poll backs off, so a mouse woken just before
-        // opening the popover could otherwise still read offline. Looking is a good moment
-        // to check.
+    /// Called as a view of the mouse opens or closes. While one is open what a button on the
+    /// mouse changes (the DPI-cycle button, a profile switch) is re-read every couple of
+    /// seconds so it shows at once.
+    func setLiveChecks(_ on: Bool, for viewer: LiveViewer = .window) {
+        let wasActive = !liveViewers.isEmpty
+        if on { liveViewers.insert(viewer) } else { liveViewers.remove(viewer) }
+        let active = !liveViewers.isEmpty
+        if !active {
+            settingsTimer?.invalidate()
+            settingsTimer = nil
+        }
+        guard active, !wasActive || on else { return }
+        // While the mouse is unreachable the poll backs off, so a mouse woken just before the
+        // view opened could otherwise still read offline. Looking is a good moment to check.
         checkIfOffline()
         refreshSettings()
+        guard settingsTimer == nil else { return }
         // Only what a button on the mouse changes is checked this often (`checkLiveSync`);
-        // everything else is read when the popover opens, and again after a change.
+        // everything else is read when the view opens, and again after a change.
         let t = Timer(timeInterval: 2.0, repeats: true) { [weak self] _ in
             self?.checkLive()
         }
