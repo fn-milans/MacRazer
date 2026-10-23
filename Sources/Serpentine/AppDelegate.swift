@@ -30,10 +30,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         controller: controller, openWindow: { [weak self] in self?.showMainWindow() })
     private lazy var appMenu = AppMenu(actions: .init(
         about: { [weak self] in self.map { $0.present($0.aboutWindow) } },
+        settings: { [weak self] in
+            self?.showMainWindow()
+            self?.mainWindow.navigation.showingSettings = true
+        },
         showMainWindow: { [weak self] in self?.showMainWindow() },
         refresh: { [weak self] in self?.controller.refreshAll() },
-        go: { [weak self] page in
-            self?.mainWindow.navigation.page = page
+        go: { [weak self] route in
+            self?.mainWindow.navigation.go(to: route)
             self?.showMainWindow()
         }))
     /// macOS started Serpentine as a login item: it starts in the menu bar, with no window.

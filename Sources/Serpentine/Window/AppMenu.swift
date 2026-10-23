@@ -3,16 +3,18 @@
 
 import AppKit
 
-/// The menu bar menus of a normal Mac app: Serpentine (Settings… opens the window's Settings
-/// page), Edit (text fields need it for copy and paste), View, Go (the pages, ⌘1 to ⌘3),
-/// Window and Help.
+/// The menu bar menus of a normal Mac app: Serpentine (Settings… opens the settings sheet),
+/// Edit (text fields need it for copy and paste), View, Go (the dashboard and what opens from
+/// it, ⌘1 to ⌘3), Window and Help.
 @MainActor
 final class AppMenu: NSObject {
     struct Actions {
         var about: () -> Void
+        var settings: () -> Void
         var showMainWindow: () -> Void
         var refresh: () -> Void
-        var go: (WindowPage) -> Void
+        /// The dashboard with nil, or one of its detail views.
+        var go: (WindowRoute?) -> Void
     }
 
     private let actions: Actions
@@ -93,9 +95,11 @@ final class AppMenu: NSObject {
 
     private func goMenu() -> NSMenu {
         let m = NSMenu()
-        for page in WindowPage.allCases {
-            let i = item(page.title, #selector(go(_:)), String(page.shortcut.character), target: self)
-            i.representedObject = page.rawValue
+        let home = item("Dashboard", #selector(go(_:)), "1", target: self)
+        m.addItem(home)
+        for (index, route) in WindowRoute.allCases.enumerated() {
+            let i = item(route.title, #selector(go(_:)), String(index + 2), target: self)
+            i.representedObject = route.rawValue
             m.addItem(i)
         }
         return m
@@ -120,12 +124,11 @@ final class AppMenu: NSObject {
     }
 
     @objc private func about() { actions.about() }
-    @objc private func settings() { actions.go(.settings) }
+    @objc private func settings() { actions.settings() }
     @objc private func showMainWindow() { actions.showMainWindow() }
     @objc private func refresh() { actions.refresh() }
     @objc private func go(_ sender: NSMenuItem) {
-        guard let raw = sender.representedObject as? String, let page = WindowPage(rawValue: raw) else { return }
-        actions.go(page)
+        actions.go((sender.representedObject as? String).flatMap(WindowRoute.init(rawValue:)))
     }
     @objc private func openRepo() { NSWorkspace.shared.open(ProjectLinks.repo) }
     @objc private func openIssues() { NSWorkspace.shared.open(ProjectLinks.issues) }

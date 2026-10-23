@@ -23,8 +23,6 @@ enum Preferences {
     static let keepRunningInBackground = "keepRunningInBackground"
     /// Whether to keep running has been asked once, when a driver-mode feature was set up.
     static let backgroundModeAsked = "backgroundModeAsked"
-    /// The main window's page (`WindowPage`).
-    static let mainWindowSection = "mainWindow.section"
 
     // MARK: Per mouse
 

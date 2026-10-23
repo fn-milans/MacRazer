@@ -5,8 +5,8 @@ memory, so the mouse behaves the same with the app closed, on any link and on an
 open it, set the mouse up, quit. What only software can do (the "driver mode" actions) works
 while it runs, and it can keep running in the background, as a small menu bar item, for them.
 
-A native Mac app with one window: the mouse's settings one under the other on the glass, its
-buttons on a page of their own, and Serpentine's settings on a third. Razer does ship a Synapse for Mac now,
+A native Mac app with one window: a dashboard with the mouse and its battery on top and a tile
+for each of its settings, on the glass. Razer does ship a Synapse for Mac now,
 but its [supported-device list](https://mysupport.razer.com/app/answers/detail/a_id/14809/~/razer-synapse-for-mac-supported-and-compatible-devices)
 is short and doesn't include the Cobra HyperSpeed or Atheris — this fills that gap. It talks
 to the mouse directly over USB HID (no kernel extension, no driver install), using a protocol
@@ -23,15 +23,15 @@ Razer mice that use the same HID protocol family, but those are untested, so tre
 > anywhere: no usage stats, no update checks, no report uploads. See [Privacy](#privacy).
 > 
 
-<img width="420" alt="The Serpentine window, light" src="docs/assets/window-light.png" />
-<img width="420" alt="The Serpentine window, dark" src="docs/assets/window-dark.png" />
+<img width="720" alt="The Serpentine dashboard, light" src="docs/assets/window-light.png" />
+<img width="720" alt="The Serpentine dashboard, dark" src="docs/assets/window-dark.png" />
 
 
 ## Features
 
-- **A window for the mouse**: the mouse, battery, DPI, polling rate, lighting, power, scroll
-  wheel and profiles one under the other, only what this mouse has; the buttons and
-  Serpentine's own settings on pages of their own.
+- **A dashboard for the mouse**: a tile for each setting it has (DPI, polling rate, lighting,
+  sleep, low battery, scroll wheel, buttons, profiles), each marked with where it lives. Buttons
+  and the battery history open from their tiles; Serpentine's settings are behind the cog.
 - **Battery**, charging status, and a learned time-until-empty estimate. History and the
   estimate are kept per physical device (by serial number).
 - **Battery usage**: the current discharge curve, the discharge rate, time since the last full

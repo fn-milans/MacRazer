@@ -21,6 +21,8 @@ enum LegacyPreferences {
         "crashReportsHandledThrough", "offerCrashReports", "deviceTest.resumeAfterRelaunch",
         // The menu bar popover: the percentage beside its item, the sections left open.
         "showPercentInMenuBar", "popoverExpandedSections",
+        // The window's tabs, before it became a dashboard.
+        "mainWindow.section",
     ]
 
     /// Removes them; cheap enough to run on every launch, so an install that skips a version

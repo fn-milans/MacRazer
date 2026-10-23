@@ -222,24 +222,26 @@ its own USB product string** (works for any Razer mouse); the registry only adds
 
 ### 6.1 The window, `Window/`
 A normal Mac app (Dock icon, menus), one main window (`MainWindowController`, frame
-remembered) on the same glass as the menu bar popover had (`AppearanceSettings.track`). The
-title bar holds the page switch (Mouse, Buttons, Settings; ⌘1-⌘3, Settings also ⌘,) and, on
-the right, a status mark (whether the mouse holds what was set), the profile menu (the mouse's
-slots or the saved profiles) and Refresh (⌘R). The title text is hidden; the mouse's card
-names it.
+remembered) on the popover's glass (`AppearanceSettings.track`). The title bar follows the
+HIG's layout: the window buttons and the title (or a back button and the detail's title) at
+the leading edge; the status mark (whether the mouse holds what was set), the profile menu,
+Refresh (⌘R) and the Settings cog (⌘,) at the trailing edge.
 
-- **Mouse** (`MousePage`): one column of cards, the way the popover had them: the mouse
- (`DeviceHeaderCard`), the battery (`BatteryCard`; its chart button opens the usage history in
- a sheet), DPI (`DPICard`), then `SettingsCard`s for polling rate, lighting (the colour wheel in
- a sheet), power, the scroll wheel and profiles ("Manage Profiles…" in a sheet). Cards a mouse
- can't use are left out; offline they stay, dimmed, with the last known values.
-- **Buttons**: `RemapView`, in a card.
-- **Settings**: `SettingsView`: background mode, start at login, connection sounds, theme and
- glass.
+- **Dashboard** (`Dashboard.swift`): the mouse across the top (`DeviceTile`: the model, its
+ link, the battery as a ring, the time left and Battery History), then a grid of tiles, two to
+ a row, one per setting the mouse has: DPI, polling rate, lighting, sleep, low battery, scroll
+ wheel, buttons, profiles. A `Tile` has a coloured symbol, the name, where the setting lives
+ (`ResidencyMark`), the value large, and the controls (the feature views in `Features/`).
+ Offline the tiles stay, dimmed, with the last known values.
+- **Detail views** open from their tiles in place, with a back button (`NavigationStack`,
+ `WindowRoute`): Buttons (`RemapView`) and Battery History (`UsageGraphView`). The colour
+ wheel and Manage Profiles open as sheets.
+- **Settings** (`SettingsView`, from the cog): background mode, start at login, connection
+ sounds, theme and glass, in a sheet.
 - **Setup**: Input Monitoring and Accessibility in a sheet (`PermissionsView`), opened at
  launch when Input Monitoring is missing, with a banner until it is granted.
 - **Menus** (`AppMenu`): Serpentine (About, Settings… ⌘,, Hide, Quit), Edit, View (Refresh, Full
- Screen), Go (the pages), Window, Help.
+ Screen), Go (Dashboard ⌘1, Buttons ⌘2, Battery History ⌘3), Window, Help.
 
 ### 6.2 Background mode and the menu bar item
 `BackgroundMode`: Settings › Keep running in the background (`keepRunningInBackground`). Off,
@@ -291,7 +293,7 @@ buttons are handled onboard and never reach macOS.
  captures any combo), **mouse** (middle/double click), **media** (play/next/prev/volume/mute).
 - Mappings persist to UserDefaults. Needs **Accessibility** permission (banner + Open
  Settings / Re-check in the UI).
-- Shown on the window's Buttons page.
+- Shown in the window's Buttons view, opened from the Buttons tile.
 
 ### 6.5 Privacy
 Serpentine makes no network requests of its own. There are no usage stats, no update checks
@@ -382,7 +384,7 @@ swift run serpentine-cli brightness [0-100] # sweeps LOGO/SCROLL/ZERO/BACKLIGHT 
 swift run serpentine-cli stages [d1,d2,…] [active] # read / write the DPI stage table
 swift run Serpentine icon out.png [size] [charging] [light] # render the menu bar icon
 swift run Serpentine render-ui [offline|color|zones|…] out.png # a page (scenes in PreviewScene)
-swift run Serpentine render-window [mouse|buttons|settings] [zones] [light] out.png # the whole window, offscreen
+swift run Serpentine render-window [buttons|battery|settings] [zones] [light] out.png # the whole window, offscreen
 swift run Serpentine render-about out.png
 swift run Serpentine render-remap out.png
 ```
@@ -438,16 +440,16 @@ AppKit; the app and the command-line tool build on them.
 | `main.swift` | Entry point: no arguments launches the app; subcommands are development tools (render-*, icons). |
 | `AppDelegate.swift` | App lifecycle: the window, background mode, the menu bar item, HIDMonitor wiring. |
 | `BackgroundMode.swift` | Keep running in the background, and what needs it (`DriverModeUsage`). |
-| `Window/` | The main window (`MainWindowController`, `MainWindowView`, `MousePage`, `WindowPage`), the menus (`AppMenu`) and the menu bar item (`MenuBarItem`). |
+| `Window/` | The main window (`MainWindowController`, `MainWindowView`, `Dashboard`, `Tile`, `WindowRoute`), the menus (`AppMenu`) and the menu bar item (`MenuBarItem`). |
 | `MouseController.swift` | The connected mouse's state, published for the UI. Its work is split by feature into `MouseController+Reads`, `+Writes`, `+Lighting`, `+Slots`, `+OnboardButtons`, `+Profiles`, `+Connection` and `+Preview`. |
 | `DeviceQueue.swift` | The serial device queue, with user commands ahead of background reads. |
 | `BatteryTracker.swift` | Battery history, charge cycles, discharge curve and last readings, per mouse. |
 | `BatteryHistory.swift`, `ChargeCycleHistory.swift`, `DischargeCurveModel.swift` | Sample log, cycles and the learned curve behind the time-left estimate. |
 | `ButtonRemapper.swift` | The remap table; the event tap, HyperShift, the DPI Cycle bridge and persistence are in `ButtonRemapper+*`. |
-| `SettingsView.swift` | The window's Settings page. |
+| `SettingsView.swift` | Serpentine's own settings, the sheet behind the cog. |
 | `Preferences.swift`, `DeviceSettings.swift` | Every UserDefaults key, and the per-mouse settings store. |
 | `LegacyPreferences.swift` | What older versions kept, and the move from MacRazer. |
-| `Features/` | The cards and controls the Mouse page is built from: device status, battery, DPI, polling, lighting, power, quick profiles. |
+| `Features/` | The controls the dashboard's tiles are built from: device status, battery, DPI, polling, lighting, power, quick profiles. |
 | `Appearance.swift`, `Palette.swift` | Settings › Appearance, the backdrops, and the colours. |
 | `ColorPickerPage.swift` | Inline hue/sat colour wheel page + shared `BackButton`. |
 | `RemapView.swift` | Button-config UI (inline + window), key recorder. |

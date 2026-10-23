@@ -112,30 +112,7 @@ struct BatteryCard: View {
         Text(batterySubtitle).font(.system(size: 11)).foregroundStyle(.secondary)
     }
 
-    private var batterySubtitle: String {
-        if !controller.connected {
-            if let snapshot = controller.lastBatterySnapshot {
-                let age = LastBatterySnapshot.relativeAgeFormatter.localizedString(for: snapshot.observedAt, relativeTo: Date())
-                if snapshot.wasCharging { return "Last reading: \(snapshot.percent)% · charging · \(age)" }
-                if let estimate = snapshot.shortEstimateText {
-                    return "\(estimate) · \(age)"
-                }
-                return "Last reading: \(snapshot.percent)% · \(age) · no estimate yet"
-            }
-            switch controller.bluetoothMouse {
-            case .needsModeSwitch: return "On Bluetooth. Use 2.4 GHz or USB-C"
-            case .connecting: return "On Bluetooth. Connecting…"
-            case .accessDenied: return "On Bluetooth. Needs Bluetooth access"
-            case nil: break
-            }
-            if needsPermission { return "Needs Input Monitoring permission" }
-            return "Disconnected. Wake the mouse and refresh"
-        }
-        if controller.charging { return "Charging" }
-        if let est = controller.timeEstimate { return est }
-        if controller.batteryPercent != nil { return "Estimating time remaining…" }
-        return "Reading battery…"
-    }
+    private var batterySubtitle: String { controller.batteryStatusLine }
 
     private var usageButton: some View {
         Button { onShowUsage?() } label: {
@@ -169,4 +146,32 @@ struct BatteryCard: View {
         .disabled(controller.isRefreshing)
     }
 
+}
+
+extension MouseController {
+    /// The battery's state in a line: time left, charging, or the last reading while away.
+    @MainActor var batteryStatusLine: String {
+        if !connected {
+            if let snapshot = lastBatterySnapshot {
+                let age = LastBatterySnapshot.relativeAgeFormatter.localizedString(for: snapshot.observedAt, relativeTo: Date())
+                if snapshot.wasCharging { return "Last reading: \(snapshot.percent)% · charging · \(age)" }
+                if let estimate = snapshot.shortEstimateText {
+                    return "\(estimate) · \(age)"
+                }
+                return "Last reading: \(snapshot.percent)% · \(age) · no estimate yet"
+            }
+            switch bluetoothMouse {
+            case .needsModeSwitch: return "On Bluetooth. Use 2.4 GHz or USB-C"
+            case .connecting: return "On Bluetooth. Connecting…"
+            case .accessDenied: return "On Bluetooth. Needs Bluetooth access"
+            case nil: break
+            }
+            if needsInputMonitoring { return "Needs Input Monitoring permission" }
+            return "Disconnected. Wake the mouse and refresh"
+        }
+        if charging { return "Charging" }
+        if let est = timeEstimate { return est }
+        if batteryPercent != nil { return "Estimating time remaining…" }
+        return "Reading battery…"
+    }
 }

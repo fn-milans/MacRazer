@@ -12,6 +12,10 @@ struct PowerControls: View {
     @ObservedObject var controller: MouseController
     @Binding var sleepTimeoutValue: Double
     @Binding var lowBatteryValue: Double
+    /// Which of the two to show; the dashboard gives each its own tile.
+    var parts: Parts = .all
+
+    enum Parts { case all, sleep, lowBattery }
 
     var body: some View { powerManagementContent }
 
@@ -19,8 +23,8 @@ struct PowerControls: View {
     /// mouse's low-battery threshold. The row shows the first of the two.
     private var powerManagementContent: some View {
         VStack(alignment: .leading, spacing: 8) {
-            if controller.supportsSleepTimeout { sleepTimeoutControls }
-            if controller.lowBatteryThreshold != nil { lowBatteryControls }
+            if parts != .lowBattery, controller.supportsSleepTimeout { sleepTimeoutControls }
+            if parts != .sleep, controller.lowBatteryThreshold != nil { lowBatteryControls }
         }
     }
 

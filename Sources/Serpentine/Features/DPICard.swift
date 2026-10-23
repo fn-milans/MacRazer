@@ -10,6 +10,9 @@ import RazerDeviceKit
 /// stages, a slider and a recallable custom value (`presetDpiCard`).
 struct DPICard: View {
     @ObservedObject var controller: MouseController
+    /// Inside a tile of the main window, which draws the frame and the heading: no card of its
+    /// own, and the DPI in use shown large.
+    var inTile = false
 
     @State private var dpiValue: Double = 1600
     /// Recallable custom DPI — persisted per-mouse, and never above the mouse's max.
@@ -79,12 +82,13 @@ struct DPICard: View {
     /// slider and the number edit the DPI in use: the single value, or the active stage.
     private var dpiModesCard: some View {
         let single = controller.dpiStages.count == 1
-        return card {
+        return chrome {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                sectionLabel("DPI", "scope")
-                Spacer()
+                if !inTile { sectionLabel("DPI", "scope") }
+                if !inTile { Spacer() }
                 dpiValueField
+                if inTile { Spacer() }
             }
             Picker("", selection: Binding(
                 get: { single },
@@ -144,7 +148,7 @@ struct DPICard: View {
                 .help("Click to type an exact DPI")
             }
         }
-        .font(.system(size: 12, weight: .medium)).monospacedDigit()
+        .font(valueFont).monospacedDigit()
         .onChange(of: dpiStageFieldFocused) { _, focused in if !focused { editingDpiValue = false } }
     }
 
@@ -255,17 +259,28 @@ struct DPICard: View {
         }
     }
 
+    /// The card, or nothing in a tile, which has its own frame.
+    @ViewBuilder
+    private func chrome<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        if inTile { content() } else { card(content) }
+    }
+
+    private var valueFont: Font {
+        inTile ? .system(size: 28, weight: .semibold, design: .rounded) : .system(size: 12, weight: .medium)
+    }
+
     /// The slot whose stages Single mode sets aside; 1 on mice without slots.
     private var activeSlot: Int { controller.activeOnboardSlot ?? 1 }
 
     private var presetDpiCard: some View {
-        card {
+        chrome {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                sectionLabel("DPI", "scope")
-                Spacer()
+                if !inTile { sectionLabel("DPI", "scope") }
+                if !inTile { Spacer() }
                 Text(verbatim: "\(Int(dpiValue))")
-                    .font(.system(size: 12, weight: .medium)).monospacedDigit()
+                    .font(valueFont).monospacedDigit()
+                if inTile { Spacer() }
             }
             if controller.supportsFreeDPI {
                 Slider(value: snapped($dpiValue, to: 50, from: 100), in: 100...Double(controller.deviceMaxDPI)) { editing in

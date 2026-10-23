@@ -14,7 +14,6 @@ final class PreferencesTests: XCTestCase {
         XCTAssertEqual(Preferences.appearanceGlass, "appearance.glass")
         XCTAssertEqual(Preferences.launchAtLoginDefaultApplied, "launchAtLoginDefaultApplied")
         XCTAssertEqual(Preferences.backgroundModeAsked, "backgroundModeAsked")
-        XCTAssertEqual(Preferences.mainWindowSection, "mainWindow.section")
         XCTAssertEqual(Preferences.lastBatterySnapshot, "lastBatterySnapshot.v1")
         XCTAssertEqual(Preferences.onboardButtonsOwned, "onboardButtonsOwned")
         XCTAssertEqual(Preferences.Device.buttonMappings("K"), "buttonMappings-K")

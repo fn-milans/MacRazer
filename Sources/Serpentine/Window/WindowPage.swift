@@ -3,40 +3,33 @@
 
 import SwiftUI
 
-/// The main window's pages: the mouse's settings, one under the other; its buttons, which need
-/// the room of their own; and Serpentine's own settings.
-enum WindowPage: String, CaseIterable, Identifiable {
-    case mouse, buttons, settings
+/// Where the main window can go from its dashboard: the detail views behind a tile, opened in
+/// place with a back button, the way System Settings drills in.
+enum WindowRoute: String, CaseIterable, Hashable, Identifiable {
+    case buttons, battery
 
     var id: Self { self }
 
     var title: String {
         switch self {
-        case .mouse: return "Mouse"
         case .buttons: return "Buttons"
-        case .settings: return "Settings"
+        case .battery: return "Battery History"
         }
     }
-
-    /// ⌘1 to ⌘3, in order. (Settings also takes ⌘, from the Serpentine menu.)
-    var shortcut: KeyEquivalent { KeyEquivalent(Character(String((Self.allCases.firstIndex(of: self) ?? 0) + 1))) }
 }
 
 /// What the main window shows, shared with the menus.
 @MainActor
 final class WindowNavigation: ObservableObject {
-    @Published var page: WindowPage = .mouse {
-        didSet { UserDefaults.standard.set(page.rawValue, forKey: Preferences.mainWindowSection) }
-    }
+    /// Empty is the dashboard.
+    @Published var path: [WindowRoute] = []
+    /// Serpentine's own settings, from the cog.
+    @Published var showingSettings = false
     /// The setup sheet (Input Monitoring and Accessibility) is up.
     @Published var showingSetup = false
-    /// The battery usage history is up.
-    @Published var showingUsage = false
 
-    init() {
-        // An earlier build kept one of several sections here; those are all on the mouse page
-        // now.
-        page = UserDefaults.standard.string(forKey: Preferences.mainWindowSection)
-            .flatMap(WindowPage.init(rawValue:)) ?? .mouse
+    /// Opens a detail view from the dashboard, or the dashboard itself with nil.
+    func go(to route: WindowRoute?) {
+        path = route.map { [$0] } ?? []
     }
 }

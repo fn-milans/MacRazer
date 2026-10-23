@@ -33,9 +33,9 @@ enum PreviewScene: String, CaseIterable {
         let view: AnyView
         switch self {
         case .main, .offline, .bluetooth, .bluetoothConnected, .dpiStages, .dpiSingle, .zones:
-            view = AnyView(MousePage(controller: controller, remapper: remapper, navigation: WindowNavigation()))
+            view = AnyView(Dashboard(controller: controller, remapper: remapper, navigation: WindowNavigation()))
         case .buttons:
-            view = AnyView(card { RemapView(remapper: remapper, controller: controller) })
+            view = AnyView(RemapView(remapper: remapper, controller: controller).padding(18).tileBackground())
         case .usage:
             view = AnyView(UsageGraphView(controller: controller))
         case .profiles:
@@ -48,7 +48,7 @@ enum PreviewScene: String, CaseIterable {
         case .color:
             return AnyView(ColorPickerPage(color: .constant(.blue), onBack: {}, onApply: { _ in }).frame(width: 320))
         }
-        // A page at the window's reading width.
-        return AnyView(view.padding(16).frame(width: 560, alignment: .topLeading))
+        // A page at the window's width.
+        return AnyView(view.padding(20).frame(width: 920, alignment: .topLeading))
     }
 }

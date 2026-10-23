@@ -4,8 +4,9 @@
 import SwiftUI
 import RazerProtocol
 
-/// The main window: one column of cards on the glass, like the menu bar popover was, with the
-/// page (Mouse, Buttons, Settings) chosen in the title bar.
+/// The main window: a dashboard of tiles on the glass, with Buttons and Battery History opened
+/// from their tiles in place (with a back button). The title sits at the leading edge; the
+/// status, the profile, Refresh and Settings at the trailing edge.
 struct MainWindowView: View {
     @ObservedObject var controller: MouseController
     @ObservedObject var remapper: ButtonRemapper
@@ -15,38 +16,32 @@ struct MainWindowView: View {
     var launchAtLogin: LaunchAtLogin
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 10) {
-                if !permissions.allRequiredGranted { setupBanner }
-                if navigation.page != .settings, !background.isEnabled, !driverModeFeatures.isEmpty {
-                    driverModeBanner
-                }
-                switch navigation.page {
-                case .mouse:
-                    MousePage(controller: controller, remapper: remapper, navigation: navigation)
+        NavigationStack(path: $navigation.path) {
+            page {
+                Dashboard(controller: controller, remapper: remapper, navigation: navigation)
+            }
+            .navigationTitle("Serpentine")
+            .navigationDestination(for: WindowRoute.self) { route in
+                switch route {
                 case .buttons:
-                    card { RemapView(remapper: remapper, controller: controller) }
-                        .disabled(!controller.connected)
-                case .settings:
-                    SettingsView(controller: controller, launchAtLogin: launchAtLogin, background: background)
+                    page {
+                        RemapView(remapper: remapper, controller: controller)
+                            .padding(18)
+                            .tileBackground()
+                            .disabled(!controller.connected)
+                    }
+                    .navigationTitle(route.title)
+                case .battery:
+                    page {
+                        UsageGraphView(controller: controller)
+                            .tileBackground()
+                    }
+                    .navigationTitle(route.title)
                 }
             }
-            .padding(16)
-            .frame(maxWidth: 560)
-            .frame(maxWidth: .infinity)
         }
-        .frame(minWidth: 480, minHeight: 520)
-        .navigationTitle("Serpentine")
+        .frame(minWidth: 760, minHeight: 600)
         .toolbar {
-            ToolbarItem(placement: .principal) {
-                Picker("Page", selection: $navigation.page) {
-                    ForEach(WindowPage.allCases) { Text($0.title).tag($0) }
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .fixedSize()
-            }
-            // One group at the trailing edge: the status, the profile, Refresh.
             ToolbarItemGroup(placement: .primaryAction) {
                 syncStatus
                 profileMenu
@@ -57,11 +52,37 @@ struct MainWindowView: View {
                 }
                 .help("Read the mouse again (⌘R)")
                 .disabled(controller.isRefreshing)
+                Button {
+                    navigation.showingSettings = true
+                } label: {
+                    Label("Settings", systemImage: "gearshape")
+                }
+                .help("Serpentine settings (⌘,)")
             }
         }
         .sheet(isPresented: $navigation.showingSetup) {
             PermissionsView(model: permissions, controller: controller,
                             onDone: { navigation.showingSetup = false })
+        }
+        .sheet(isPresented: $navigation.showingSettings) {
+            SheetPage(title: "Settings", onDone: { navigation.showingSettings = false }) {
+                SettingsView(controller: controller, launchAtLogin: launchAtLogin, background: background)
+            }
+        }
+    }
+
+    /// A page of the window: its banners, then its content, scrolling, at a comfortable width
+    /// on the glass.
+    private func page<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                if !permissions.allRequiredGranted { setupBanner }
+                if !background.isEnabled, !driverModeFeatures.isEmpty { driverModeBanner }
+                content()
+            }
+            .padding(20)
+            .frame(maxWidth: 1000)
+            .frame(maxWidth: .infinity)
         }
     }
 
@@ -155,7 +176,7 @@ struct MainWindowView: View {
             Spacer(minLength: 8)
             Button(action, action: perform)
         }
-        .padding(12)
-        .background(Color.batteryMid.opacity(0.12), in: RoundedRectangle(cornerRadius: 13))
+        .padding(14)
+        .background(Color.batteryMid.opacity(0.12), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 }

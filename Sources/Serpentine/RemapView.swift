@@ -447,6 +447,8 @@ struct RemapView: View {
 /// level (`RazerDevices.hasScrollAcceleration`). A level shows while its switch is on.
 struct MouseSwitchesSection: View {
     @ObservedObject var controller: MouseController
+    /// Inside a tile, which draws the frame: no box of its own.
+    var inTile = false
 
     var body: some View {
         let reel = controller.smartReel
@@ -473,7 +475,7 @@ struct MouseSwitchesSection: View {
                     }
                 }
             }
-            .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
+            .background(inTile ? Color.clear : Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
         }
     }
 
