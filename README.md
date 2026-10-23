@@ -31,8 +31,8 @@ Razer mice that use the same HID protocol family, but those are untested, so tre
 
 - **A dashboard for the mouse**: a tile for each setting it has (DPI, polling rate, lighting,
   sleep, low battery, scroll wheel), each marked with where it lives, and the button remaps in
-  a column beside them. It rearranges to the window's width. Profiles are switched, added,
-  renamed and deleted from the title bar; the battery history opens from the mouse's tile;
+  a column beside them. It rearranges to the window's width. Profiles are switched, and
+  managed, from the title bar; the battery history opens from the mouse's tile;
   Serpentine's settings are behind the cog.
 - **Battery**, charging status, and a learned time-until-empty estimate. History and the
   estimate are kept per physical device (by serial number).

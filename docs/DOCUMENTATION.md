@@ -241,9 +241,9 @@ Refresh (⌘R) and the Settings cog (⌘,) at the trailing edge.
 - **Battery History** opens from the mouse's tile in place, with a back button
  (`NavigationStack`, `WindowRoute`). The colour wheel opens as a sheet.
 - **Profiles** are in the title bar (`ProfileMenu`): the one in use is the label; the menu
- switches, adds (a new slot, or the current setup saved), renames, resets to factory (slots)
- and deletes, with confirmations, and Manage Profiles… opens the full list in a sheet. A
- failed apply turns the status mark into a warning.
+ switches, and Manage Profiles… opens a sheet to add (a new slot, or the current setup saved),
+ rename, reset to factory (slots) and delete. A failed apply turns the status mark into a
+ warning.
 - **Settings** (`SettingsView`, from the cog): background mode, start at login, connection
  sounds, theme and glass, in a sheet.
 - **Setup**: Input Monitoring and Accessibility in a sheet (`PermissionsView`), opened at

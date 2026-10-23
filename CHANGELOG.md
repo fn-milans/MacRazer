@@ -13,8 +13,8 @@ expect rough edges until 1.0.
   and scroll wheel, each with its current value and where it lives (in the mouse, or
   done by Serpentine), and the button remaps in a column of their own beside them. Wide, there
   are two columns of tiles; narrower, one; narrow, everything in one column with the buttons
-  last. Profiles live in the title bar: one menu switches, adds, renames, resets and deletes
-  them. The battery history opens from the mouse's tile, with a back button; Settings is
+  last. Profiles live in the title bar: the menu switches between them, and Manage Profiles…
+  adds, renames, resets and deletes them. The battery history opens from the mouse's tile, with a back button; Settings is
   behind the cog. The title is on the left of the title bar, the
   status, profile menu, Refresh and Settings on the right. Input Monitoring setup is a sheet.
   The menu bar popover and the Configure Buttons, Setup and Settings windows are gone.
