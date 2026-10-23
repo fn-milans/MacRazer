@@ -20,7 +20,7 @@ Every setting is one of two kinds, and the UI says which (`SettingResidency` in 
 | Lighting, brightness | The DPI Cycle F20 bridge (Basilisk V3 X HyperSpeed) |
 | Sleep timer, low-battery level | Low-battery notifications |
 | Wheel mode, Smart-Reel, scroll acceleration | Battery history and the time-left estimate |
-| Onboard profiles and slots | Battery percentage in the menu bar |
+| Onboard profiles and slots | |
 | Onboard button remaps and HyperShift (Basilisk V4 Pro) | Connection sounds |
 
 When none of the right-hand column is in use, closing the window quits the app.
@@ -90,8 +90,7 @@ mode, launch at login, appearance, sounds; Notifications: low battery).
 
 ## The menu bar item (background mode only)
 
-Much smaller than today's popover. Shows the serpent glyph (and the battery percentage, if
-chosen). Its menu (a `MenuBarExtra` with `.menu` style, or `.window` style for the compact
+Much smaller than today's popover. Shows the serpent glyph only, no battery percentage. Its menu (a `MenuBarExtra` with `.menu` style, or `.window` style for the compact
 panel below):
 
 ```
@@ -120,16 +119,16 @@ Quit Serpentine         ⌘Q
 
 - **Activation policy flips** can leave the app without a key window or flash the Dock icon.
   Do the switch after the window has closed, and activate explicitly when reopening.
-- **`MenuBarExtra` limits**: no right-click menu and limited control over the label. If the
-  battery percentage next to the glyph renders badly, fall back to an `NSStatusItem` owned by
-  the app delegate (today's code, much reduced).
+- **`MenuBarExtra` limits**: no right-click menu and limited control over the label. With
+  the glyph alone (no percentage) the label is simple; if the charging variant still renders
+  badly, fall back to an `NSStatusItem` owned by the app delegate (today's code, much reduced).
 - **Polling while hidden**: today the poll cadence speeds up while the popover is open
   (`setPopoverVisible`). Tie that to the window being key instead.
 - **Permissions**: the bundle id changed with the rename, so every user is re-granting Input
   Monitoring anyway; the first-launch sheet should make that painless.
-- **Decision for you**: whether background mode turns itself on when the user adds a
-  driver-mode remap (proposed: ask once, with the list of what needs it), and whether to keep
-  the battery percentage in the menu bar at all.
+- **Decided (2026-10-23)**: background mode never turns itself on. The first time a
+  driver-mode feature is set up, the app asks once, listing what needs it. And the menu bar
+  item shows no battery percentage: the glyph only, with the percentage inside its menu.
 
 ## Icons
 
