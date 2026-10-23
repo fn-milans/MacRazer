@@ -13,25 +13,25 @@ final class LegacyPreferencesTests: XCTestCase {
         defaults.set("granted", forKey: "usageStats.consent")
         defaults.set(Data([1, 2, 3]), forKey: "cachedReleases")
         defaults.set(Date(), forKey: "lastUpdateCheckDate")
-        defaults.set(true, forKey: "showPercentInMenuBar")
+        defaults.set(true, forKey: "connectionSoundsEnabled")
         LegacyPreferences.remove(from: defaults)
         XCTAssertNil(defaults.object(forKey: "usageStats.id"), "the ID made from the hardware UUID")
         XCTAssertNil(defaults.object(forKey: "usageStats.consent"))
         XCTAssertNil(defaults.object(forKey: "cachedReleases"))
         XCTAssertNil(defaults.object(forKey: "lastUpdateCheckDate"))
-        XCTAssertEqual(defaults.object(forKey: "showPercentInMenuBar") as? Bool, true, "a setting still in use stays")
+        XCTAssertEqual(defaults.object(forKey: "connectionSoundsEnabled") as? Bool, true, "a setting still in use stays")
     }
 
     func testImportsTheOldPreferencesWithoutOverwritingNewOnes() {
         let name = "SerpentineTests.\(#function)"
         let defaults = UserDefaults(suiteName: name)!
         defer { defaults.removePersistentDomain(forName: name) }
-        defaults.set(false, forKey: "showPercentInMenuBar")
+        defaults.set(false, forKey: "connectionSoundsEnabled")
         LegacyInstall.importPreferences(into: defaults, from: [
-            "showPercentInMenuBar": true,
+            "connectionSoundsEnabled": true,
             "lowBatteryThreshold": 15,
         ])
-        XCTAssertEqual(defaults.object(forKey: "showPercentInMenuBar") as? Bool, false, "set since the rename")
+        XCTAssertEqual(defaults.object(forKey: "connectionSoundsEnabled") as? Bool, false, "set since the rename")
         XCTAssertEqual(defaults.integer(forKey: "lowBatteryThreshold"), 15)
     }
 

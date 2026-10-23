@@ -110,7 +110,6 @@ final class MouseController: ObservableObject, @unchecked Sendable {
     @Published var cycleStartedPercent: Int?
     @Published var pastCycles: [ChargeCycleSummary] = []
     @Published var averageCycleHours: Double?
-    @Published var statusText = "…"
     @Published var lastError: String?
     @Published var isRefreshing = false
     /// Name of the connected Razer mouse (from its USB product string), or nil if none present.
@@ -172,13 +171,6 @@ final class MouseController: ObservableObject, @unchecked Sendable {
     /// a chip on a sleeping mouse does visibly nothing. Cleared when the next apply starts.
     @Published var profileApplyFailed = false
 
-    /// User preference: show the battery % beside the menu bar icon (persisted).
-    @Published var showPercentInMenuBar: Bool = (UserDefaults.standard.object(forKey: Preferences.showPercentInMenuBar) as? Bool) ?? true {
-        didSet {
-            UserDefaults.standard.set(showPercentInMenuBar, forKey: Preferences.showPercentInMenuBar)
-            updateStatusText()
-        }
-    }
 
     /// User preference: play sounds when the mouse connects or disconnects (persisted).
     @Published var connectionSoundsEnabled: Bool =
@@ -515,18 +507,5 @@ final class MouseController: ObservableObject, @unchecked Sendable {
     /// shortcut picker collapsing after ~a second, mid-choice).
     func update<T: Equatable>(_ keyPath: ReferenceWritableKeyPath<MouseController, T>, _ value: T) {
         if self[keyPath: keyPath] != value { self[keyPath: keyPath] = value }
-    }
-
-    func updateStatusText() {
-        let text: String
-        if !showPercentInMenuBar || !deviceHasBattery {
-            text = "" // no-battery mouse or preference off → just the mouse icon
-        } else if let p = batteryPercent, connected {
-            // Single mouse glyph + percentage only — charging is shown inside the popover.
-            text = " \(p)%"
-        } else {
-            text = " —"
-        }
-        update(\.statusText, text)
     }
 }

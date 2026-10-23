@@ -51,7 +51,6 @@ extension MouseController {
                                        end: end, startPercent: 100, endPercent: 5)
         }
         averageCycleHours = 23
-        updateStatusText()
         let p1 = MouseProfile(name: "Work", dpi: 1600, pollRate: 1000, brightness: 60,
                                effect: LightingEffect.staticColor.rawValue, color: RGB(r: 0x44, g: 0xD6, b: 0x2C), buttonMappings: [:])
         let p2 = MouseProfile(name: "Gaming", dpi: 6400, pollRate: 1000, brightness: 100,
@@ -78,7 +77,6 @@ extension MouseController {
             deviceName: deviceName ?? "Razer Mouse", percent: batteryPercent ?? 72,
             observedAt: readingDate, estimatedHoursRemaining: 39, wasCharging: false
         )
-        updateStatusText()
     }
 
     /// For the `render-ui bluetooth-connected` preview: the Cobra HyperSpeed controlled over
@@ -98,6 +96,5 @@ extension MouseController {
         batteryPercent = nil
         timeEstimate = nil
         bluetoothMouse = .needsModeSwitch(name: "Cobra HS")
-        updateStatusText()
     }
 }

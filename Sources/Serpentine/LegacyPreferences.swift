@@ -5,7 +5,7 @@ import Foundation
 
 /// What earlier versions kept for features this fork removed: the usage stats (including the
 /// ID derived from the Mac's hardware UUID), the updater's cached releases and its dates, the
-/// crash report and device test windows. Nothing reads these any more, so without this they
+/// crash report and device test windows, the menu bar percentage. Nothing reads these any more, so without this they
 /// would sit in the preferences of every install that ran one of those versions.
 enum LegacyPreferences {
     static let keys = [
@@ -19,6 +19,8 @@ enum LegacyPreferences {
         "pendingUpdateAnnouncement", "updatedFromVersion",
         // The crash report and device test windows.
         "crashReportsHandledThrough", "offerCrashReports", "deviceTest.resumeAfterRelaunch",
+        // The battery percentage beside the menu bar item, which the windowed app doesn't show.
+        "showPercentInMenuBar",
     ]
 
     /// Removes them; cheap enough to run on every launch, so an install that skips a version

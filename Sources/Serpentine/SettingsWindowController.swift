@@ -4,22 +4,24 @@
 import AppKit
 import SwiftUI
 
-/// Hosts the app's settings in a normal window. Reachable from the menu bar's right-click
-/// menu (⌘,) and from the gear in the popover footer.
+/// Hosts the app's settings in a normal window, from Serpentine › Settings (⌘,) and the menu
+/// bar item.
 @MainActor
 final class SettingsWindowController: AppWindowPresenter {
     private var window: NSWindow?
     private let controller: MouseController
     private let launchAtLogin: LaunchAtLogin
+    private let background: BackgroundMode
 
-    init(controller: MouseController, launchAtLogin: LaunchAtLogin) {
+    init(controller: MouseController, launchAtLogin: LaunchAtLogin, background: BackgroundMode) {
         self.controller = controller
         self.launchAtLogin = launchAtLogin
+        self.background = background
     }
 
     func show() {
         if window == nil {
-            let root = SettingsView(controller: controller, launchAtLogin: launchAtLogin,
+            let root = SettingsView(controller: controller, launchAtLogin: launchAtLogin, background: background,
                                     onDone: { [weak self] in self?.window?.close() })
             let hosting = NSHostingController(rootView: root)
             hosting.sizingOptions = [.preferredContentSize]

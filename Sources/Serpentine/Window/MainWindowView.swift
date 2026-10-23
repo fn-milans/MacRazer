@@ -11,6 +11,7 @@ struct MainWindowView: View {
     @ObservedObject var remapper: ButtonRemapper
     @ObservedObject var navigation: WindowNavigation
     var permissions: PermissionsModel
+    @ObservedObject var background: BackgroundMode
 
     /// The sections this mouse has, in sidebar order.
     private var sections: [PaneSection] {
@@ -70,6 +71,7 @@ struct MainWindowView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 if !permissions.allRequiredGranted { setupBanner }
+                if !background.isEnabled, !driverModeFeatures.isEmpty { driverModeBanner }
                 pane(navigation.section)
             }
             .padding(24)
@@ -123,7 +125,27 @@ struct MainWindowView: View {
 
     /// Whether Serpentine keeps running once the window closes, which decides whether what
     /// only it can do keeps happening.
-    private var keepsRunning: Bool { true }
+    private var keepsRunning: Bool { background.isEnabled }
+
+    private var driverModeFeatures: [String] {
+        DriverModeUsage.features(controller: controller, remapper: remapper)
+    }
+
+    /// What stops when the window closes, while Serpentine doesn't keep running.
+    private var driverModeBanner: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "macwindow").foregroundStyle(Color.batteryMid)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Some settings need Serpentine running").font(.system(size: 12.5, weight: .semibold))
+                Text(driverModeFeatures.joined(separator: ", ") + " stop when you close this window.")
+                    .font(.system(size: 11.5)).foregroundStyle(.secondary)
+            }
+            Spacer()
+            Button("Keep Running in Background") { background.isEnabled = true }
+        }
+        .padding(12)
+        .background(Color.batteryMid.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
+    }
 
     // MARK: Toolbar
 

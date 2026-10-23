@@ -12,6 +12,7 @@ import SwiftUI
 struct SettingsView: View {
     @ObservedObject var controller: MouseController
     var launchAtLogin: LaunchAtLogin
+    @ObservedObject var background: BackgroundMode
     /// Not optional, for the same reason as `AboutView.onDone`: a defaulted no-op ships a
     /// Done button that does nothing and compiles fine.
     var onDone: () -> Void
@@ -21,11 +22,9 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 18) {
             header
             titledSection("General") {
+                backgroundRow
                 launchAtLoginRow
                 connectionSoundsRow
-                // Hidden rather than disabled for a mouse with no battery: there is no
-                // percentage to show, so the switch would be a promise about nothing.
-                if controller.deviceHasBattery { batteryPercentRow }
             }
             titledSection("Appearance") {
                 themeRow
@@ -53,7 +52,7 @@ struct SettingsView: View {
             .frame(width: 44, height: 44)
             VStack(alignment: .leading, spacing: 2) {
                 Text("Serpentine Settings").font(.system(size: 17, weight: .semibold))
-                Text("How the app itself behaves. Mouse controls stay in the menu bar popover.")
+                Text("How the app itself behaves. The mouse's own settings are in the main window.")
                     .font(.system(size: 12)).foregroundStyle(.secondary)
             }
             Spacer(minLength: 0)
@@ -62,12 +61,22 @@ struct SettingsView: View {
 
     // MARK: Rows
 
+    private var backgroundRow: some View {
+        settingRow(
+            title: "Keep running in the background",
+            detail: "Closing the window leaves Serpentine in the menu bar, so what only it can do keeps "
+                + "working: remaps the mouse can't store, the DPI Cycle action, low-battery alerts and "
+                + "battery history. Off, closing the window quits; the mouse keeps its own settings.",
+            isOn: $background.isEnabled
+        )
+    }
+
     private var launchAtLoginRow: some View {
         settingRow(
             title: "Start Serpentine at login",
-            detail: "The menu bar item is there after a restart, without opening the app yourself.",
+            detail: "Starts in the menu bar after a restart, without a window. Needs Serpentine to keep running in the background.",
             isOn: Binding(get: { launchAtLogin.isEnabled }, set: { launchAtLogin.setEnabled($0) }),
-            enabled: launchAtLogin.isSupported
+            enabled: launchAtLogin.isSupported && background.isEnabled
         ) {
             // Shown rather than hidden when unavailable: running straight from the disk image
             // is a real thing people do, and "why is this switch dead" deserves an answer.
@@ -93,15 +102,6 @@ struct SettingsView: View {
         )
     }
 
-    private var batteryPercentRow: some View {
-        settingRow(
-            title: "Show battery % in menu bar",
-            detail: "Off leaves just the mouse icon, which takes less room in a crowded menu bar.",
-            isOn: Binding(get: { controller.showPercentInMenuBar },
-                          set: { controller.showPercentInMenuBar = $0 })
-        )
-    }
-
     private var themeRow: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
@@ -122,7 +122,7 @@ struct SettingsView: View {
     private var glassRow: some View {
         settingRow(
             title: "Glass effect",
-            detail: "The popover and windows let the desktop show through. Turn it off for a solid "
+            detail: "Settings and the other small windows let the desktop show through. Turn it off for a solid "
                 + "background, which is easier to read over busy windows.",
             isOn: $appearance.glass
         )

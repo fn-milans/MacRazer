@@ -8,7 +8,7 @@ import XCTest
 /// drop that setting for everyone, so their spelling is pinned here.
 final class PreferencesTests: XCTestCase {
     func testStoredSpellingsDontChange() {
-        XCTAssertEqual(Preferences.showPercentInMenuBar, "showPercentInMenuBar")
+        XCTAssertEqual(Preferences.keepRunningInBackground, "keepRunningInBackground")
         XCTAssertEqual(Preferences.connectionSoundsEnabled, "connectionSoundsEnabled")
         XCTAssertEqual(Preferences.appearanceTheme, "appearance.theme")
         XCTAssertEqual(Preferences.appearanceGlass, "appearance.glass")

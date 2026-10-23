@@ -278,7 +278,6 @@ extension MouseController {
                     self.update(\.deviceIsBluetooth, false)
                     self.update(\.activeDpiStage, nil)
                 }
-                self.updateStatusText()
                 if self.hasBaseline && wasConnected { self.playSound(connected: false) }
                 self.hasBaseline = true
             }
@@ -296,7 +295,6 @@ extension MouseController {
             self.update(\.lastError, nil)
             self.inputWatcher.stop() // in use again: its reports would be a wake-up per movement
             alsoSet()
-            self.updateStatusText()
             if self.hasBaseline && !wasConnected {
                 self.playSound(connected: true)
                 // A sleeping BLE mouse may answer the battery probe before its vendor

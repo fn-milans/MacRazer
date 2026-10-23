@@ -10,7 +10,6 @@ import Foundation
 enum Preferences {
     // MARK: App-wide
 
-    static let showPercentInMenuBar = "showPercentInMenuBar"
     static let connectionSoundsEnabled = "connectionSoundsEnabled"
     static let appearanceTheme = "appearance.theme"
     static let appearanceGlass = "appearance.glass"
@@ -22,6 +21,10 @@ enum Preferences {
     /// Which onboard button entries Serpentine wrote, per mouse serial (`OnboardOwnership`).
     static let onboardButtonsOwned = "onboardButtonsOwned"
     static let migratedFromLegacyInstall = "migratedFromLegacyInstall"
+    /// Serpentine keeps running, with a menu bar item, once its window closes (`BackgroundMode`).
+    static let keepRunningInBackground = "keepRunningInBackground"
+    /// Whether to keep running has been asked once, when a driver-mode feature was set up.
+    static let backgroundModeAsked = "backgroundModeAsked"
     /// The main window's selected pane (`PaneSection`).
     static let mainWindowSection = "mainWindow.section"
 

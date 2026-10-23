@@ -13,14 +13,17 @@ final class MainWindowController: NSObject, AppWindowPresenter, NSWindowDelegate
     private let controller: MouseController
     private let remapper: ButtonRemapper
     private let permissions: PermissionsModel
+    private let background: BackgroundMode
     let navigation = WindowNavigation()
     /// Called after the window closes.
     var onClose: (() -> Void)?
 
-    init(controller: MouseController, remapper: ButtonRemapper, permissions: PermissionsModel) {
+    init(controller: MouseController, remapper: ButtonRemapper, permissions: PermissionsModel,
+         background: BackgroundMode) {
         self.controller = controller
         self.remapper = remapper
         self.permissions = permissions
+        self.background = background
     }
 
     var isVisible: Bool { window?.isVisible ?? false }
@@ -28,7 +31,6 @@ final class MainWindowController: NSObject, AppWindowPresenter, NSWindowDelegate
 
     func show() {
         if window == nil { window = makeWindow() }
-        NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
         window?.makeKeyAndOrderFront(nil)
         // While the window is open, what a button on the mouse changes is checked every couple
@@ -38,7 +40,8 @@ final class MainWindowController: NSObject, AppWindowPresenter, NSWindowDelegate
 
     private func makeWindow() -> NSWindow {
         let hosting = NSHostingController(rootView: MainWindowView(
-            controller: controller, remapper: remapper, navigation: navigation, permissions: permissions))
+            controller: controller, remapper: remapper, navigation: navigation, permissions: permissions,
+            background: background))
         // The SwiftUI view sets the minimum; the window keeps the size the user gave it.
         hosting.sizingOptions = [.minSize]
         // The panes' titles and toolbar items go in the window's own title bar.
