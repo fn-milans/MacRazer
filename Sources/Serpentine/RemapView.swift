@@ -587,8 +587,7 @@ private struct DpiCycleBindingSection: View {
     var onRecordShortcut: () -> Void
 
     var body: some View {
-        if controller.deviceIsBluetooth,
-           controller.deviceID.map(RazerDevices.supportsDpiButtonBinding(pid:)) == true {
+        if controller.capabilities.isBluetooth, controller.capabilities.dpiButtonBinding {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 8) {
                     Text("DPI Cycle").font(.system(size: 12, weight: .medium))

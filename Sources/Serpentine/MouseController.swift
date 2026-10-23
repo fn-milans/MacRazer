@@ -139,15 +139,20 @@ final class MouseController: ObservableObject, @unchecked Sendable {
     // (`BLEProtocol`). A profile sets all of those, so applying one there would half-fail,
     // except on a mouse with onboard slots: its profile lives in the mouse, and switching to
     // its slot brings back what Bluetooth can't set.
-    var supportsPollRate: Bool { !deviceIsBluetooth }
-    var supportsLightingEffects: Bool { !deviceIsBluetooth || !lightingZones.isEmpty }
+    /// What the connected mouse can do on its link; `.none` while nothing is connected.
+    /// Derived from `deviceID` and `deviceIsBluetooth`, which are published, so views follow it.
+    var capabilities: DeviceCapabilities {
+        DeviceCapabilities(pid: deviceID, link: deviceIsBluetooth ? .bluetooth : .usb)
+    }
+    var supportsPollRate: Bool { capabilities.pollRate }
+    var supportsLightingEffects: Bool { capabilities.lightingEffects }
     /// The connected mouse's lighting zones (`ZonedLighting`); empty when it is lit as one.
-    var lightingZones: [LightingZone] { ZonedLighting.zones(pid: deviceID) }
-    var lightingEffects: [LightingEffect] { lightingZones.isEmpty ? LightingEffect.classic : ZonedLighting.effects }
-    var supportsFreeDPI: Bool { !deviceIsBluetooth }
+    var lightingZones: [LightingZone] { capabilities.lightingZones }
+    var lightingEffects: [LightingEffect] { capabilities.effects }
+    var supportsFreeDPI: Bool { capabilities.freeDPI }
     /// Single and Stages DPI modes, the same on every link (`setDPITable`).
-    var supportsDpiModes: Bool { deviceID.map(RazerDevices.supportsDpiModes(pid:)) ?? false }
-    var supportsProfiles: Bool { !deviceIsBluetooth || activeOnboardSlot != nil }
+    var supportsDpiModes: Bool { capabilities.dpiModes }
+    var supportsProfiles: Bool { !capabilities.isBluetooth || activeOnboardSlot != nil }
     private var ioHasBattery = true // io-queue mirror of deviceHasBattery
 
     /// Saved DPI/poll/lighting/button-remap presets for the connected mouse, and which one (if
@@ -776,8 +781,7 @@ final class MouseController: ObservableObject, @unchecked Sendable {
                 // channel is ready. Queue a focused settings pass after the connection
                 // state is published so DPI, binding and power controls converge quickly.
                 DispatchQueue.main.async { [self] in
-                    guard self.deviceIsBluetooth,
-                          self.deviceID.map(RazerDevices.supportsStageEditing(pid:)) == true else { return }
+                    guard self.capabilities.stageEditingOverBluetooth else { return }
                     self.refreshSettings()
                 }
             }
@@ -860,16 +864,16 @@ final class MouseController: ObservableObject, @unchecked Sendable {
             catch HIDDevice.HIDError.timeout { linkDead = true; return nil }
             catch { return nil }
         }()
-        let hasWheelControls = RazerDevices.hasWheelControls(pid: dev.productID) && !dev.isBluetooth
+        let hasWheelControls = dev.capabilities.wheelControls
         let smartReel = hasWheelControls ? read(RazerCommands.getScrollSmartReel()) { $0.arguments[1] != 0 } : nil
-        let hasReelSensitivity = RazerDevices.hasSmartReelSensitivity(pid: dev.productID) && !dev.isBluetooth
+        let hasReelSensitivity = dev.capabilities.smartReelSensitivity
         let reelSensitivity = hasReelSensitivity
             ? read(RazerCommands.getSmartReelSensitivity(), RazerCommands.parseWheelLevel) ?? nil : nil
-        let hasAcceleration = RazerDevices.hasScrollAcceleration(pid: dev.productID) && !dev.isBluetooth
+        let hasAcceleration = dev.capabilities.scrollAcceleration
         let acceleration = hasAcceleration ? read(RazerCommands.getScrollAcceleration()) { $0.arguments[1] != 0 } : nil
         let accelerationLevel = hasAcceleration
             ? read(RazerCommands.getScrollAccelerationLevel(), RazerCommands.parseWheelLevel) ?? nil : nil
-        let hasLowBattery = RazerDevices.supportsLowBatteryThreshold(pid: dev.productID)
+        let hasLowBattery = dev.capabilities.lowBatteryThreshold
         let lowBattery = hasLowBattery ? read(RazerCommands.getLowBatteryThreshold(), RazerCommands.parseLowBatteryThreshold) : nil
         // Zone lighting changes only through the app or a profile switch, so it is read once
         // per mouse and slot rather than on every refresh.
@@ -1127,7 +1131,7 @@ final class MouseController: ObservableObject, @unchecked Sendable {
     /// answer as the link opened, and hasn't on a poll since). Its profiles can't be shown,
     /// and it must not fall back to snapshot profiles.
     var onboardSlotsUnread: Bool {
-        connected && !supportsOnboardSlots && (deviceID.map(RazerDevices.hasOnboardSlots(pid:)) ?? false)
+        connected && !supportsOnboardSlots && capabilities.onboardSlots
     }
     /// The slots that exist in the mouse, in order: its profiles.
     @Published private(set) var onboardSlotList: [Int] = []
@@ -1449,7 +1453,7 @@ final class MouseController: ObservableObject, @unchecked Sendable {
     /// copy can be up to one settings refresh old, and writing it back would undo a press of
     /// the mouse's DPI button made in the meantime.
     func setDPIStageValue(_ value: Int, at index: Int) {
-        guard deviceIsBluetooth, deviceID.map(RazerDevices.supportsStageEditing(pid:)) == true else { return }
+        guard capabilities.stageEditingOverBluetooth else { return }
         let dpiValue = max(100, min(value, deviceMaxDPI))
         isUpdatingDpiStages = true
         dpiStagesError = nil
@@ -1483,10 +1487,7 @@ final class MouseController: ObservableObject, @unchecked Sendable {
 
     /// The mouse's own sleep timer: over Bluetooth on the mice that have one there, and over
     /// the dongle and cable (0x07/0x83), on the mice whose row says so.
-    var supportsSleepTimeout: Bool {
-        guard let pid = deviceID else { return false }
-        return RazerDevices.supportsSleepTimeout(pid: pid)
-    }
+    var supportsSleepTimeout: Bool { capabilities.sleepTimeout }
 
     func setSleepTimeout(_ seconds: Int) {
         guard supportsSleepTimeout, BLEProtocol.sleepTimeoutPayload(seconds: seconds) != nil else { return }

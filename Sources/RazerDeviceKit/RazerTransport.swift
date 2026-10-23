@@ -86,3 +86,10 @@ public enum RazerRetry: Sendable {
         throw lastError
     }
 }
+
+extension RazerTransport {
+    /// What this mouse can do on this link.
+    public var capabilities: DeviceCapabilities {
+        DeviceCapabilities(pid: productID, link: isBluetooth ? .bluetooth : .usb)
+    }
+}

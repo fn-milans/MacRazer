@@ -78,8 +78,7 @@ struct PopoverView: View {
     @State private var gearHovered = false
 
     private var pollRates: [Int] {
-        controller.deviceIsBluetooth ? RazerCommands.supportedPollingRates
-            : RazerCommands.supportedPollingRates(pid: controller.deviceID)
+        controller.capabilities.pollingRates
     }
     private let defaultStages = [400, 800, 1600, 3200, 6400]
     /// The connected mouse's actual configured DPI stages, or sensible defaults.
@@ -327,29 +326,27 @@ struct PopoverView: View {
     }
 
     private var supportsBasiliskBluetooth: Bool {
-        controller.deviceIsBluetooth
-            && controller.deviceID.map(RazerDevices.supportsStageEditing(pid:)) == true
+        controller.capabilities.stageEditingOverBluetooth
     }
 
     // MARK: Custom DPI (per-mouse, clamped to the model's max)
 
     /// nil while no device key is known — persisting then would land in a "default" slot
     /// shared by every mouse and never migrated to the real key once it resolves.
-    private var customDPIKey: String? {
-        controller.deviceKey.map(Preferences.Device.customDPI)
+    private var deviceSettings: DeviceSettings? {
+        controller.deviceKey.map { DeviceSettings(deviceKey: $0) }
     }
 
     private func loadCustomDPI() {
-        let stored = customDPIKey.flatMap { UserDefaults.standard.object(forKey: $0) as? Int }
-            ?? min(8000, controller.deviceMaxDPI)
+        let stored = deviceSettings?.customDPI ?? min(8000, controller.deviceMaxDPI)
         let clamped = min(max(stored, 100), controller.deviceMaxDPI) // reset if it exceeds this mouse's max
         customDPI = clamped
-        if clamped != stored, let key = customDPIKey { UserDefaults.standard.set(clamped, forKey: key) }
+        if clamped != stored { deviceSettings?.customDPI = clamped }
     }
 
     private func saveCustomDPI(_ value: Int) {
         customDPI = value
-        if let key = customDPIKey { UserDefaults.standard.set(value, forKey: key) }
+        deviceSettings?.customDPI = value
     }
 
     // MARK: Header
@@ -944,10 +941,10 @@ struct PopoverView: View {
         guard !stages.isEmpty, single != (stages.count == 1) else { return }
         let current = stages[min(controller.activeDpiStage ?? 0, stages.count - 1)]
         if single {
-            if let key = rememberedStagesKey { UserDefaults.standard.set(stages, forKey: key) }
+            deviceSettings?.rememberDpiStages(stages, slot: activeSlot)
             controller.setDPITable([current], active: 0)
         } else {
-            let remembered = rememberedStagesKey.flatMap { UserDefaults.standard.array(forKey: $0) as? [Int] }
+            let remembered = deviceSettings?.rememberedDpiStages(slot: activeSlot)
             let restored = (remembered?.count == RazerCommands.maxDPIStages ? remembered! : defaultStages)
                 .map { min($0, controller.deviceMaxDPI) }
             let nearest = restored.indices.min { abs(restored[$0] - current) < abs(restored[$1] - current) } ?? 0
@@ -956,11 +953,8 @@ struct PopoverView: View {
         }
     }
 
-    /// Where the five stages wait while a slot is in Single mode, which holds only one.
-    private var rememberedStagesKey: String? {
-        guard let key = controller.deviceKey else { return nil }
-        return Preferences.Device.rememberedDpiStages(key, slot: controller.activeOnboardSlot ?? 1)
-    }
+    /// The slot whose stages Single mode sets aside; 1 on mice without slots.
+    private var activeSlot: Int { controller.activeOnboardSlot ?? 1 }
 
     private var presetDpiCard: some View {
         card {

@@ -12,7 +12,7 @@ import RazerProtocol
 ///
 /// It only works while the app runs and needs Accessibility permission. A mouse whose
 /// function table is known (`OnboardButtons`) keeps its remaps itself; the tap then only
-/// handles what the mouse can't store (Double Click).
+/// handles what the mouse can't store (a mouse button past the fifth, a key with no HID usage).
 final class ButtonRemapper: ObservableObject, @unchecked Sendable {
     @Published private(set) var accessibilityGranted = false
     @Published private(set) var eventTapAvailable = false
