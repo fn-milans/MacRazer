@@ -10,14 +10,12 @@ struct MainWindowView: View {
     @ObservedObject var controller: MouseController
     @ObservedObject var remapper: ButtonRemapper
     @ObservedObject var navigation: WindowNavigation
+    var permissions: PermissionsModel
 
     /// The sections this mouse has, in sidebar order.
     private var sections: [PaneSection] {
-        PaneSection.allCases.filter { $0.isAvailable(for: controller) && Self.built.contains($0) }
+        PaneSection.allCases.filter { $0.isAvailable(for: controller) }
     }
-
-    /// The panes that exist so far.
-    static let built: Set<PaneSection> = [.overview]
 
     var body: some View {
         NavigationSplitView {
@@ -31,6 +29,13 @@ struct MainWindowView: View {
         // falls back to Overview rather than leaving the detail empty.
         .onChange(of: sections) { _, available in
             if !available.contains(navigation.section) { navigation.section = .overview }
+        }
+        .onAppear {
+            if !sections.contains(navigation.section) { navigation.section = .overview }
+        }
+        .sheet(isPresented: $navigation.showingSetup) {
+            PermissionsView(model: permissions, controller: controller,
+                            onDone: { navigation.showingSetup = false })
         }
     }
 
@@ -64,6 +69,7 @@ struct MainWindowView: View {
     private var detail: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
+                if !permissions.allRequiredGranted { setupBanner }
                 pane(navigation.section)
             }
             .padding(24)
@@ -73,6 +79,8 @@ struct MainWindowView: View {
         .navigationTitle(navigation.section.title)
         .navigationSubtitle(subtitle)
         .toolbar {
+            ToolbarItem(placement: .status) { syncStatus }
+            ToolbarItem(placement: .primaryAction) { profileMenu }
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     controller.refreshAll()
@@ -102,9 +110,88 @@ struct MainWindowView: View {
     @ViewBuilder
     private func pane(_ section: PaneSection) -> some View {
         switch section {
-        default:
-            OverviewPane(controller: controller, remapper: remapper, navigation: navigation)
+        case .overview: OverviewPane(controller: controller, remapper: remapper, navigation: navigation)
+        case .performance: PerformancePane(controller: controller)
+        case .lighting: LightingPane(controller: controller)
+        case .buttons: ButtonsPane(controller: controller, remapper: remapper, keepsRunning: keepsRunning)
+        case .profiles: ProfilesPane(controller: controller, remapper: remapper)
+        case .scroll: ScrollPane(controller: controller)
+        case .power: PowerPane(controller: controller)
+        case .battery: BatteryPane(controller: controller, keepsRunning: keepsRunning)
         }
+    }
+
+    /// Whether Serpentine keeps running once the window closes, which decides whether what
+    /// only it can do keeps happening.
+    private var keepsRunning: Bool { true }
+
+    // MARK: Toolbar
+
+    /// Whether what was last changed reached the mouse.
+    @ViewBuilder
+    private var syncStatus: some View {
+        if controller.connected {
+            if let error = controller.onboardWriteError {
+                Label("Not all saved", systemImage: "exclamationmark.triangle.fill")
+                    .foregroundStyle(Color.batteryMid)
+                    .help(error)
+            } else {
+                Label("In the mouse", systemImage: "checkmark.circle.fill")
+                    .foregroundStyle(Color.razerGreenText)
+                    .help("The mouse holds these settings itself.")
+            }
+        }
+    }
+
+    /// The profile in use, and the others to switch to: the mouse's slots, or saved profiles.
+    @ViewBuilder
+    private var profileMenu: some View {
+        if controller.usesSlotProfiles {
+            Menu {
+                ForEach(controller.onboardSlotList, id: \.self) { slot in
+                    Toggle(controller.slotName(slot), isOn: Binding(
+                        get: { controller.activeOnboardSlot == slot },
+                        set: { if $0 { controller.switchToSlot(slot) } }))
+                }
+            } label: {
+                Label(controller.activeOnboardSlot.map(controller.slotName) ?? "Profile",
+                      systemImage: "person.crop.square")
+            }
+            .labelStyle(.titleAndIcon)
+            .help("Switch the mouse's profile")
+            .disabled(!controller.connected)
+        } else if controller.supportsProfiles, !controller.profiles.isEmpty {
+            Menu {
+                ForEach(controller.profiles) { profile in
+                    Toggle(profile.name, isOn: Binding(
+                        get: { controller.activeProfileID == profile.id },
+                        set: { if $0 { controller.applyProfile(profile, remapper: remapper) } }))
+                }
+            } label: {
+                Label(controller.profiles.first { $0.id == controller.activeProfileID }?.name ?? "Profile",
+                      systemImage: "person.crop.square")
+            }
+            .labelStyle(.titleAndIcon)
+            .help("Apply a saved profile")
+            .disabled(!controller.connected)
+        }
+    }
+
+    // MARK: Setup
+
+    private var setupBanner: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "lock.shield").foregroundStyle(Color.batteryMid)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Serpentine needs Input Monitoring").font(.system(size: 12.5, weight: .semibold))
+                Text("macOS asks for it before any app can talk to a mouse over USB.")
+                    .font(.system(size: 11.5)).foregroundStyle(.secondary)
+            }
+            Spacer()
+            Button("Set Up…") { navigation.showingSetup = true }
+        }
+        .padding(12)
+        .background(Color.batteryMid.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
     }
 }
 

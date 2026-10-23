@@ -8,6 +8,8 @@ struct RemapView: View {
     @ObservedObject var remapper: ButtonRemapper
     var controller: MouseController?
     var onBack: (() -> Void)?
+    /// In a pane of the main window, which titles it: no heading of its own, and the pane's width.
+    var embedded = false
     @State private var recordingButton: Int?
     /// Set while recording a Turbo Keybind: its repeat interval.
     @State private var recordingTurboMs: Int?
@@ -37,7 +39,7 @@ struct RemapView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            header
+            if !embedded { header }
             if remapper.needsEventTap && !remapper.remappingPermissionsGranted {
                 accessibilityBanner
                 buttonList
@@ -64,8 +66,9 @@ struct RemapView: View {
         }
         // 22 in its own window, like Settings and the other 440-wide windows; 18 inside the
         // popover, like Profiles.
-        .padding(onBack == nil ? 22 : 18)
-        .frame(width: onBack == nil ? 440 : 320)
+        .padding(embedded ? 0 : (onBack == nil ? 22 : 18))
+        .frame(width: embedded ? nil : (onBack == nil ? 440 : 320))
+        .frame(maxWidth: embedded ? .infinity : nil, alignment: .leading)
         .onAppear { remapper.refreshAccessibility(prompt: false) }
         .overlay { if recordingButton != nil || recordingDpiCycleShortcut { recorderOverlay } }
         .overlay { if clutchButton != nil { clutchOverlay } }
@@ -463,7 +466,7 @@ struct RemapView: View {
 /// reported it: Smart-Reel on the wheels Serpentine knows (`RazerDevices.hasWheelControls`) and
 /// its sensitivity (`RazerDevices.hasSmartReelSensitivity`), and scroll acceleration with its
 /// level (`RazerDevices.hasScrollAcceleration`). A level shows while its switch is on.
-private struct MouseSwitchesSection: View {
+struct MouseSwitchesSection: View {
     @ObservedObject var controller: MouseController
 
     var body: some View {

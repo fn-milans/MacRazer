@@ -10,7 +10,8 @@ import Charts
 /// which are owned and mutated on the `io` queue.
 struct UsageGraphView: View {
     @ObservedObject var controller: MouseController
-    var onBack: () -> Void
+    /// nil in a pane of the main window, which titles it.
+    var onBack: (() -> Void)? = nil
 
     /// Sample/cycle currently under the pointer, used to draw the hover tooltip on each chart.
     @State private var hoveredSample: BatterySample?
@@ -18,10 +19,12 @@ struct UsageGraphView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 10) {
-                BackButton(action: onBack)
-                Text("Battery Usage").font(.system(size: 16, weight: .semibold))
-                Spacer()
+            if let onBack {
+                HStack(spacing: 10) {
+                    BackButton(action: onBack)
+                    Text("Battery Usage").font(.system(size: 16, weight: .semibold))
+                    Spacer()
+                }
             }
             currentCycleChart
             statsCard

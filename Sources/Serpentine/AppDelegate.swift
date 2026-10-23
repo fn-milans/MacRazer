@@ -27,7 +27,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, UNU
     /// The solid colour or green tint behind the popover; see `PopoverBackdropView`.
     private let popoverBackdrop = PopoverBackdropView()
     private lazy var aboutWindow = AboutWindowController()
-    private lazy var mainWindow = MainWindowController(controller: controller, remapper: remapper)
+    private lazy var mainWindow = MainWindowController(controller: controller, remapper: remapper,
+                                                       permissions: permissions)
     private lazy var appMenu = AppMenu(actions: .init(
         about: { [weak self] in self.map { $0.present($0.aboutWindow) } },
         settings: { [weak self] in self.map { $0.present($0.settingsWindow) } },
@@ -71,10 +72,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, UNU
         // can drop the stale "active" highlight.
         remapper.onManualChange = { [weak controller] in controller?.clearActiveProfileIfManuallyChanged() }
         if !permissions.allRequiredGranted {
-            DispatchQueue.main.async { [weak self] in
-                guard let self else { return }
-                self.present(self.permissionsWindow)
-            }
+            // The setup sheet, on the main window that opens below.
+            mainWindow.navigation.showingSetup = true
         }
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -363,7 +362,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, UNU
     }
 
     @objc private func refreshNow() { controller.refreshAll() }
-    @objc private func openRemap() { present(remapWindow) }
+    @objc private func openRemap() {
+        mainWindow.navigation.section = .buttons
+        showMainWindow()
+    }
     @objc private func openSettings() { present(settingsWindow) }
     @objc private func openAbout() { present(aboutWindow) }
 
@@ -374,7 +376,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, UNU
         window.show()
     }
 
-    @objc private func openPermissions() { present(permissionsWindow) }
+    @objc private func openPermissions() {
+        mainWindow.navigation.showingSetup = true
+        showMainWindow()
+    }
     @objc private func quit() { NSApplication.shared.terminate(nil) }
 
     // MARK: - Appearance

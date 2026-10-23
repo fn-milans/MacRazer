@@ -12,7 +12,8 @@ struct QuickProfiles: View {
     @ObservedObject var remapper: ButtonRemapper
     /// The popover's: it ends adding when the row closes or disappears.
     @Binding var isAddingProfile: Bool
-    var onManage: () -> Void
+    /// nil hides "Manage Profiles…", where the management is already on screen.
+    var onManage: (() -> Void)?
     @State private var newProfileName = ""
 
     var body: some View { profilesContent }
@@ -52,8 +53,8 @@ struct QuickProfiles: View {
                 Text("Couldn't apply that. The mouse isn't responding.")
                     .font(.system(size: 10.5)).foregroundStyle(Color.batteryLow)
             }
-            if !controller.profiles.isEmpty, !controller.usesSlotProfiles, !controller.onboardSlotsUnread {
-                Button("Manage Profiles…") { onManage() }
+            if onManage != nil, !controller.profiles.isEmpty, !controller.usesSlotProfiles, !controller.onboardSlotsUnread {
+                Button("Manage Profiles…") { onManage?() }
                     .buttonStyle(.plain)
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(Color.razerGreenText)

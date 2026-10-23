@@ -55,6 +55,9 @@ enum PaneSection: String, CaseIterable, Identifiable {
 /// Which pane the main window shows, shared with the menu bar's Go menu.
 @MainActor
 final class WindowNavigation: ObservableObject {
+    /// The setup sheet (Input Monitoring and Accessibility) is up.
+    @Published var showingSetup = false
+
     @Published var section: PaneSection = .overview {
         didSet { UserDefaults.standard.set(section.rawValue, forKey: Preferences.mainWindowSection) }
     }

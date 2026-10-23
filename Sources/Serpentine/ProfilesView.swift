@@ -12,6 +12,8 @@ struct ProfilesView: View {
     @ObservedObject var controller: MouseController
     @ObservedObject var remapper: ButtonRemapper
     var onBack: (() -> Void)?
+    /// In a pane of the main window, which titles it: no heading of its own, and the pane's width.
+    var embedded = false
 
     @State private var renamingID: UUID?
     @State private var renameText: String = ""
@@ -19,7 +21,7 @@ struct ProfilesView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            header
+            if !embedded { header }
             if controller.profiles.isEmpty {
                 emptyState
             } else {
@@ -37,8 +39,9 @@ struct ProfilesView: View {
                 }
             }
         }
-        .padding(18)
-        .frame(width: onBack == nil ? 440 : 320)
+        .padding(embedded ? 0 : 18)
+        .frame(width: embedded ? nil : (onBack == nil ? 440 : 320))
+        .frame(maxWidth: embedded ? .infinity : nil, alignment: .leading)
         .confirmationDialog("Delete this profile?", isPresented: Binding(
             get: { pendingDeleteID != nil },
             set: { if !$0 { pendingDeleteID = nil } }

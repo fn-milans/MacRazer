@@ -152,7 +152,7 @@ case "render-window":
     let navigation = WindowNavigation()
     navigation.section = PaneSection.allCases.first { args.dropFirst().contains($0.rawValue) } ?? .overview
     let hosting = NSHostingController(rootView: MainWindowView(controller: controller, remapper: remapper,
-                                                               navigation: navigation))
+                                                               navigation: navigation, permissions: PermissionsModel()))
     hosting.sceneBridgingOptions = [.title, .toolbars]
     let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 960, height: 640),
                           styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],

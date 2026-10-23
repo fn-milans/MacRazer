@@ -11,7 +11,8 @@ struct BatteryCard: View {
     @ObservedObject var controller: MouseController
     /// The view is on screen; the offline age only re-renders then.
     var isShown: Bool
-    var onShowUsage: () -> Void
+    /// nil hides the button: the battery pane already shows the usage.
+    var onShowUsage: (() -> Void)?
 
     private var needsPermission: Bool { controller.needsInputMonitoring }
     private var noMouse: Bool { controller.noMouseKnown }
@@ -40,7 +41,7 @@ struct BatteryCard: View {
                     Text("%").font(.system(size: 17, weight: .medium)).foregroundStyle(.secondary)
                 }
                 Spacer()
-                usageButton
+                if onShowUsage != nil { usageButton }
                 refreshButton
             }
             // State-coloured level bar.
@@ -137,7 +138,7 @@ struct BatteryCard: View {
     }
 
     private var usageButton: some View {
-        Button { onShowUsage() } label: {
+        Button { onShowUsage?() } label: {
             Image(systemName: "chart.line.uptrend.xyaxis")
                 .font(.system(size: 13, weight: .medium))
                 .frame(width: 16, height: 16)

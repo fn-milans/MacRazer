@@ -12,13 +12,15 @@ final class MainWindowController: NSObject, AppWindowPresenter, NSWindowDelegate
     private var window: NSWindow?
     private let controller: MouseController
     private let remapper: ButtonRemapper
+    private let permissions: PermissionsModel
     let navigation = WindowNavigation()
     /// Called after the window closes.
     var onClose: (() -> Void)?
 
-    init(controller: MouseController, remapper: ButtonRemapper) {
+    init(controller: MouseController, remapper: ButtonRemapper, permissions: PermissionsModel) {
         self.controller = controller
         self.remapper = remapper
+        self.permissions = permissions
     }
 
     var isVisible: Bool { window?.isVisible ?? false }
@@ -36,7 +38,7 @@ final class MainWindowController: NSObject, AppWindowPresenter, NSWindowDelegate
 
     private func makeWindow() -> NSWindow {
         let hosting = NSHostingController(rootView: MainWindowView(
-            controller: controller, remapper: remapper, navigation: navigation))
+            controller: controller, remapper: remapper, navigation: navigation, permissions: permissions))
         // The SwiftUI view sets the minimum; the window keeps the size the user gave it.
         hosting.sizingOptions = [.minSize]
         // The panes' titles and toolbar items go in the window's own title bar.
