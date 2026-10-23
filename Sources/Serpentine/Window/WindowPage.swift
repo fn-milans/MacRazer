@@ -6,13 +6,12 @@ import SwiftUI
 /// Where the main window can go from its dashboard: the detail views behind a tile, opened in
 /// place with a back button, the way System Settings drills in.
 enum WindowRoute: String, CaseIterable, Hashable, Identifiable {
-    case buttons, battery
+    case battery
 
     var id: Self { self }
 
     var title: String {
         switch self {
-        case .buttons: return "Buttons"
         case .battery: return "Battery History"
         }
     }

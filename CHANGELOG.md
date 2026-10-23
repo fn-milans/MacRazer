@@ -10,9 +10,11 @@ expect rough edges until 1.0.
 - **Serpentine is a windowed app.** A normal Mac app with a Dock icon, menus and one window on
   the same glass as the popover. Its dashboard has the mouse and its battery across the top,
   then a tile for each setting the mouse has: DPI, polling rate, lighting, sleep, low battery,
-  scroll wheel, buttons and profiles, each with its current value and where it lives (in the
-  mouse, or done by Serpentine). Buttons and the battery history open from their tiles, with a
-  back button; Settings is behind the cog. The title is on the left of the title bar, the
+  scroll wheel and profiles, each with its current value and where it lives (in the mouse, or
+  done by Serpentine), and the button remaps in a column of their own beside them. Wide, there
+  are two columns of tiles; narrower, one; narrow, everything in one column with the buttons
+  last. The battery history opens from the mouse's tile, with a back button; Settings is
+  behind the cog. The title is on the left of the title bar, the
   status, profile menu, Refresh and Settings on the right. Input Monitoring setup is a sheet.
   The menu bar popover and the Configure Buttons, Setup and Settings windows are gone.
 

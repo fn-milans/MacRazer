@@ -22,8 +22,9 @@ and the Go menu, screenshots and docs (W5). Differences from the plan below:
   it keeps the dynamic charging icon, which needed `NSStatusItem` anyway.
 - About stays a small window rather than the standard About panel, for its credits.
 - After trying it, the sidebar of sections became a dashboard: a tile per setting, two to a
-  row, on the popover's glass, with Buttons and Battery History opened from their tiles (back
-  button) and Settings behind a cog. The title bar keeps the title on the left and everything
+  row, on the popover's glass, with the buttons unfolded in a third column (the layout follows
+  the window's width), Battery History opened from the mouse's tile (back button) and Settings
+  behind a cog. The title bar keeps the title on the left and everything
   else on the right. The menu bar item's menu is only the status, Open and Quit.
 - Not tried on a mouse yet, like the refactor.
 

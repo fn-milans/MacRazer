@@ -228,20 +228,24 @@ the leading edge; the status mark (whether the mouse holds what was set), the pr
 Refresh (⌘R) and the Settings cog (⌘,) at the trailing edge.
 
 - **Dashboard** (`Dashboard.swift`): the mouse across the top (`DeviceTile`: the model, its
- link, the battery as a ring, the time left and Battery History), then a grid of tiles, two to
- a row, one per setting the mouse has: DPI, polling rate, lighting, sleep, low battery, scroll
- wheel, buttons, profiles. A `Tile` has a coloured symbol, the name, where the setting lives
- (`ResidencyMark`), the value large, and the controls (the feature views in `Features/`).
- Offline the tiles stay, dimmed, with the last known values.
-- **Detail views** open from their tiles in place, with a back button (`NavigationStack`,
- `WindowRoute`): Buttons (`RemapView`) and Battery History (`UsageGraphView`). The colour
- wheel and Manage Profiles open as sheets.
+ link, the battery as a ring, the time left and Battery History), then a tile per setting the
+ mouse has (DPI, polling rate, lighting, sleep, low battery, scroll wheel, profiles) and the
+ **Buttons** column (`RemapView`, unfolded). A `Tile` has a coloured symbol, the name, where
+ the setting lives (`ResidencyMark`), the value large, and the controls (the feature views in
+ `Features/`). Offline the tiles stay, dimmed, with the last known values.
+- **Responsive** (`Dashboard.Layout`, from the width): at 1180 pt and up, two columns of tiles
+ and the buttons column (400 pt); from 820, one column of tiles and the buttons column; below
+ that, one column with the buttons last and the battery under the mouse's name. The window
+ goes down to 560 pt wide. The pages start under the title bar (no full-size content view), so
+ they never scroll beneath it.
+- **Battery History** opens from the mouse's tile in place, with a back button
+ (`NavigationStack`, `WindowRoute`). The colour wheel and Manage Profiles open as sheets.
 - **Settings** (`SettingsView`, from the cog): background mode, start at login, connection
  sounds, theme and glass, in a sheet.
 - **Setup**: Input Monitoring and Accessibility in a sheet (`PermissionsView`), opened at
  launch when Input Monitoring is missing, with a banner until it is granted.
 - **Menus** (`AppMenu`): Serpentine (About, Settings… ⌘,, Hide, Quit), Edit, View (Refresh, Full
- Screen), Go (Dashboard ⌘1, Buttons ⌘2, Battery History ⌘3), Window, Help.
+ Screen), Go (Dashboard ⌘1, Battery History ⌘2), Window, Help.
 
 ### 6.2 Background mode and the menu bar item
 `BackgroundMode`: Settings › Keep running in the background (`keepRunningInBackground`). Off,
@@ -293,7 +297,7 @@ buttons are handled onboard and never reach macOS.
  captures any combo), **mouse** (middle/double click), **media** (play/next/prev/volume/mute).
 - Mappings persist to UserDefaults. Needs **Accessibility** permission (banner + Open
  Settings / Re-check in the UI).
-- Shown in the window's Buttons view, opened from the Buttons tile.
+- Shown in the dashboard's Buttons column.
 
 ### 6.5 Privacy
 Serpentine makes no network requests of its own. There are no usage stats, no update checks
@@ -384,7 +388,7 @@ swift run serpentine-cli brightness [0-100] # sweeps LOGO/SCROLL/ZERO/BACKLIGHT 
 swift run serpentine-cli stages [d1,d2,…] [active] # read / write the DPI stage table
 swift run Serpentine icon out.png [size] [charging] [light] # render the menu bar icon
 swift run Serpentine render-ui [offline|color|zones|…] out.png # a page (scenes in PreviewScene)
-swift run Serpentine render-window [buttons|battery|settings] [zones] [light] out.png # the whole window, offscreen
+swift run Serpentine render-window [battery|settings] [zones] [light] [width] out.png # the whole window, offscreen
 swift run Serpentine render-about out.png
 swift run Serpentine render-remap out.png
 ```

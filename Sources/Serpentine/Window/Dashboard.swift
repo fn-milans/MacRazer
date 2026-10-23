@@ -5,12 +5,35 @@ import SwiftUI
 import RazerProtocol
 
 /// The main window's home: the mouse and its battery across the top, then a tile for each of
-/// its settings, two to a row, only the ones this mouse has. Buttons and the battery history
-/// open from their tiles.
+/// its settings, only the ones this mouse has, and the buttons in a column of their own beside
+/// them. The battery history opens from the mouse's tile.
+///
+/// It follows the window's width (`Layout`): two columns of tiles and the buttons column when
+/// it's wide, one of each when it's not, and a single column, buttons last, when it's narrow.
 struct Dashboard: View {
     @ObservedObject var controller: MouseController
     @ObservedObject var remapper: ButtonRemapper
     @ObservedObject var navigation: WindowNavigation
+    /// The width the dashboard has to fill.
+    var width: CGFloat
+
+    /// How the dashboard lays out at a width.
+    enum Layout: Equatable {
+        case wide, medium, narrow
+
+        /// The buttons column's width beside the tiles.
+        static let buttonsColumn: CGFloat = 400
+        static let spacing: CGFloat = 14
+
+        init(width: CGFloat) {
+            if width >= 1180 { self = .wide } else if width >= 820 { self = .medium } else { self = .narrow }
+        }
+
+        var tileColumns: Int { self == .wide ? 2 : 1 }
+        var buttonsBeside: Bool { self != .narrow }
+    }
+
+    private var layout: Layout { Layout(width: width) }
 
     @State private var brightness: Double = 100
     @State private var color: Color = .razerGreen
@@ -21,7 +44,7 @@ struct Dashboard: View {
     @State private var managingProfiles = false
 
     /// The setting tiles, in reading order.
-    private enum Kind: Hashable { case dpi, polling, lighting, sleep, lowBattery, scroll, buttons, profiles }
+    private enum Kind: Hashable { case dpi, polling, lighting, sleep, lowBattery, scroll, profiles }
 
     private var kinds: [Kind] {
         var out: [Kind] = [.dpi]
@@ -30,31 +53,26 @@ struct Dashboard: View {
         if controller.supportsSleepTimeout { out.append(.sleep) }
         if controller.lowBatteryThreshold != nil { out.append(.lowBattery) }
         if controller.smartReel != nil || controller.scrollAcceleration != nil { out.append(.scroll) }
-        out.append(.buttons)
         if controller.supportsProfiles || controller.onboardSlotsUnread { out.append(.profiles) }
         return out
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            DeviceTile(controller: controller, navigation: navigation)
+            DeviceTile(controller: controller, navigation: navigation, compact: layout == .narrow)
             if controller.bluetoothMouse != nil && !controller.connected {
                 BluetoothNoticeCard(controller: controller)
             }
             if controller.noMouseKnown {
                 NoMouseCard(controller: controller)
-            } else {
-                Grid(horizontalSpacing: 14, verticalSpacing: 14) {
-                    ForEach(rows, id: \.self) { row in
-                        GridRow {
-                            ForEach(row, id: \.self) { kind in
-                                tile(kind)
-                                    .gridCellColumns(row.count == 1 ? 2 : 1)
-                            }
-                        }
-                    }
+            } else if layout.buttonsBeside {
+                HStack(alignment: .top, spacing: Layout.spacing) {
+                    tiles
+                    buttonsColumn.frame(width: Layout.buttonsColumn)
                 }
-                .opacity(controller.connected ? 1 : 0.55)
+            } else {
+                tiles
+                buttonsColumn
             }
         }
         .onAppear(perform: sync)
@@ -79,9 +97,22 @@ struct Dashboard: View {
         }
     }
 
-    /// Two to a row; an odd one out takes the whole row.
-    private var rows: [[Kind]] {
-        stride(from: 0, to: kinds.count, by: 2).map { Array(kinds[$0..<min($0 + 2, kinds.count)]) }
+    /// The setting tiles, as many to a row as the layout has columns; an odd one out takes the
+    /// whole row.
+    private var tiles: some View {
+        let columns = layout.tileColumns
+        let rows = stride(from: 0, to: kinds.count, by: columns).map { Array(kinds[$0..<min($0 + columns, kinds.count)]) }
+        return Grid(horizontalSpacing: Layout.spacing, verticalSpacing: Layout.spacing) {
+            ForEach(rows, id: \.self) { row in
+                GridRow {
+                    ForEach(row, id: \.self) { kind in
+                        tile(kind)
+                            .gridCellColumns(row.count < columns ? columns : 1)
+                    }
+                }
+            }
+        }
+        .opacity(controller.connected ? 1 : 0.55)
     }
 
     @ViewBuilder
@@ -123,14 +154,14 @@ struct Dashboard: View {
                 MouseSwitchesSection(controller: controller, inTile: true)
             }
             .disabled(!controller.connected)
-        case .buttons:
-            buttonsTile
         case .profiles:
             profilesTile
         }
     }
 
-    private var buttonsTile: some View {
+    /// The buttons, unfolded: what each does, in the mouse or done by Serpentine, with the
+    /// HyperShift layer and the mouse's own switches. Beside the tiles, or last when narrow.
+    private var buttonsColumn: some View {
         let count = remapper.mappings.values.filter { $0 != .passthrough }.count
         let caps = controller.capabilities
         let inMouse = remapper.mappingsLiveInMouse
@@ -138,21 +169,9 @@ struct Dashboard: View {
         return Tile(title: "Buttons", symbol: "computermouse.fill", tint: .pink,
                     residency: inMouse ? .mouse : .app,
                     value: count == 0 ? "Factory" : (count == 1 ? "1 remapped" : "\(count) remapped")) {
-            VStack(alignment: .leading, spacing: 10) {
-                Text(remapper.mappingsLiveInMouse
-                     ? "Remaps are written to the mouse, the HyperShift layer too."
-                     : "Remaps on this mouse are done by Serpentine while it runs.")
-                    .font(.system(size: 11.5)).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                Button {
-                    navigation.go(to: .buttons)
-                } label: {
-                    Label("Customize Buttons", systemImage: "chevron.right")
-                        .labelStyle(TrailingIconLabelStyle())
-                }
-                .buttonStyle(RazerProminentButtonStyle())
-            }
+            RemapView(remapper: remapper, controller: controller)
         }
+        .disabled(!controller.connected)
     }
 
     private var profilesTile: some View {
@@ -176,22 +195,38 @@ struct Dashboard: View {
     }
 }
 
-/// A label with its icon after the title, for "Customize Buttons ›".
-struct TrailingIconLabelStyle: LabelStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        HStack(spacing: 6) {
-            configuration.title
-            configuration.icon.font(.system(size: 10, weight: .bold))
-        }
-    }
-}
-
 /// The mouse across the top of the dashboard: what it is, how it's connected, and its battery.
 struct DeviceTile: View {
     @ObservedObject var controller: MouseController
     @ObservedObject var navigation: WindowNavigation
+    /// Narrow: the battery goes under the mouse rather than beside it.
+    var compact = false
+
+    private var showsBattery: Bool {
+        controller.deviceHasBattery && (controller.deviceName != nil || controller.lastBatterySnapshot != nil)
+    }
 
     var body: some View {
+        Group {
+            if compact {
+                VStack(alignment: .leading, spacing: 14) {
+                    identity
+                    if showsBattery { battery }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                HStack(spacing: 16) {
+                    identity
+                    Spacer(minLength: 12)
+                    if showsBattery { battery }
+                }
+            }
+        }
+        .padding(18)
+        .tileBackground()
+    }
+
+    private var identity: some View {
         HStack(spacing: 16) {
             Image(nsImage: MenuBarIcon.mouseModel(pid: controller.deviceID, pointSize: 30))
                 .renderingMode(.template)
@@ -210,13 +245,7 @@ struct DeviceTile: View {
                     Text(statusText).font(.system(size: 12)).foregroundStyle(.secondary)
                 }
             }
-            Spacer(minLength: 12)
-            if controller.deviceHasBattery, controller.deviceName != nil || controller.lastBatterySnapshot != nil {
-                battery
-            }
         }
-        .padding(18)
-        .tileBackground()
     }
 
     private var statusText: String {
@@ -237,20 +266,27 @@ struct DeviceTile: View {
         }
     }
 
+    /// The ring, then the line and the history beside it: on the right when there's room, under
+    /// the mouse, left-aligned, when there isn't.
     private var battery: some View {
         HStack(spacing: 14) {
-            VStack(alignment: .trailing, spacing: 4) {
+            if compact { gauge }
+            VStack(alignment: compact ? .leading : .trailing, spacing: 4) {
                 Text(controller.batteryStatusLine)
                     .font(.system(size: 12)).foregroundStyle(.secondary)
-                    .multilineTextAlignment(.trailing)
+                    .multilineTextAlignment(compact ? .leading : .trailing)
                 Button("Battery History") { navigation.go(to: .battery) }
                     .buttonStyle(.link)
                     .font(.system(size: 12))
             }
-            BatteryGauge(percent: controller.batteryPercent ?? controller.lastBatterySnapshot?.percent,
-                         charging: controller.charging)
-                .opacity(controller.connected ? 1 : 0.55)
+            if !compact { gauge }
         }
+    }
+
+    private var gauge: some View {
+        BatteryGauge(percent: controller.batteryPercent ?? controller.lastBatterySnapshot?.percent,
+                     charging: controller.charging)
+            .opacity(controller.connected ? 1 : 0.55)
     }
 }
 

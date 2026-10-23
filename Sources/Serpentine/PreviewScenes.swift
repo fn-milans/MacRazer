@@ -33,7 +33,7 @@ enum PreviewScene: String, CaseIterable {
         let view: AnyView
         switch self {
         case .main, .offline, .bluetooth, .bluetoothConnected, .dpiStages, .dpiSingle, .zones:
-            view = AnyView(Dashboard(controller: controller, remapper: remapper, navigation: WindowNavigation()))
+            view = AnyView(Dashboard(controller: controller, remapper: remapper, navigation: WindowNavigation(), width: 920))
         case .buttons:
             view = AnyView(RemapView(remapper: remapper, controller: controller).padding(18).tileBackground())
         case .usage:

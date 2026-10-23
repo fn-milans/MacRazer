@@ -49,7 +49,7 @@ final class MainWindowController: NSObject, AppWindowPresenter, NSWindowDelegate
         w.tabbingMode = .disallowed
         // Remembered between launches; the first time, a comfortable size in the middle.
         if !w.setFrameUsingName(Self.frameName) {
-            w.setContentSize(NSSize(width: 960, height: 780))
+            w.setContentSize(NSSize(width: 1240, height: 800))
             w.center()
         }
         w.setFrameAutosaveName(Self.frameName)
@@ -66,8 +66,11 @@ final class MainWindowController: NSObject, AppWindowPresenter, NSWindowDelegate
         hosting.sizingOptions = [.minSize]
         // The panes' titles and toolbar items go in the window's own title bar.
         hosting.sceneBridgingOptions = [.title, .toolbars]
-        let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 960, height: 780),
-                         styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
+        let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1240, height: 800),
+                         // Not full-size content: the pages start under the title bar and scroll
+                         // clipped there, rather than sliding beneath it. The glass still covers
+                         // the title bar (`WindowBackdrop`).
+                         styleMask: [.titled, .closable, .miniaturizable, .resizable],
                          backing: .buffered, defer: false)
         w.contentViewController = hosting
         w.title = "Serpentine"

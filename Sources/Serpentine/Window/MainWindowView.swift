@@ -4,8 +4,8 @@
 import SwiftUI
 import RazerProtocol
 
-/// The main window: a dashboard of tiles on the glass, with Buttons and Battery History opened
-/// from their tiles in place (with a back button). The title sits at the leading edge; the
+/// The main window: a dashboard of tiles on the glass, the buttons in a column of their own,
+/// and Battery History opened from the mouse's tile in place (with a back button). The title sits at the leading edge; the
 /// status, the profile, Refresh and Settings at the trailing edge.
 struct MainWindowView: View {
     @ObservedObject var controller: MouseController
@@ -17,20 +17,16 @@ struct MainWindowView: View {
 
     var body: some View {
         NavigationStack(path: $navigation.path) {
-            page {
-                Dashboard(controller: controller, remapper: remapper, navigation: navigation)
+            GeometryReader { geometry in
+                page {
+                    // The page's padding comes off the width the dashboard lays out in.
+                    Dashboard(controller: controller, remapper: remapper, navigation: navigation,
+                              width: geometry.size.width - 2 * Self.pagePadding)
+                }
             }
             .navigationTitle("Serpentine")
             .navigationDestination(for: WindowRoute.self) { route in
                 switch route {
-                case .buttons:
-                    page {
-                        RemapView(remapper: remapper, controller: controller)
-                            .padding(18)
-                            .tileBackground()
-                            .disabled(!controller.connected)
-                    }
-                    .navigationTitle(route.title)
                 case .battery:
                     page {
                         UsageGraphView(controller: controller)
@@ -40,7 +36,7 @@ struct MainWindowView: View {
                 }
             }
         }
-        .frame(minWidth: 760, minHeight: 600)
+        .frame(minWidth: 560, minHeight: 520)
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
                 syncStatus
@@ -80,11 +76,12 @@ struct MainWindowView: View {
                 if !background.isEnabled, !driverModeFeatures.isEmpty { driverModeBanner }
                 content()
             }
-            .padding(20)
-            .frame(maxWidth: 1000)
-            .frame(maxWidth: .infinity)
+            .padding(Self.pagePadding)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
         }
     }
+
+    static let pagePadding: CGFloat = 20
 
     /// "Razer Basilisk V4 Pro (Wireless)" reads as "Basilisk V4 Pro" in the menu bar item.
     static func shortName(_ name: String) -> String {
