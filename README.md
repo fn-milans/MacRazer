@@ -178,16 +178,16 @@ once to grant codesign standing access so nothing prompts again.
 
 ## Command-line diagnostics
 
-The same binary runs read-only probes when given a subcommand (handy for verifying a new
-mouse). Run these from a terminal:
+A separate command-line tool, `serpentine-cli`, runs probes against the mouse over USB (handy
+for verifying a new mouse). Run these from a terminal:
 
 ```sh
-swift run Serpentine info                 # list the mouse's HID interfaces
-swift run Serpentine battery              # read battery %
-swift run Serpentine dpi [x] [y]          # read or set DPI
-swift run Serpentine poll [125|500|1000]  # read or set polling rate
-swift run Serpentine rgb static ff0000    # static colour (or: spectrum | wave | off)
-swift run Serpentine brightness [0-100]   # read or set LED brightness
+swift run serpentine-cli info                 # list the mouse's HID interfaces
+swift run serpentine-cli battery              # read battery %
+swift run serpentine-cli dpi [x] [y]          # read or set DPI
+swift run serpentine-cli poll [125|500|1000]  # read or set polling rate
+swift run serpentine-cli rgb static ff0000    # static colour (or: spectrum | wave | off)
+swift run serpentine-cli brightness [0-100]   # read or set LED brightness
 ```
 
 ## How it works

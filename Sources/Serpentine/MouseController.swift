@@ -48,96 +48,96 @@ enum BluetoothRecoveryState: Equatable {
 ///
 /// The state is declared here and the work is split by feature into `MouseController+*.swift`
 /// (reads, writes, lighting, slots, remaps in the mouse, profiles, connection, previews). The
-/// published values are `internal(set)` so those files can set them; views only read them and
-/// change the mouse through the methods.
+/// published values have internal setters so those files can set them; views only read them
+/// and change the mouse through the methods.
 final class MouseController: ObservableObject, @unchecked Sendable {
     static let connectionSoundsEnabledKey = Preferences.connectionSoundsEnabled
 
-    @Published internal(set) var connected = false
-    @Published internal(set) var batteryPercent: Int?
-    @Published internal(set) var charging = false
-    @Published internal(set) var dpi: Int = 0
-    @Published internal(set) var pollRate: Int = 0
-    @Published internal(set) var brightness: Int = 100 // percent
+    @Published var connected = false
+    @Published var batteryPercent: Int?
+    @Published var charging = false
+    @Published var dpi: Int = 0
+    @Published var pollRate: Int = 0
+    @Published var brightness: Int = 100 // percent
     /// Lighting state is controller-owned like DPI/brightness: published on successful
     /// device writes only. There's no lighting readback command, so this is the app's
     /// single source of truth for what the mouse is showing — the picker, the swatches,
     /// and profile snapshots all read it (a UI-local copy used to snapshot "phantom"
     /// lighting the mouse never took).
-    @Published internal(set) var effect: LightingEffect = .staticColor
-    @Published internal(set) var lightingColor = RGB(r: 0x44, g: 0xD6, b: 0x2C) // razer green
+    @Published var effect: LightingEffect = .staticColor
+    @Published var lightingColor = RGB(r: 0x44, g: 0xD6, b: 0x2C) // razer green
     /// Each zone's lighting as read from the mouse, on mice whose zones are set one by one
     /// (`ZonedLighting`); empty on every other mouse. `effect`, `lightingColor` and
     /// `brightness` then show the selected zone (the logo when all are selected).
-    @Published internal(set) var zoneLighting: [LightingZone: ZoneLighting] = [:]
+    @Published var zoneLighting: [LightingZone: ZoneLighting] = [:]
     /// The zone the lighting controls change; nil changes them all.
-    @Published internal(set) var selectedLightingZone: LightingZone?
-    @Published internal(set) var dpiStages: [Int] = [] // the mouse's configured DPI presets
-    @Published internal(set) var activeDpiStage: Int?
-    @Published internal(set) var dpiStagesError: String?
-    @Published internal(set) var isUpdatingDpiStages = false
-    @Published internal(set) var sleepTimeout: Int?
+    @Published var selectedLightingZone: LightingZone?
+    @Published var dpiStages: [Int] = [] // the mouse's configured DPI presets
+    @Published var activeDpiStage: Int?
+    @Published var dpiStagesError: String?
+    @Published var isUpdatingDpiStages = false
+    @Published var sleepTimeout: Int?
     /// Smart-Reel (`RazerCommands.setScrollSmartReel`), on mice with `RazerDevices.hasWheelControls`; nil
     /// until read, and on every other mouse.
-    @Published internal(set) var smartReel: Bool?
+    @Published var smartReel: Bool?
     /// Smart-Reel sensitivity, `RazerCommands.wheelLevelRange` (higher drops into free
     /// spin more readily), on mice with `RazerDevices.hasSmartReelSensitivity`; nil until read,
     /// and on every other mouse.
-    @Published internal(set) var smartReelSensitivity: Int?
+    @Published var smartReelSensitivity: Int?
     /// Scroll acceleration on/off and its level (`RazerCommands.wheelLevelRange`, higher
     /// scrolls further on a fast free spin), on mice with `RazerDevices.hasScrollAcceleration`; nil
     /// until read, and on every other mouse.
-    @Published internal(set) var scrollAcceleration: Bool?
-    @Published internal(set) var scrollAccelerationLevel: Int?
-    @Published internal(set) var sleepTimeoutError: String?
+    @Published var scrollAcceleration: Bool?
+    @Published var scrollAccelerationLevel: Int?
+    @Published var sleepTimeoutError: String?
     /// The battery percentage at which the mouse itself goes into its low-battery mode, on mice
     /// with `RazerDevices.supportsLowBatteryThreshold`; nil until read, and on every other mouse.
-    @Published internal(set) var lowBatteryThreshold: Int?
-    @Published internal(set) var isUpdatingSleepTimeout = false
-    @Published internal(set) var timeEstimate: String?
+    @Published var lowBatteryThreshold: Int?
+    @Published var isUpdatingSleepTimeout = false
+    @Published var timeEstimate: String?
     /// The most recent trusted battery reading, retained while disconnected.
-    @Published internal(set) var lastBatterySnapshot: LastBatterySnapshot?
+    @Published var lastBatterySnapshot: LastBatterySnapshot?
     /// Snapshots of `io`-queue-owned history, republished on the main queue for the usage graph.
-    @Published internal(set) var batterySamples: [BatterySample] = []
+    @Published var batterySamples: [BatterySample] = []
     /// The last finished cycle's curve, drawn dimmed behind the current one (~2 charges of
     /// context) so the chart doesn't blank out at a recharge.
-    @Published internal(set) var previousCycleSamples: [BatterySample] = []
-    @Published internal(set) var dischargeRatePerHour: Double?
-    @Published internal(set) var cycleStartedAt: Date?
-    @Published internal(set) var cycleStartedPercent: Int?
-    @Published internal(set) var pastCycles: [ChargeCycleSummary] = []
-    @Published internal(set) var averageCycleHours: Double?
-    @Published internal(set) var statusText = "…"
-    @Published internal(set) var lastError: String?
-    @Published internal(set) var isRefreshing = false
+    @Published var previousCycleSamples: [BatterySample] = []
+    @Published var dischargeRatePerHour: Double?
+    @Published var cycleStartedAt: Date?
+    @Published var cycleStartedPercent: Int?
+    @Published var pastCycles: [ChargeCycleSummary] = []
+    @Published var averageCycleHours: Double?
+    @Published var statusText = "…"
+    @Published var lastError: String?
+    @Published var isRefreshing = false
     /// Name of the connected Razer mouse (from its USB product string), or nil if none present.
-    @Published internal(set) var deviceName: String?
+    @Published var deviceName: String?
     /// Whether the connected model's control protocol is verified (Cobra family).
-    @Published internal(set) var deviceSupported = true
+    @Published var deviceSupported = true
     /// Whether the connected mouse has a battery (wired-only mice don't → hide battery UI).
-    @Published internal(set) var deviceHasBattery = true
+    @Published var deviceHasBattery = true
     /// Whether the connected mouse has RGB lighting (e.g. the Atheris has none → hide it).
-    @Published internal(set) var deviceHasLighting = true
+    @Published var deviceHasLighting = true
     /// Max settable DPI for the connected model (drives the slider range).
-    @Published internal(set) var deviceMaxDPI = 26000
+    @Published var deviceMaxDPI = 26000
     /// Bumped whenever a user-initiated device write fails, so the UI can snap its
     /// optimistic slider state back to the real values (the values themselves don't change
     /// on a failed write, so no other `@Published` transition fires).
-    @Published internal(set) var lastWriteFailure: Date?
+    @Published var lastWriteFailure: Date?
     /// Product ID of the connected mouse (nil when none) — drives feature gating.
-    @Published internal(set) var deviceID: Int?
+    @Published var deviceID: Int?
     /// Stable per-unit key (serial number if available, else PID) — drives per-device settings.
-    @Published internal(set) var deviceKey: String?
+    @Published var deviceKey: String?
     /// The connected mouse is on Bluetooth. Read through the `supports…` properties below.
-    @Published internal(set) var deviceIsBluetooth = false
+    @Published var deviceIsBluetooth = false
     /// The Basilisk V3 X HyperSpeed's dedicated DPI Cycle assignment, available over Bluetooth.
-    @Published internal(set) var dpiCycleButtonBinding: BLEProtocol.DPIButtonBinding?
-    @Published internal(set) var dpiCycleButtonError: String?
-    @Published internal(set) var isUpdatingDpiCycleButton = false
+    @Published var dpiCycleButtonBinding: BLEProtocol.DPIButtonBinding?
+    @Published var dpiCycleButtonError: String?
+    @Published var isUpdatingDpiCycleButton = false
     /// A Razer mouse seen on Bluetooth while we aren't controlling one, and why.
-    @Published internal(set) var bluetoothMouse: BluetoothMouseStatus?
-    @Published internal(set) var bluetoothRecoveryState: BluetoothRecoveryState = .idle
-    @Published internal(set) var wakeRecoveryCounter = 0
+    @Published var bluetoothMouse: BluetoothMouseStatus?
+    @Published var bluetoothRecoveryState: BluetoothRecoveryState = .idle
+    @Published var wakeRecoveryCounter = 0
 
     // What the connected link can do. Bluetooth has no known command for polling rate or
     // effects other than static, and switches DPI only between the mouse's own stages
@@ -163,11 +163,11 @@ final class MouseController: ObservableObject, @unchecked Sendable {
     /// Saved DPI/poll/lighting/button-remap presets for the connected mouse, and which one (if
     /// any) currently matches the live config. Loaded/swapped alongside `deviceKey` in
     /// `ensureDevice()`, same as the battery history.
-    @Published internal(set) var profiles: [MouseProfile] = []
-    @Published internal(set) var activeProfileID: UUID?
+    @Published var profiles: [MouseProfile] = []
+    @Published var activeProfileID: UUID?
     /// The most recent profile apply failed (mouse offline/asleep) — without this, tapping
     /// a chip on a sleeping mouse does visibly nothing. Cleared when the next apply starts.
-    @Published internal(set) var profileApplyFailed = false
+    @Published var profileApplyFailed = false
 
     /// User preference: show the battery % beside the menu bar icon (persisted).
     @Published var showPercentInMenuBar: Bool = (UserDefaults.standard.object(forKey: Preferences.showPercentInMenuBar) as? Bool) ?? true {
@@ -428,7 +428,7 @@ final class MouseController: ObservableObject, @unchecked Sendable {
     }
 
     /// Set when the last attempt to write the remaps into the mouse didn't fully succeed.
-    @Published internal(set) var onboardWriteError: String?
+    @Published var onboardWriteError: String?
 
     /// Which entries Serpentine wrote into which mouse. Tests hand in their own defaults.
     var onboardOwnership = OnboardOwnership(defaults: .standard)
@@ -456,12 +456,12 @@ final class MouseController: ObservableObject, @unchecked Sendable {
 
     /// The mouse's active onboard slot (`OnboardSlots`); nil on mice without them, and until
     /// read. Profiles are kept in the mouse only while this is set.
-    @Published internal(set) var activeOnboardSlot: Int?
+    @Published var activeOnboardSlot: Int?
     var supportsOnboardSlots: Bool { activeOnboardSlot != nil }
     /// The slots that exist in the mouse, in order: its profiles.
-    @Published internal(set) var onboardSlotList: [Int] = []
+    @Published var onboardSlotList: [Int] = []
     /// The profiles' names, by slot (`SlotNames`).
-    @Published internal(set) var slotNames: [Int: String] = [:]
+    @Published var slotNames: [Int: String] = [:]
 
     /// io-queue only. The slots that exist in the open mouse, as last read or changed.
     var existingSlots: Set<UInt8> = [] {

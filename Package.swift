@@ -8,6 +8,10 @@ let package = Package(
     platforms: [
         .macOS(.v14)
     ],
+    products: [
+        .executable(name: "Serpentine", targets: ["Serpentine"]),
+        .executable(name: "serpentine-cli", targets: ["SerpentineCLI"]),
+    ],
     targets: [
         // Razer's HID protocol: report framing, command builders and parsers, the Bluetooth
         // translation, onboard tables, the device registry. Pure; no AppKit, no IOKit.
@@ -26,6 +30,12 @@ let package = Package(
             name: "Serpentine",
             dependencies: ["RazerProtocol", "RazerDeviceKit"],
             path: "Sources/Serpentine"
+        ),
+        // Hardware diagnostics, without AppKit: `swift run serpentine-cli battery`.
+        .executableTarget(
+            name: "SerpentineCLI",
+            dependencies: ["RazerProtocol", "RazerDeviceKit"],
+            path: "Sources/SerpentineCLI"
         ),
         // Tests import the executable target directly (@testable) — supported by SwiftPM on
         // macOS, and avoids splitting a library target just to gain testability.

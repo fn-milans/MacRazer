@@ -104,7 +104,7 @@ Built in [`RazerCommands.swift`](../Sources/Serpentine/RazerCommands.swift). VID
  only lit zone is the scroll wheel — answers only on `SCROLL_LED` (0x01). Every other group
  returns status `0x03` (failure), so a wrong id is not a silent no-op: the brightness slider
  simply stops working. The id is a registry field (`RazerDevices.brightnessLed`, default
- `LOGO_LED`); `swift run Serpentine brightness` sweeps all four groups to find it on a new
+ `LOGO_LED`); `swift run serpentine-cli brightness` sweeps all four groups to find it on a new
  model. Both verified live.
 - **Lighting is one group.** The "4 zones" in marketing aren't independently addressable;
  everything is driven together via ZERO_LED.
@@ -394,12 +394,12 @@ Run from a terminal (uses the Terminal's permission grant). These were how each 
 verified against hardware:
 
 ```sh
-swift run Serpentine info # list HID interfaces (find the control one)
-swift run Serpentine battery # read battery %
-swift run Serpentine dpi [x] [y] # read / set DPI
-swift run Serpentine poll [125|500|1000]
-swift run Serpentine rgb static ff0000 # or: spectrum | wave | off
-swift run Serpentine brightness [0-100] # sweeps LOGO/SCROLL/ZERO/BACKLIGHT LEDs
+swift run serpentine-cli info # list HID interfaces (find the control one)
+swift run serpentine-cli battery # read battery %
+swift run serpentine-cli dpi [x] [y] # read / set DPI
+swift run serpentine-cli poll [125|500|1000]
+swift run serpentine-cli rgb static ff0000 # or: spectrum | wave | off
+swift run serpentine-cli brightness [0-100] # sweeps LOGO/SCROLL/ZERO/BACKLIGHT LEDs
 swift run Serpentine icon out.png [size] [charging] [light] # render the menu bar icon
 swift run Serpentine render-ui [offline|color|zones|…] out.png # popover (dev)
 swift run Serpentine render-about out.png

@@ -15,21 +15,21 @@ import RazerProtocol
 /// handles what the mouse can't store (a mouse button past the fifth, a key with no HID usage).
 ///
 /// The remap table and its onboard plan are here; the tap, HyperShift, the DPI Cycle bridge
-/// and persistence are in `ButtonRemapper+*.swift`. The published values are `internal(set)`
-/// so those files can set them; views only read them.
+/// and persistence are in `ButtonRemapper+*.swift`. The published values have internal
+/// setters so those files can set them; views only read them.
 final class ButtonRemapper: ObservableObject, @unchecked Sendable {
-    @Published internal(set) var accessibilityGranted = false
-    @Published internal(set) var eventTapAvailable = false
-    @Published internal(set) var keyboardCaptureAvailable = false
-    @Published internal(set) var lastDetectedButton: Int?
-    @Published internal(set) var seenButtons: Set<Int> = []
-    @Published internal(set) var suggestedButtons: Set<Int> = []
-    @Published internal(set) var mappings: [Int: RemapAction] = [:] {
+    @Published var accessibilityGranted = false
+    @Published var eventTapAvailable = false
+    @Published var keyboardCaptureAvailable = false
+    @Published var lastDetectedButton: Int?
+    @Published var seenButtons: Set<Int> = []
+    @Published var suggestedButtons: Set<Int> = []
+    @Published var mappings: [Int: RemapAction] = [:] {
         didSet { refreshOnboardPlan() }
     }
 
-    @Published internal(set) var dpiCycleSoftwareAction: RemapAction?
-    @Published internal(set) var dpiBridgeBindingConfirmed = false
+    @Published var dpiCycleSoftwareAction: RemapAction?
+    @Published var dpiBridgeBindingConfirmed = false
     var bridgeKeyIsDown = false
     var dpiBridgeReadRequested = false
     var dpiBridgeRestoreAttempted = false
@@ -147,7 +147,7 @@ final class ButtonRemapper: ObservableObject, @unchecked Sendable {
 
     /// Where each control of the connected mouse has its remap (`OnboardButtons.plan`),
     /// empty for a mouse without a known function table.
-    @Published internal(set) var onboardPlan: [OnboardButtons.Entry] = []
+    @Published var onboardPlan: [OnboardButtons.Entry] = []
 
     /// The id the active mouse's remaps are saved under (`setActiveDevice`), nil with none.
     var activeDeviceKey: String? { activeKey == "none" ? nil : activeKey }
@@ -220,7 +220,7 @@ final class ButtonRemapper: ObservableObject, @unchecked Sendable {
     }
 
     /// A button mapped to `.hyperShift` is held down. Main thread.
-    @Published internal(set) var hyperShiftHeld = false
+    @Published var hyperShiftHeld = false
     /// Tap-path buttons whose press was taken over, so their release is swallowed too even
     /// if HyperShift was let go in between and the release alone would map to nothing.
     var suppressedTapButtons: Set<Int> = []

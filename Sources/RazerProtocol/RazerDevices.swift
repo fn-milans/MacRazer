@@ -62,7 +62,7 @@ public struct RazerDeviceInfo: Sendable {
     /// The default is LOGO_LED, verified by the `brightness` probe on the Cobra family and on
     /// the Viper Ultimate (#6). It is an assumption on every other lit model here. A wrong id
     /// does not error, the slider just stops working, so a model gaining lighting support
-    /// should be swept with `swift run Serpentine brightness` rather than inheriting this.
+    /// should be swept with `swift run serpentine-cli brightness` rather than inheriting this.
     public var brightnessLed: UInt8 = Razer.logoLed
     public let connection: RazerConnection
     public let silhouette: RazerMouseSilhouette

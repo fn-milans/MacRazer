@@ -16,6 +16,10 @@ expect rough edges until 1.0.
   certificate from an earlier `setup-signing.sh` is now looked for as "Serpentine Self-Signed";
   run the script again to make one.
 
+- **The hardware diagnostics are their own tool, `serpentine-cli`.** `swift run serpentine-cli
+  battery` (and `info`, `dpi`, `poll`, `stages`, `rgb`, `brightness`) instead of
+  `swift run Serpentine …`, which now says where they went.
+
 - **A serpent for the app and menu bar icons.** The snake from Health Icons (MIT), in place of
   the mouse mark, for now. The bolt still shows while the mouse charges.
 

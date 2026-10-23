@@ -9,8 +9,9 @@ the HID protocol, and every feature.
 ## Build & run
 ```sh
 swift run Serpentine # menu bar app (uses your Terminal's permission grants)
-swift run Serpentine battery # CLI diagnostics: battery / dpi / poll / rgb / brightness / info
+swift run serpentine-cli battery # hardware diagnostics: battery / dpi / poll / stages / rgb / brightness / info
 swift test # unit tests (protocol codec, battery models, persistence — no hardware needed)
+SERPENTINE_SNAPSHOTS=/tmp/snaps swift test --filter SnapshotTests # every preview scene as a PNG
 ./Scripts/build-app.sh # build a standalone .app
 ./Scripts/make-dmg.sh # package the .app into dist/Serpentine.dmg
 ./Scripts/make-dmg.sh --adhoc # the same, ad-hoc signed, for a DMG you share
@@ -88,12 +89,12 @@ what lets a reviewer see the status bytes and the read-backs, and it is what ear
 the README table.
 
 ```sh
-swift run Serpentine info              # confirms detection and the PID it enumerates as
-swift run Serpentine battery
-swift run Serpentine dpi               # then: dpi 3200   (check the read-back matches)
-swift run Serpentine poll              # then: poll 1000  (check the read-back matches)
-swift run Serpentine rgb static ff0000 # if it has lighting
-swift run Serpentine brightness        # sweeps LOGO / SCROLL / ZERO / BACKLIGHT
+swift run serpentine-cli info              # confirms detection and the PID it enumerates as
+swift run serpentine-cli battery
+swift run serpentine-cli dpi               # then: dpi 3200   (check the read-back matches)
+swift run serpentine-cli poll              # then: poll 1000  (check the read-back matches)
+swift run serpentine-cli rgb static ff0000 # if it has lighting
+swift run serpentine-cli brightness        # sweeps LOGO / SCROLL / ZERO / BACKLIGHT
 ```
 
 `status=0x02` is success. `0x03` is the mouse refusing, which is information, not failure —
