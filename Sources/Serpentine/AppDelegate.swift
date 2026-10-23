@@ -6,6 +6,7 @@ import SwiftUI
 import Combine
 import UserNotifications
 import RazerProtocol
+import RazerDeviceKit
 
 /// Menu bar (accessory) app: an NSStatusItem showing battery %, click opens an NSPopover
 /// hosting the SwiftUI controls. Mirrors the pattern macOS's own Bluetooth/Battery menus use.

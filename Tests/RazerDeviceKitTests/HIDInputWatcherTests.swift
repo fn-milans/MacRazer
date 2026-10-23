@@ -2,7 +2,7 @@
 // Part of Serpentine, a control app for Razer mice on macOS. See LICENSE and NOTICE.md.
 
 import XCTest
-@testable import Serpentine
+@testable import RazerDeviceKit
 
 /// The reports themselves need a real mouse, so what is pinned here is the bookkeeping around
 /// them: whether the watcher believes it is listening, and whether a later start can try

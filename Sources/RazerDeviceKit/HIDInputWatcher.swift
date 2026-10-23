@@ -29,7 +29,7 @@ import RazerProtocol
 /// Main thread only, like the run loop it schedules on: IOKit delivers the reports there
 /// because that is the run loop the devices are scheduled on, and every method is called from
 /// there too. `@unchecked Sendable` states that discipline, the same as `HIDMonitor`.
-final class HIDInputWatcher: @unchecked Sendable {
+public final class HIDInputWatcher: @unchecked Sendable {
     private let vendorId: Int
     private let includeBluetooth: Bool
     private let onInput: @Sendable () -> Void
@@ -41,18 +41,18 @@ final class HIDInputWatcher: @unchecked Sendable {
     /// ignored rather than queueing a check per movement.
     private var fired = false
 
-    init(vendorId: Int, includeBluetooth: Bool = true, onInput: @escaping @Sendable () -> Void) {
+    public init(vendorId: Int, includeBluetooth: Bool = true, onInput: @escaping @Sendable () -> Void) {
         self.vendorId = vendorId
         self.includeBluetooth = includeBluetooth
         self.onInput = onInput
     }
 
-    var isRunning: Bool { selfContext != nil }
+    public var isRunning: Bool { selfContext != nil }
 
     /// Opens every Razer mouse interface and listens. A device that can't be opened is
     /// skipped: without Input Monitoring this does nothing at all, and polling still covers
     /// the reconnect, just more slowly.
-    func start() {
+    public func start() {
         guard !isRunning else { return }
         fired = false
         let context = Unmanaged.passRetained(self).toOpaque()
@@ -100,7 +100,7 @@ final class HIDInputWatcher: @unchecked Sendable {
         selfContext = context
     }
 
-    static func isWakeSource(vendorID: Int?, productID: Int?, transport: String) -> Bool {
+    public static func isWakeSource(vendorID: Int?, productID: Int?, transport: String) -> Bool {
         guard transport.localizedCaseInsensitiveContains("Bluetooth"),
               vendorID == BLEProtocol.vendorId,
               let productID else { return false }
@@ -108,7 +108,7 @@ final class HIDInputWatcher: @unchecked Sendable {
     }
 
     /// Stops listening and closes everything. Safe to call when not running.
-    func stop() {
+    public func stop() {
         for entry in open {
             IOHIDDeviceRegisterInputReportCallback(entry.device, entry.buffer, entry.size, nil, nil)
             IOHIDDeviceUnscheduleFromRunLoop(entry.device, CFRunLoopGetMain(), CFRunLoopMode.commonModes.rawValue)

@@ -3,6 +3,7 @@
 
 import XCTest
 @testable import Serpentine
+@testable import RazerDeviceKit
 
 final class BatteryPollStateMachineTests: XCTestCase {
     // raw 217 → 85%; raw values chosen so percent math is unambiguous.

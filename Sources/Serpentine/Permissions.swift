@@ -3,6 +3,7 @@
 
 import AppKit
 import IOKit.hid
+import RazerDeviceKit
 
 /// The System Settings privacy panes this app sends users to — one place for the
 /// `x-apple.systempreferences` deep links instead of hand-rolled copies per caller.

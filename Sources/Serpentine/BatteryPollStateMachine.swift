@@ -3,6 +3,7 @@
 
 import Foundation
 import RazerProtocol
+import RazerDeviceKit
 
 /// The pure decision core of the battery poll loop. All the subtle connection-state logic —
 /// the offline debounce, post-reconnect garbage rejection, and the charging two-poll

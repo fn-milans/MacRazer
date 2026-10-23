@@ -4,6 +4,7 @@
 import XCTest
 import CoreBluetooth
 @testable import Serpentine
+@testable import RazerDeviceKit
 
 /// Which link Serpentine talks to the mouse over when more than one is present, and when it
 /// lets go of one. Both rules came from hardware: a dongle left plugged in while the mouse

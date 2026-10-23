@@ -7,7 +7,7 @@ import RazerProtocol
 /// What `MouseController` needs from a connected mouse, whichever link it is on: the USB
 /// HID feature report (cable or 2.4 GHz dongle) or Razer's Bluetooth LE service.
 /// Both speak `RazerReport`, so every command builder and parser is shared.
-protocol RazerTransport: AnyObject {
+public protocol RazerTransport: AnyObject {
     var productID: Int { get }
     var productName: String { get }
     /// Identifies the physical port for the serial cache. 0 on Bluetooth, where the
@@ -19,25 +19,25 @@ protocol RazerTransport: AnyObject {
 }
 
 extension HIDDevice: RazerTransport {
-    var isBluetooth: Bool { false }
-    func sendWithRetry(_ report: RazerReport) throws -> RazerReport {
+    public var isBluetooth: Bool { false }
+    public func sendWithRetry(_ report: RazerReport) throws -> RazerReport {
         try sendWithRetry(report, attempts: HIDDevice.defaultAttempts)
     }
 }
 
 extension HIDDevice: ButtonFunctionTable {
-    func readButtonBlock(_ id: UInt8) throws -> [UInt8] {
+    public func readButtonBlock(_ id: UInt8) throws -> [UInt8] {
         guard let block = RazerCommands.parseButtonFunction(try sendWithRetry(RazerCommands.getButtonFunction(id)), id: id)
         else { throw HIDError.badResponse }
         return block
     }
 
-    func writeButtonBlock(_ id: UInt8, block: [UInt8]) throws {
+    public func writeButtonBlock(_ id: UInt8, block: [UInt8]) throws {
         _ = try sendWithRetry(RazerCommands.setButtonFunction(id, block: block))
         guard try readButtonBlock(id) == block else { throw HIDError.badResponse }
     }
 
-    func readShiftedBlock(_ id: UInt8) throws -> [UInt8]? {
+    public func readShiftedBlock(_ id: UInt8) throws -> [UInt8]? {
         let resp = try sendWithRetry(RazerCommands.getButtonFunction(id, layer: 0x01))
         switch RazerCommands.parseShiftedButtonFunction(resp, id: id) {
         case .set(let block): return block
@@ -46,23 +46,23 @@ extension HIDDevice: ButtonFunctionTable {
         }
     }
 
-    func writeShiftedBlock(_ id: UInt8, block: [UInt8]) throws {
+    public func writeShiftedBlock(_ id: UInt8, block: [UInt8]) throws {
         _ = try sendWithRetry(RazerCommands.setButtonFunction(id, block: block, layer: 0x01))
         guard try readShiftedBlock(id) == block else { throw HIDError.badResponse }
     }
 }
 
 extension BluetoothDevice: ButtonFunctionTable {
-    func readButtonBlock(_ id: UInt8) throws -> [UInt8] { try readButtonFunction(id).current }
-    func writeButtonBlock(_ id: UInt8, block: [UInt8]) throws { try setButtonFunction(id, block: block) }
-    func readShiftedBlock(_ id: UInt8) throws -> [UInt8]? { try readShiftedButtonFunction(id) }
-    func writeShiftedBlock(_ id: UInt8, block: [UInt8]) throws { try setShiftedButtonFunction(id, block: block) }
+    public func readButtonBlock(_ id: UInt8) throws -> [UInt8] { try readButtonFunction(id).current }
+    public func writeButtonBlock(_ id: UInt8, block: [UInt8]) throws { try setButtonFunction(id, block: block) }
+    public func readShiftedBlock(_ id: UInt8) throws -> [UInt8]? { try readShiftedButtonFunction(id) }
+    public func writeShiftedBlock(_ id: UInt8, block: [UInt8]) throws { try setShiftedButtonFunction(id, block: block) }
 }
 
 /// The retry ladder both transports share, so a policy change can't drift between them.
 /// Falls through to the last error.
-enum RazerRetry {
-    static func run<T>(attempts: Int, _ body: () throws -> T) throws -> T {
+public enum RazerRetry: Sendable {
+    public static func run<T>(attempts: Int, _ body: () throws -> T) throws -> T {
         var lastError: Error = HIDDevice.HIDError.timeout
         for attempt in 0..<attempts {
             do {

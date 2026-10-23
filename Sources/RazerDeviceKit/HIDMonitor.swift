@@ -12,7 +12,7 @@ import IOKit.hid
 /// interfere with the control-interface open used to actually send commands. This gives
 /// instant wired plug/unplug detection; battery polling remains the fallback for the
 /// wireless case where the dongle stays present while the mouse sleeps.
-final class HIDMonitor: @unchecked Sendable {
+public final class HIDMonitor: @unchecked Sendable {
     private var port: IONotificationPortRef?
     private var matchedIter: io_iterator_t = 0
     private var terminatedIter: io_iterator_t = 0
@@ -28,7 +28,7 @@ final class HIDMonitor: @unchecked Sendable {
     /// away; until then this keeps the object alive deliberately.
     private var selfContext: UnsafeMutableRawPointer?
 
-    init(vendorId: Int, onAppear: @escaping @Sendable ([Int]) -> Void, onRemove: @escaping @Sendable ([Int]) -> Void) {
+    public init(vendorId: Int, onAppear: @escaping @Sendable ([Int]) -> Void, onRemove: @escaping @Sendable ([Int]) -> Void) {
         self.onAppear = onAppear
         self.onRemove = onRemove
 
@@ -102,7 +102,7 @@ final class HIDMonitor: @unchecked Sendable {
     /// Stops IOKit notifications and releases the retained callback context. Must be called by
     /// the owner before dropping its last reference — until this runs, the retain in `init`
     /// keeps this object alive on purpose, so `deinit` is only ever reached afterward.
-    func invalidate() {
+    public func invalidate() {
         if let port { IONotificationPortDestroy(port) }
         port = nil
         if matchedIter != 0 { IOObjectRelease(matchedIter); matchedIter = 0 }

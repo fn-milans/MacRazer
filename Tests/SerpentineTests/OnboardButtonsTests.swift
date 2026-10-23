@@ -5,6 +5,7 @@ import AppKit
 import XCTest
 @testable import Serpentine
 @testable import RazerProtocol
+@testable import RazerDeviceKit
 
 /// Remaps saved in the Basilisk V4 Pro's own function table, the way Synapse saves them.
 final class OnboardButtonsTests: XCTestCase {

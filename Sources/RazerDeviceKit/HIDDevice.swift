@@ -15,23 +15,23 @@ import RazerProtocol
 /// Report ID: OpenRazer control messages use report id 0x00. We pass reportID 0 to
 /// IOHIDDeviceGetReport/SetReport and send the raw 90-byte buffer. If the device NAKs,
 /// the next thing to try is prefixing a report-id byte — verify against razer-macos.
-final class HIDDevice {
+public final class HIDDevice {
 
     /// Kept under its old name, which the code throughout uses.
-    typealias HIDError = RazerError
+    public typealias HIDError = RazerError
 
     /// Whether an error string from a failed open/read means the macOS Input Monitoring
     /// permission is missing. `HIDError` renders IOReturn codes as hex only, so match
     /// kIOReturnNotPermitted's hex form — a "NotPermitted" substring never appears.
-    static func errorLooksPermissionDenied(_ text: String) -> Bool {
+    public static func errorLooksPermissionDenied(_ text: String) -> Bool {
         text.contains("0xe00002e2") // kIOReturnNotPermitted
     }
 
     private let device: IOHIDDevice
-    let productID: Int
-    let productName: String
+    public let productID: Int
+    public let productName: String
     /// Where the device sits on the USB bus. Stable for as long as it stays plugged in.
-    let locationID: Int
+    public let locationID: Int
 
     private init(device: IOHIDDevice) {
         self.device = device
@@ -51,7 +51,7 @@ final class HIDDevice {
 
     /// Every HID interface matching `criteria` (an IOHID matching dictionary). The one place
     /// that builds a manager and enumerates, so a fix to the pattern lands once.
-    static func devices(matching criteria: [String: Any]) -> [IOHIDDevice] {
+    public static func devices(matching criteria: [String: Any]) -> [IOHIDDevice] {
         let manager = IOHIDManagerCreate(kCFAllocatorDefault, IOOptionBits(kIOHIDOptionsTypeNone))
         IOHIDManagerSetDeviceMatching(manager, criteria as CFDictionary)
         guard let set = IOHIDManagerCopyDevices(manager) as? Set<IOHIDDevice> else { return [] }
@@ -63,7 +63,7 @@ final class HIDDevice {
     /// Input Monitoring) and is what produced kIOReturnNotOpen. We only need the device
     /// list; opening happens per-device.
     /// All HID interfaces for the vendor (any product). We pick the right one by control score.
-    static func matchingDevices(vendorId: Int) -> [IOHIDDevice] {
+    public static func matchingDevices(vendorId: Int) -> [IOHIDDevice] {
         devices(matching: [kIOHIDVendorIDKey as String: vendorId])
     }
 
@@ -76,11 +76,16 @@ final class HIDDevice {
     ]
 
     /// A Razer mouse macOS has connected over Bluetooth.
-    struct BluetoothMouse: Equatable {
-        let name: String
+    public struct BluetoothMouse: Equatable, Sendable {
+        public let name: String
         /// Set when the registry can control this model over Bluetooth
         /// (`RazerDevices.bluetoothPIDs`), through Razer's GATT service (`BluetoothDevice`).
-        let controllablePID: Int?
+        public let controllablePID: Int?
+
+        public init(name: String, controllablePID: Int?) {
+            self.name = name
+            self.controllablePID = controllablePID
+        }
     }
 
     /// The Razer mouse connected over **Bluetooth**, if any, preferring one Serpentine can
@@ -89,7 +94,7 @@ final class HIDDevice {
     /// needed, and CoreBluetooth (with its permission prompt) stays away from everyone who
     /// has no such mouse. Models without Bluetooth control are recognised by name so the UI
     /// can explain why and prompt switching to 2.4GHz / USB-C.
-    static func bluetoothRazerMouse() -> BluetoothMouse? {
+    public static func bluetoothRazerMouse() -> BluetoothMouse? {
         // Generic Desktop (0x01) / Mouse (0x02), any vendor — the BLE mouse isn't VID 0x1532.
         let found = devices(matching: [
             kIOHIDDeviceUsagePageKey as String: 0x01,
@@ -106,7 +111,7 @@ final class HIDDevice {
     /// Whether a Bluetooth HID mouse is a Razer one, and one we can control. Control needs
     /// the exact Bluetooth vendor and product id (a name match could be another model on the
     /// same service); recognising it for the hint only needs the name.
-    static func classifyBluetoothMouse(vendorID: Int?, productID: Int?, name: String) -> BluetoothMouse? {
+    public static func classifyBluetoothMouse(vendorID: Int?, productID: Int?, name: String) -> BluetoothMouse? {
         if vendorID == BLEProtocol.vendorId, let pid = productID, RazerDevices.bluetoothPIDs.contains(pid) {
             return BluetoothMouse(name: name, controllablePID: pid)
         }
@@ -116,7 +121,7 @@ final class HIDDevice {
     }
 
     /// One-line description of an interface, for the `info` diagnostic.
-    static func describe(_ dev: IOHIDDevice) -> String {
+    public static func describe(_ dev: IOHIDDevice) -> String {
         let pid = intProp(dev, kIOHIDProductIDKey) ?? 0
         let up = intProp(dev, kIOHIDPrimaryUsagePageKey) ?? 0
         let usage = intProp(dev, kIOHIDPrimaryUsageKey) ?? 0
@@ -134,13 +139,13 @@ final class HIDDevice {
     /// interfaces) wins is decided by `HIDDeviceSelection` — matching is vendor-wide, so
     /// with a Razer keyboard or second mouse attached, the mouse must be picked by rank
     /// (registry-known PID → mouse-usage device → score), not by raw interface score.
-    static func open(vendorId: Int) throws -> HIDDevice {
+    public static func open(vendorId: Int) throws -> HIDDevice {
         try open(controlInterface(vendorId: vendorId))
     }
 
     /// The control interface `open(vendorId:)` would pick, without opening it — so a caller
     /// can look at its product id first (see `MouseController.openTransport`).
-    static func controlInterface(vendorId: Int) throws -> IOHIDDevice {
+    public static func controlInterface(vendorId: Int) throws -> IOHIDDevice {
         let devices = matchingDevices(vendorId: vendorId)
         guard !devices.isEmpty else { throw HIDError.notFound }
 
@@ -161,9 +166,9 @@ final class HIDDevice {
         }
     }
 
-    static func productID(of dev: IOHIDDevice) -> Int { intProp(dev, kIOHIDProductIDKey) ?? 0 }
+    public static func productID(of dev: IOHIDDevice) -> Int { intProp(dev, kIOHIDProductIDKey) ?? 0 }
 
-    static func open(_ chosen: IOHIDDevice) throws -> HIDDevice {
+    public static func open(_ chosen: IOHIDDevice) throws -> HIDDevice {
         // stderr, not stdout: this fires on every (re)open inside the GUI app too, and the
         // CLI's actual output goes to stdout.
         FileHandle.standardError.write(Data("[Serpentine] control interface: \(describe(chosen))\n".utf8))
@@ -175,18 +180,18 @@ final class HIDDevice {
     /// Wait between SetReport and GetReport, in microseconds. Cobra Pro / HyperSpeed route
     /// through `RAZER_NEW_MOUSE_RECEIVER_WAIT_US` = 31000µs in OpenRazer. Too short a wait
     /// returns status 0x01 (BUSY) with empty arguments.
-    static let receiverWaitUs: useconds_t = 31_000
+    public static let receiverWaitUs: useconds_t = 31_000
 
     /// Send a report and read the response. Razer's request/response pattern: SetReport the
     /// request, sleep the receiver wait, then GetReport. If the device replies BUSY (0x01),
     /// it hasn't finished yet — wait and re-read a few times before giving up.
-    func send(_ report: RazerReport) throws -> RazerReport {
+    public func send(_ report: RazerReport) throws -> RazerReport {
         try send(report, transactionId: nil)
     }
 
     /// `transactionId` overrides the registry's for this one command, to try which id an
     /// unknown model answers to; nil uses the registry's.
-    func send(_ report: RazerReport, transactionId: UInt8?) throws -> RazerReport {
+    public func send(_ report: RazerReport, transactionId: UInt8?) throws -> RazerReport {
         var report = report
         // Per-model (and per-command-class) transaction id from the registry, stamped at
         // the single point every command passes through — the builders in `RazerCommands`
@@ -253,20 +258,20 @@ final class HIDDevice {
 
     /// How many tries everyday traffic gets. `DeviceProbe` uses the same number, so a probe
     /// that passes says the app's own reads and writes will too.
-    static let defaultAttempts = 3
+    public static let defaultAttempts = 3
 
     /// Send with retry + linear backoff — the wireless dongle is documented as finicky and
     /// battery reads in particular time out intermittently. See `RazerRetry`.
-    func sendWithRetry(_ report: RazerReport, attempts: Int = HIDDevice.defaultAttempts) throws -> RazerReport {
+    public func sendWithRetry(_ report: RazerReport, attempts: Int = HIDDevice.defaultAttempts) throws -> RazerReport {
         try sendWithRetry(report, attempts: attempts, transactionId: nil)
     }
 
     /// As above, with the transaction id override `send(_:transactionId:)` describes.
-    func sendWithRetry(_ report: RazerReport, attempts: Int, transactionId: UInt8?) throws -> RazerReport {
+    public func sendWithRetry(_ report: RazerReport, attempts: Int, transactionId: UInt8?) throws -> RazerReport {
         try RazerRetry.run(attempts: attempts) { try send(report, transactionId: transactionId) }
     }
 
-    func close() {
+    public func close() {
         IOHIDDeviceClose(device, IOOptionBits(kIOHIDOptionsTypeNone))
     }
 }

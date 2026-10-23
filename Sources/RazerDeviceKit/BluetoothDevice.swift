@@ -16,11 +16,11 @@ import RazerProtocol
 /// for a product id the registry lists as `.bluetooth`. That pre-check runs on IOHID, so
 /// nobody without such a mouse ever creates a `CBCentralManager` or sees the Bluetooth
 /// permission prompt.
-final class BluetoothDevice: NSObject, RazerTransport, @unchecked Sendable {
-    let productID: Int
-    let productName: String
-    let locationID = 0
-    let isBluetooth = true
+public final class BluetoothDevice: NSObject, RazerTransport, @unchecked Sendable {
+    public let productID: Int
+    public let productName: String
+    public let locationID = 0
+    public let isBluetooth = true
 
     private let queue = DispatchQueue(label: "io.github.fn-milans.serpentine.bluetooth")
     private let service = CBUUID(string: BLEProtocol.serviceUUID)
@@ -42,28 +42,28 @@ final class BluetoothDevice: NSObject, RazerTransport, @unchecked Sendable {
     private var nextID: UInt8 = 0x30
     /// The onboard slot settings go to on a mouse that has them (`OnboardSlots`); set by
     /// `OnboardSlotTransport`. Slot 1 on every other mouse.
-    var slot: UInt8 = OnboardSlots.first
+    public var slot: UInt8 = OnboardSlots.first
 
     /// One request in flight: the frames still to write and the reply being assembled.
     private final class Exchange: @unchecked Sendable {
-        var frames: [Data]
-        var assembler: BLEProtocol.Assembler
-        let done = DispatchSemaphore(value: 0)
-        var error: Error?
-        var finished = false
-        init(frames: [Data], id: UInt8) {
+        public var frames: [Data]
+        public var assembler: BLEProtocol.Assembler
+        public let done = DispatchSemaphore(value: 0)
+        public var error: Error?
+        public var finished = false
+        public init(frames: [Data], id: UInt8) {
             self.frames = frames
             self.assembler = BLEProtocol.Assembler(id: id)
         }
     }
 
     /// Time allowed for Bluetooth to report its state, then for the GATT setup.
-    static let poweredOnTimeout: TimeInterval = 3
-    static let connectTimeout: TimeInterval = 5
+    public static let poweredOnTimeout: TimeInterval = 3
+    public static let connectTimeout: TimeInterval = 5
     /// One request, from the first write to the last reply byte. Replies measured on the
     /// Cobra HyperSpeed arrive within tens of milliseconds; this leaves room for a mouse
     /// waking from its idle state.
-    static let requestTimeout: TimeInterval = 1.5
+    public static let requestTimeout: TimeInterval = 1.5
 
     private init(productID: Int, productName: String) {
         self.productID = productID
@@ -74,7 +74,7 @@ final class BluetoothDevice: NSObject, RazerTransport, @unchecked Sendable {
     /// Connect to the vendor service of the Bluetooth mouse `pid` names. Throws `notFound`
     /// when Bluetooth is off or not allowed, the mouse isn't connected to this Mac, or it
     /// doesn't expose the service.
-    static func open(pid: Int, hidName: String) throws -> BluetoothDevice {
+    public static func open(pid: Int, hidName: String) throws -> BluetoothDevice {
         let name = RazerDevices.info(pid: pid)?.name ?? hidName
         let device = BluetoothDevice(productID: pid, productName: name)
         do {
@@ -128,7 +128,7 @@ final class BluetoothDevice: NSObject, RazerTransport, @unchecked Sendable {
 
     // MARK: - RazerTransport
 
-    func sendWithRetry(_ report: RazerReport) throws -> RazerReport {
+    public func sendWithRetry(_ report: RazerReport) throws -> RazerReport {
         try RazerRetry.run(attempts: HIDDevice.defaultAttempts) { try send(report) }
     }
 
@@ -157,11 +157,11 @@ final class BluetoothDevice: NSObject, RazerTransport, @unchecked Sendable {
         return try BLEProtocol.DPIStageTable(decoding: Array(exchange(request)))
     }
 
-    func readDpiStages() throws -> BLEProtocol.DPIStageTable {
+    public func readDpiStages() throws -> BLEProtocol.DPIStageTable {
         try RazerRetry.run(attempts: HIDDevice.defaultAttempts) { try readStages() }
     }
 
-    func setDpiStages(_ stages: BLEProtocol.DPIStageTable) throws {
+    public func setDpiStages(_ stages: BLEProtocol.DPIStageTable) throws {
         let request = BLEProtocol.Request(key: .stagesSet(slot: slot), payload: stages.encoded(), reply: .ack)
         try RazerRetry.run(attempts: HIDDevice.defaultAttempts) {
             _ = try exchange(request)
@@ -169,13 +169,13 @@ final class BluetoothDevice: NSObject, RazerTransport, @unchecked Sendable {
         }
     }
 
-    func readSleepTimeout() throws -> Int {
+    public func readSleepTimeout() throws -> Int {
         let request = BLEProtocol.Request(key: .powerTimeoutGet, payload: [], reply: .ack)
         let payload = try RazerRetry.run(attempts: HIDDevice.defaultAttempts) { try exchange(request) }
         return try BLEProtocol.parseSleepTimeout(payload)
     }
 
-    func setSleepTimeout(_ seconds: Int) throws {
+    public func setSleepTimeout(_ seconds: Int) throws {
         guard let payload = BLEProtocol.sleepTimeoutPayload(seconds: seconds) else {
             throw HIDDevice.HIDError.notSupported
         }
@@ -191,7 +191,7 @@ final class BluetoothDevice: NSObject, RazerTransport, @unchecked Sendable {
     /// Read the Basilisk V3 X HyperSpeed's dedicated DPI Cycle assignment. This is a
     /// model-specific control layered on the shared BLE framing; ordinary Razer reports
     /// continue to use `sendWithRetry` above.
-    func readDpiCycleBinding() throws -> BLEProtocol.DPIButtonBinding {
+    public func readDpiCycleBinding() throws -> BLEProtocol.DPIButtonBinding {
         let request = BLEProtocol.Request(key: .dpiButtonGet, payload: [], reply: .ack)
         let payload = try RazerRetry.run(attempts: HIDDevice.defaultAttempts) { try exchange(request) }
         return try BLEProtocol.parseDpiButtonBinding(payload)
@@ -200,7 +200,7 @@ final class BluetoothDevice: NSObject, RazerTransport, @unchecked Sendable {
     /// Write a DPI Cycle assignment and verify the mouse's readback before returning. A
     /// software action is represented by the reserved F20 keyboard usage and is interpreted
     /// by ButtonRemapper while this app is running.
-    func setDpiCycleBinding(_ binding: BLEProtocol.DPIButtonBinding) throws {
+    public func setDpiCycleBinding(_ binding: BLEProtocol.DPIButtonBinding) throws {
         let request = BLEProtocol.Request(key: .dpiButtonSet,
                                           payload: Array(BLEProtocol.dpiButtonPayload(for: binding)),
                                           reply: .ack)
@@ -211,14 +211,14 @@ final class BluetoothDevice: NSObject, RazerTransport, @unchecked Sendable {
     }
 
     /// One entry of the mouse's function table (`BLEProtocol.ButtonFunction`).
-    func readButtonFunction(_ id: UInt8) throws -> BLEProtocol.ButtonFunction {
+    public func readButtonFunction(_ id: UInt8) throws -> BLEProtocol.ButtonFunction {
         let request = BLEProtocol.Request(key: .buttonFunctionGet(id), payload: [], reply: .ack)
         let payload = try RazerRetry.run(attempts: HIDDevice.defaultAttempts) { try exchange(request) }
         return try BLEProtocol.parseButtonFunction(id: id, payload)
     }
 
     /// Writes one entry and checks the mouse reads it back before returning.
-    func setButtonFunction(_ id: UInt8, block: [UInt8]) throws {
+    public func setButtonFunction(_ id: UInt8, block: [UInt8]) throws {
         let request = BLEProtocol.Request(key: .buttonFunctionSet(id, slot: slot),
                                           payload: BLEProtocol.buttonFunctionPayload(id: id, block: block, slot: slot),
                                           reply: .ack)
@@ -227,14 +227,14 @@ final class BluetoothDevice: NSObject, RazerTransport, @unchecked Sendable {
     }
 
     /// One entry's HyperShift layer; nil when nothing was written there.
-    func readShiftedButtonFunction(_ id: UInt8) throws -> [UInt8]? {
+    public func readShiftedButtonFunction(_ id: UInt8) throws -> [UInt8]? {
         let request = BLEProtocol.Request(key: .buttonFunctionGet(id), payload: [], reply: .ack)
         let payload = try RazerRetry.run(attempts: HIDDevice.defaultAttempts) { try exchange(request) }
         return try BLEProtocol.parseShiftedButtonFunction(id: id, payload)
     }
 
     /// Writes one entry's HyperShift layer and checks the mouse reads it back.
-    func setShiftedButtonFunction(_ id: UInt8, block: [UInt8]) throws {
+    public func setShiftedButtonFunction(_ id: UInt8, block: [UInt8]) throws {
         let request = BLEProtocol.Request(key: .buttonFunctionSet(id, slot: slot),
                                           payload: BLEProtocol.buttonFunctionPayload(id: id, block: block, layer: 0x01, slot: slot),
                                           reply: .ack)
@@ -256,7 +256,7 @@ final class BluetoothDevice: NSObject, RazerTransport, @unchecked Sendable {
         return try exchange.assembler.result()
     }
 
-    func close() {
+    public func close() {
         queue.async {
             if let pending = self.pending { self.finish(pending, error: HIDDevice.HIDError.notFound) }
             if let peripheral = self.peripheral { self.central?.cancelPeripheralConnection(peripheral) }
@@ -297,28 +297,28 @@ final class BluetoothDevice: NSObject, RazerTransport, @unchecked Sendable {
 // MARK: - CoreBluetooth delegates
 
 extension BluetoothDevice: CBCentralManagerDelegate, CBPeripheralDelegate {
-    func centralManagerDidUpdateState(_ central: CBCentralManager) {
+    public func centralManagerDidUpdateState(_ central: CBCentralManager) {
         // Any settled state wakes `connect`, which then checks for `.poweredOn`.
         if central.state != .unknown && central.state != .resetting { onStateChange?() }
         if central.state != .poweredOn, let pending { finish(pending, error: HIDDevice.HIDError.notFound) }
     }
 
-    func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+    public func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
         peripheral.discoverServices([service, deviceInfoService])
     }
 
-    func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
+    public func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
         notifyReady = false
         if let pending { finish(pending, error: HIDDevice.HIDError.notFound) }
     }
 
-    func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
+    public func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         for s in peripheral.services ?? [] where s.uuid == service || s.uuid == deviceInfoService {
             peripheral.discoverCharacteristics(s.uuid == service ? [writeUUID, notifyUUID] : [pnpIDUUID], for: s)
         }
     }
 
-    func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
+    public func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
         for c in service.characteristics ?? [] {
             switch c.uuid {
             case writeUUID: writeCharacteristic = c
@@ -329,19 +329,19 @@ extension BluetoothDevice: CBCentralManagerDelegate, CBPeripheralDelegate {
         }
     }
 
-    func peripheral(_ peripheral: CBPeripheral, didUpdateNotificationStateFor characteristic: CBCharacteristic, error: Error?) {
+    public func peripheral(_ peripheral: CBPeripheral, didUpdateNotificationStateFor characteristic: CBCharacteristic, error: Error?) {
         guard characteristic.uuid == notifyUUID else { return }
         notifyReady = error == nil && characteristic.isNotifying
         onStateChange?()
     }
 
-    func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
+    public func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
         guard let pending else { return }
         if let error { finish(pending, error: error); return }
         writeNextFrame()
     }
 
-    func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
+    public func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
         guard let value = characteristic.value else { return }
         if characteristic.uuid == pnpIDUUID {
             // PnP ID: [vendorIdSource, vid_lo, vid_hi, pid_lo, pid_hi, ver_lo, ver_hi]. Only

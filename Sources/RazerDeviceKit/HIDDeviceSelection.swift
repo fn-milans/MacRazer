@@ -6,22 +6,30 @@ import RazerProtocol
 
 /// The facts about one HID interface that device selection needs — extracted from
 /// `IOHIDDevice` properties into plain values so the ranking logic is unit-testable.
-struct HIDInterfaceInfo: Equatable {
-    let pid: Int
+public struct HIDInterfaceInfo: Equatable, Sendable {
+    public let pid: Int
     /// USB location — distinguishes two units of the same model (same PID, different port).
-    let locationID: Int
-    let usagePage: Int
-    let usage: Int
-    let maxFeatureReportSize: Int
+    public let locationID: Int
+    public let usagePage: Int
+    public let usage: Int
+    public let maxFeatureReportSize: Int
+
+    public init(pid: Int, locationID: Int, usagePage: Int, usage: Int, maxFeatureReportSize: Int) {
+        self.pid = pid
+        self.locationID = locationID
+        self.usagePage = usagePage
+        self.usage = usage
+        self.maxFeatureReportSize = maxFeatureReportSize
+    }
 }
 
 /// Picks which physical device — and which of its interfaces — to bind as the Razer control
 /// channel. Matching is vendor-wide (any VID 0x1532 product enumerates), so with a Razer
 /// keyboard or a second mouse attached, "highest feature-report score anywhere" could bind
 /// the wrong product entirely; ranking by device first prevents that.
-enum HIDDeviceSelection {
+public enum HIDDeviceSelection: Sendable {
     /// Interfaces that can carry the 90-byte Razer control report.
-    static let controlReportSize = 90
+    public static let controlReportSize = 90
 
     /// Index into `interfaces` of the control interface to open, or nil if no interface can
     /// carry the control report.
@@ -35,7 +43,7 @@ enum HIDDeviceSelection {
     ///    report a LocationID and default to 0) — so which of two identical mice wins is
     ///    stable across reconnects instead of following Set/Dictionary iteration order.
     /// Within the winning device, the interface with the best `controlScore` is chosen.
-    static func controlInterfaceIndex(interfaces: [HIDInterfaceInfo]) -> Int? {
+    public static func controlInterfaceIndex(interfaces: [HIDInterfaceInfo]) -> Int? {
         struct DeviceKey: Hashable { let pid: Int; let locationID: Int }
         let groups = Dictionary(grouping: interfaces.indices) {
             DeviceKey(pid: interfaces[$0].pid, locationID: interfaces[$0].locationID)
@@ -73,7 +81,7 @@ enum HIDDeviceSelection {
     /// Higher score = more likely to be this device's Razer control interface. (Which
     /// *device* to use is decided by the ranking above; this only picks among one device's
     /// own interfaces.)
-    static func controlScore(_ i: HIDInterfaceInfo) -> Int {
+    public static func controlScore(_ i: HIDInterfaceInfo) -> Int {
         var score = i.maxFeatureReportSize        // prefer interfaces carrying big feature reports
         if i.usagePage >= 0xFF00 { score += 1000 } // vendor-defined usage page (some models)
         if i.usagePage == 0x01 && i.usage == 0x02 { score += 500 } // the Mouse interface over a keyboard's

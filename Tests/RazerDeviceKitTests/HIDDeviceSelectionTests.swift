@@ -2,7 +2,7 @@
 // Part of Serpentine, a control app for Razer mice on macOS. See LICENSE and NOTICE.md.
 
 import XCTest
-@testable import Serpentine
+@testable import RazerDeviceKit
 
 final class HIDDeviceSelectionTests: XCTestCase {
     /// The Cobra HyperSpeed dongle's real interface set, captured from `Serpentine info`

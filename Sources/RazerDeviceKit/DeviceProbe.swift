@@ -11,7 +11,7 @@ import RazerProtocol
 /// Just the two calls the probes make, spelled exactly as `HIDDevice` spells them, so
 /// conforming adds nothing to `HIDDevice` itself. Nothing model-specific: deciding per model
 /// (which LED to write, say) is the caller's job.
-protocol DeviceProbeChannel {
+public protocol DeviceProbeChannel {
     func send(_ report: RazerReport) throws -> RazerReport
     func sendWithRetry(_ report: RazerReport, attempts: Int) throws -> RazerReport
 }
@@ -26,59 +26,91 @@ extension HIDDevice: DeviceProbeChannel {}
 /// against what the protocol accepts is the caller's job, because the right answer to bad
 /// input differs between a terminal (a usage line) and the app (a control that never offers
 /// it).
-enum DeviceProbe {
+public enum DeviceProbe: Sendable {
     /// The retry count probes use: the same constant everyday traffic uses, not a copy of it.
-    static let attempts = HIDDevice.defaultAttempts
+    public static let attempts = HIDDevice.defaultAttempts
 
     /// A value read from the mouse, with the response it was decoded from.
-    struct Reading<Value: Sendable>: Sendable {
-        let value: Value
-        let response: RazerReport
+    public struct Reading<Value: Sendable>: Sendable {
+        public let value: Value
+        public let response: RazerReport
+
+        public init(value: Value, response: RazerReport) {
+            self.value = value
+            self.response = response
+        }
     }
 
     /// A write followed by a read of the same setting. The acknowledgement only says the
     /// command arrived; the read-back is what says it took.
-    struct WriteCheck<Value: Sendable>: Sendable {
-        let requested: Value
-        let setResponse: RazerReport
-        let readBack: Reading<Value>
+    public struct WriteCheck<Value: Sendable>: Sendable {
+        public let requested: Value
+        public let setResponse: RazerReport
+        public let readBack: Reading<Value>
+
+        public init(requested: Value, setResponse: RazerReport, readBack: Reading<Value>) {
+            self.requested = requested
+            self.setResponse = setResponse
+            self.readBack = readBack
+        }
     }
 
-    struct DPI: Equatable {
-        let x: UInt16
-        let y: UInt16
+    public struct DPI: Equatable, Sendable {
+        public let x: UInt16
+        public let y: UInt16
+
+        public init(x: UInt16, y: UInt16) {
+            self.x = x
+            self.y = y
+        }
     }
 
-    struct StageTable: Equatable {
-        let stages: [Int]
+    public struct StageTable: Equatable, Sendable {
+        public let stages: [Int]
         /// args[1] of the answer, as the mouse reports it.
-        let activeByte: Int
+        public let activeByte: Int
+
+        public init(stages: [Int], activeByte: Int) {
+            self.stages = stages
+            self.activeByte = activeByte
+        }
     }
 
     /// A stage-table write and the table read back. There is no `confirmed` here, unlike
     /// `WriteCheck`: the active byte a mouse answers with need not be the index it was given.
-    struct StageWrite: Sendable {
-        let setResponse: RazerReport
-        let readBack: Reading<StageTable>
+    public struct StageWrite: Sendable {
+        public let setResponse: RazerReport
+        public let readBack: Reading<StageTable>
+
+        public init(setResponse: RazerReport, readBack: Reading<StageTable>) {
+            self.setResponse = setResponse
+            self.readBack = readBack
+        }
     }
 
     /// One LED group's answer to a brightness read. Refusals are expected, not failures: most
     /// models answer on one or two of the four groups, and which ones is the point of asking.
-    struct LEDAnswer: Sendable {
-        let name: String
-        let led: UInt8
-        let result: Result<Reading<UInt8>, Error>
+    public struct LEDAnswer: Sendable {
+        public let name: String
+        public let led: UInt8
+        public let result: Result<Reading<UInt8>, Error>
+
+        public init(name: String, led: UInt8, result: Result<Reading<UInt8>, Error>) {
+            self.name = name
+            self.led = led
+            self.result = result
+        }
     }
 
     /// The groups the sweep asks, in order. LOGO first, since it is the one most models use.
-    static let ledGroups: [(name: String, led: UInt8)] = [
+    public static let ledGroups: [(name: String, led: UInt8)] = [
         ("LOGO", Razer.logoLed), ("SCROLL", Razer.scrollLed),
         ("ZERO", Razer.zeroLed), ("BACKLIGHT", Razer.backlightLed),
     ]
 
     // MARK: - Identity
 
-    static func firmware(_ channel: DeviceProbeChannel) throws -> Reading<String> {
+    public static func firmware(_ channel: DeviceProbeChannel) throws -> Reading<String> {
         let response = try channel.sendWithRetry(RazerCommands.getFirmwareVersion(), attempts: attempts)
         return Reading(value: RazerCommands.parseFirmwareVersion(response), response: response)
     }
@@ -86,39 +118,39 @@ enum DeviceProbe {
     // MARK: - Battery
 
     /// The raw 0-255 level. args[0] of the answer is the var-store echo; the level is args[1].
-    static func battery(_ channel: DeviceProbeChannel) throws -> Reading<UInt8> {
+    public static func battery(_ channel: DeviceProbeChannel) throws -> Reading<UInt8> {
         let response = try channel.sendWithRetry(RazerCommands.getBatteryLevel(), attempts: attempts)
         return Reading(value: response.arguments[1], response: response)
     }
 
-    static func charging(_ channel: DeviceProbeChannel) throws -> Reading<Bool> {
+    public static func charging(_ channel: DeviceProbeChannel) throws -> Reading<Bool> {
         let response = try channel.sendWithRetry(RazerCommands.getChargingStatus(), attempts: attempts)
         return Reading(value: response.arguments[1] != 0, response: response)
     }
 
     // MARK: - DPI
 
-    static func readDPI(_ channel: DeviceProbeChannel) throws -> Reading<DPI> {
+    public static func readDPI(_ channel: DeviceProbeChannel) throws -> Reading<DPI> {
         let response = try channel.sendWithRetry(RazerCommands.getDPI(), attempts: attempts)
         let parsed = RazerCommands.parseDPI(response)
         return Reading(value: DPI(x: parsed.x, y: parsed.y), response: response)
     }
 
-    static func writeDPI(_ channel: DeviceProbeChannel, _ value: DPI) throws -> WriteCheck<DPI> {
+    public static func writeDPI(_ channel: DeviceProbeChannel, _ value: DPI) throws -> WriteCheck<DPI> {
         let set = try channel.sendWithRetry(RazerCommands.setDPI(x: value.x, y: value.y), attempts: attempts)
         return WriteCheck(requested: value, setResponse: set, readBack: try readDPI(channel))
     }
 
     // MARK: - DPI stages
 
-    static func readStages(_ channel: DeviceProbeChannel) throws -> Reading<StageTable> {
+    public static func readStages(_ channel: DeviceProbeChannel) throws -> Reading<StageTable> {
         let response = try channel.sendWithRetry(RazerCommands.getDPIStages(), attempts: attempts)
         let table = StageTable(stages: RazerCommands.parseDPIStages(response),
                                activeByte: RazerCommands.parseActiveDPIStage(response))
         return Reading(value: table, response: response)
     }
 
-    static func writeStages(_ channel: DeviceProbeChannel, stages: [Int], activeStage: Int) throws -> StageWrite {
+    public static func writeStages(_ channel: DeviceProbeChannel, stages: [Int], activeStage: Int) throws -> StageWrite {
         let set = try channel.sendWithRetry(RazerCommands.setDPIStages(stages, activeStage: activeStage),
                                             attempts: attempts)
         return StageWrite(setResponse: set, readBack: try readStages(channel))
@@ -127,12 +159,12 @@ enum DeviceProbe {
     // MARK: - Polling rate
 
     /// In Hz, or 0 for an answer the protocol table doesn't name.
-    static func readPollingRate(_ channel: DeviceProbeChannel) throws -> Reading<Int> {
+    public static func readPollingRate(_ channel: DeviceProbeChannel) throws -> Reading<Int> {
         let response = try channel.sendWithRetry(RazerCommands.getPollingRate(), attempts: attempts)
         return Reading(value: RazerCommands.parsePollingRate(response), response: response)
     }
 
-    static func writePollingRate(_ channel: DeviceProbeChannel, hz: Int) throws -> WriteCheck<Int> {
+    public static func writePollingRate(_ channel: DeviceProbeChannel, hz: Int) throws -> WriteCheck<Int> {
         let set = try channel.sendWithRetry(RazerCommands.setPollingRate(hz), attempts: attempts)
         return WriteCheck(requested: hz, setResponse: set, readBack: try readPollingRate(channel))
     }
@@ -145,7 +177,7 @@ enum DeviceProbe {
     /// deterministic, the same answer every time. Retrying turns a sweep on a model where three
     /// groups refuse into nine round trips and most of a second of pure backoff, in a probe
     /// whose whole job is to report which group answered.
-    static func brightnessSweep(_ channel: DeviceProbeChannel) -> [LEDAnswer] {
+    public static func brightnessSweep(_ channel: DeviceProbeChannel) -> [LEDAnswer] {
         ledGroups.map { group in
             let result = Result {
                 let response = try channel.send(RazerCommands.getBrightness(led: group.led))
@@ -157,7 +189,7 @@ enum DeviceProbe {
 
     /// Writes a raw 0-255 brightness to one group and reads it back. Unlike the sweep, a
     /// refusal here is a real failure, so it throws.
-    static func writeBrightness(_ channel: DeviceProbeChannel, raw: UInt8, led: UInt8) throws -> WriteCheck<UInt8> {
+    public static func writeBrightness(_ channel: DeviceProbeChannel, raw: UInt8, led: UInt8) throws -> WriteCheck<UInt8> {
         let set = try channel.sendWithRetry(RazerCommands.setBrightness(raw, led: led), attempts: attempts)
         let back = try channel.sendWithRetry(RazerCommands.getBrightness(led: led), attempts: attempts)
         return WriteCheck(requested: raw, setResponse: set,
@@ -166,7 +198,7 @@ enum DeviceProbe {
 
     /// Sends a lighting effect. There is no read-back: the protocol has no command for asking
     /// which effect is showing; only the person looking at the mouse can say.
-    static func applyLighting(_ channel: DeviceProbeChannel, _ report: RazerReport) throws -> RazerReport {
+    public static func applyLighting(_ channel: DeviceProbeChannel, _ report: RazerReport) throws -> RazerReport {
         try channel.sendWithRetry(report, attempts: attempts)
     }
 }
@@ -174,5 +206,5 @@ enum DeviceProbe {
 extension DeviceProbe.WriteCheck where Value: Equatable {
     /// Whether the mouse kept what it was asked to. A mouse that clamps (a DPI above its
     /// ceiling) or quietly ignores a write reads back something else.
-    var confirmed: Bool { readBack.value == requested }
+    public var confirmed: Bool { readBack.value == requested }
 }

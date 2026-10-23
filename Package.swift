@@ -15,9 +15,16 @@ let package = Package(
             name: "RazerProtocol",
             path: "Sources/RazerProtocol"
         ),
+        // Talking to the hardware: USB HID and Bluetooth LE transports, device discovery and
+        // monitoring, and the probes the CLI runs.
+        .target(
+            name: "RazerDeviceKit",
+            dependencies: ["RazerProtocol"],
+            path: "Sources/RazerDeviceKit"
+        ),
         .executableTarget(
             name: "Serpentine",
-            dependencies: ["RazerProtocol"],
+            dependencies: ["RazerProtocol", "RazerDeviceKit"],
             path: "Sources/Serpentine"
         ),
         // Tests import the executable target directly (@testable) — supported by SwiftPM on
@@ -28,8 +35,13 @@ let package = Package(
             path: "Tests/RazerProtocolTests"
         ),
         .testTarget(
+            name: "RazerDeviceKitTests",
+            dependencies: ["RazerDeviceKit", "RazerProtocol"],
+            path: "Tests/RazerDeviceKitTests"
+        ),
+        .testTarget(
             name: "SerpentineTests",
-            dependencies: ["Serpentine", "RazerProtocol"],
+            dependencies: ["Serpentine", "RazerProtocol", "RazerDeviceKit"],
             path: "Tests/SerpentineTests"
         ),
     ]

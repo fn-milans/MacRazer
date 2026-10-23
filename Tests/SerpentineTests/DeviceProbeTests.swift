@@ -4,6 +4,7 @@
 import XCTest
 @testable import Serpentine
 @testable import RazerProtocol
+@testable import RazerDeviceKit
 
 /// `DeviceProbe` is what the CLI probes run on.
 /// These drive it with a fake mouse that records every command and answers the way the real
