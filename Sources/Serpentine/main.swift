@@ -167,6 +167,17 @@ case "render-window":
     window.setFrameOrigin(NSPoint(x: -20000, y: -20000))
     window.orderFrontRegardless()
     RunLoop.main.run(until: Date().addingTimeInterval(1.0))
+    // "scrolled": the page scrolled down, to see that nothing slides under the title bar.
+    if args.contains("scrolled") {
+        func scrollViews(_ view: NSView) -> [NSScrollView] {
+            (view as? NSScrollView).map { [$0] } ?? view.subviews.flatMap(scrollViews)
+        }
+        for scroll in scrollViews(window.contentView!) {
+            scroll.contentView.scroll(to: NSPoint(x: 0, y: 300))
+            scroll.reflectScrolledClipView(scroll.contentView)
+        }
+        RunLoop.main.run(until: Date().addingTimeInterval(0.5))
+    }
     let frameView = window.contentView!.superview!
     guard let rep = frameView.bitmapImageRepForCachingDisplay(in: frameView.bounds) else { print("Render failed"); exit(1) }
     frameView.cacheDisplay(in: frameView.bounds, to: rep)

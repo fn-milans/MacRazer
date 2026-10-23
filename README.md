@@ -30,9 +30,10 @@ Razer mice that use the same HID protocol family, but those are untested, so tre
 ## Features
 
 - **A dashboard for the mouse**: a tile for each setting it has (DPI, polling rate, lighting,
-  sleep, low battery, scroll wheel, profiles), each marked with where it lives, and the button
-  remaps in a column beside them. It rearranges to the window's width. The battery history
-  opens from the mouse's tile; Serpentine's settings are behind the cog.
+  sleep, low battery, scroll wheel), each marked with where it lives, and the button remaps in
+  a column beside them. It rearranges to the window's width. Profiles are switched, added,
+  renamed and deleted from the title bar; the battery history opens from the mouse's tile;
+  Serpentine's settings are behind the cog.
 - **Battery**, charging status, and a learned time-until-empty estimate. History and the
   estimate are kept per physical device (by serial number).
 - **Battery usage**: the current discharge curve, the discharge rate, time since the last full
@@ -50,7 +51,7 @@ Razer mice that use the same HID protocol family, but those are untested, so tre
 - Settings are written to the mouse's **onboard memory** where supported, so they persist when
   the app is not running.
 - **Background mode** (Settings): closing the window leaves a small menu bar item (the mouse's
-  status, Open, Quit), so remaps
+  status, Settings, Quit), so remaps
   the mouse can't store, low-battery alerts and battery history keep working. Off by default;
   Serpentine asks once when you set up something that needs it. It can then **start at login**,
   in the menu bar with no window.

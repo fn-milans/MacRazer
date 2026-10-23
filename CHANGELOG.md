@@ -9,19 +9,19 @@ expect rough edges until 1.0.
 ### Changed
 - **Serpentine is a windowed app.** A normal Mac app with a Dock icon, menus and one window on
   the same glass as the popover. Its dashboard has the mouse and its battery across the top,
-  then a tile for each setting the mouse has: DPI, polling rate, lighting, sleep, low battery,
-  scroll wheel and profiles, each with its current value and where it lives (in the mouse, or
+  then a tile for each setting the mouse has: DPI, polling rate, lighting, sleep, low battery
+  and scroll wheel, each with its current value and where it lives (in the mouse, or
   done by Serpentine), and the button remaps in a column of their own beside them. Wide, there
   are two columns of tiles; narrower, one; narrow, everything in one column with the buttons
-  last. The battery history opens from the mouse's tile, with a back button; Settings is
+  last. Profiles live in the title bar: one menu switches, adds, renames, resets and deletes
+  them. The battery history opens from the mouse's tile, with a back button; Settings is
   behind the cog. The title is on the left of the title bar, the
   status, profile menu, Refresh and Settings on the right. Input Monitoring setup is a sheet.
   The menu bar popover and the Configure Buttons, Setup and Settings windows are gone.
 
 - **Background mode replaces the menu bar app.** Closing the window quits, unless Settings ›
   Keep running in the background is on: then Serpentine stays as a small menu bar item, the
-  serpent alone with no percentage, whose menu shows the mouse's status and opens the window or
-  quits. It is off on a new install and on if you are upgrading from
+  serpent alone with no percentage, whose menu shows the mouse's status, Settings and Quit. It is off on a new install and on if you are upgrading from
   the menu bar version. Setting up something only the app can do (a remap the mouse can't store,
   the DPI Cycle action) asks once whether to turn it on. Start at login now needs background
   mode, and starts Serpentine in the menu bar with no window. The "Show battery % in menu bar"

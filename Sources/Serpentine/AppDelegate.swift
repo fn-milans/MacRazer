@@ -27,13 +27,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
                                                        permissions: permissions, background: background,
                                                        launchAtLogin: launchAtLogin)
     private lazy var menuBarItem = MenuBarItem(
-        controller: controller, openWindow: { [weak self] in self?.showMainWindow() })
+        controller: controller, openSettings: { [weak self] in self?.showSettings() })
     private lazy var appMenu = AppMenu(actions: .init(
         about: { [weak self] in self.map { $0.present($0.aboutWindow) } },
-        settings: { [weak self] in
-            self?.showMainWindow()
-            self?.mainWindow.navigation.showingSettings = true
-        },
+        settings: { [weak self] in self?.showSettings() },
         showMainWindow: { [weak self] in self?.showMainWindow() },
         refresh: { [weak self] in self?.controller.refreshAll() },
         go: { [weak self] route in
@@ -192,6 +189,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     // MARK: - Main window
 
     @objc func showMainWindow() { present(mainWindow) }
+
+    /// The window, with its settings sheet up.
+    private func showSettings() {
+        showMainWindow()
+        mainWindow.navigation.showingSettings = true
+    }
 
     /// Every way the app opens one of its windows goes through here. A window needs the app in
     /// the Dock, so a background app comes back to it.

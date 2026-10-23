@@ -40,7 +40,7 @@ struct MainWindowView: View {
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
                 syncStatus
-                profileMenu
+                ProfileMenu(controller: controller, remapper: remapper)
                 Button {
                     controller.refreshAll()
                 } label: {
@@ -79,6 +79,9 @@ struct MainWindowView: View {
             .padding(Self.pagePadding)
             .frame(maxWidth: .infinity, alignment: .topLeading)
         }
+        // A scroll view draws under the title bar by default, its content inset below it.
+        // Clipped to its own frame, which ends at the toolbar, nothing slides beneath the title.
+        .clipped()
     }
 
     static let pagePadding: CGFloat = 20
@@ -96,7 +99,11 @@ struct MainWindowView: View {
     @ViewBuilder
     private var syncStatus: some View {
         if controller.connected {
-            if let error = controller.onboardWriteError {
+            if controller.profileApplyFailed {
+                Label("Profile not applied", systemImage: "exclamationmark.triangle.fill")
+                    .foregroundStyle(Color.batteryLow)
+                    .help("Couldn't apply that profile. The mouse isn't responding.")
+            } else if let error = controller.onboardWriteError {
                 Label("Not all saved", systemImage: "exclamationmark.triangle.fill")
                     .foregroundStyle(Color.batteryMid)
                     .help(error)
@@ -105,40 +112,6 @@ struct MainWindowView: View {
                     .foregroundStyle(Color.razerGreenText)
                     .help("The mouse holds these settings itself.")
             }
-        }
-    }
-
-    /// The profile in use, and the others to switch to: the mouse's slots, or saved profiles.
-    @ViewBuilder
-    private var profileMenu: some View {
-        if controller.usesSlotProfiles {
-            Menu {
-                ForEach(controller.onboardSlotList, id: \.self) { slot in
-                    Toggle(controller.slotName(slot), isOn: Binding(
-                        get: { controller.activeOnboardSlot == slot },
-                        set: { if $0 { controller.switchToSlot(slot) } }))
-                }
-            } label: {
-                Label(controller.activeOnboardSlot.map(controller.slotName) ?? "Profile",
-                      systemImage: "person.crop.square")
-            }
-            .labelStyle(.titleAndIcon)
-            .help("Switch the mouse's profile")
-            .disabled(!controller.connected)
-        } else if controller.supportsProfiles, !controller.profiles.isEmpty {
-            Menu {
-                ForEach(controller.profiles) { profile in
-                    Toggle(profile.name, isOn: Binding(
-                        get: { controller.activeProfileID == profile.id },
-                        set: { if $0 { controller.applyProfile(profile, remapper: remapper) } }))
-                }
-            } label: {
-                Label(controller.profiles.first { $0.id == controller.activeProfileID }?.name ?? "Profile",
-                      systemImage: "person.crop.square")
-            }
-            .labelStyle(.titleAndIcon)
-            .help("Apply a saved profile")
-            .disabled(!controller.connected)
         }
     }
 

@@ -229,17 +229,21 @@ Refresh (⌘R) and the Settings cog (⌘,) at the trailing edge.
 
 - **Dashboard** (`Dashboard.swift`): the mouse across the top (`DeviceTile`: the model, its
  link, the battery as a ring, the time left and Battery History), then a tile per setting the
- mouse has (DPI, polling rate, lighting, sleep, low battery, scroll wheel, profiles) and the
+ mouse has (DPI, polling rate, lighting, sleep, low battery, scroll wheel) and the
  **Buttons** column (`RemapView`, unfolded). A `Tile` has a coloured symbol, the name, where
  the setting lives (`ResidencyMark`), the value large, and the controls (the feature views in
  `Features/`). Offline the tiles stay, dimmed, with the last known values.
 - **Responsive** (`Dashboard.Layout`, from the width): at 1180 pt and up, two columns of tiles
  and the buttons column (400 pt); from 820, one column of tiles and the buttons column; below
  that, one column with the buttons last and the battery under the mouse's name. The window
- goes down to 560 pt wide. The pages start under the title bar (no full-size content view), so
- they never scroll beneath it.
+ goes down to 560 pt wide. The page's scroll view is clipped at the toolbar, so content never
+ slides beneath the title bar (`render-window … scrolled` shows it).
 - **Battery History** opens from the mouse's tile in place, with a back button
- (`NavigationStack`, `WindowRoute`). The colour wheel and Manage Profiles open as sheets.
+ (`NavigationStack`, `WindowRoute`). The colour wheel opens as a sheet.
+- **Profiles** are in the title bar (`ProfileMenu`): the one in use is the label; the menu
+ switches, adds (a new slot, or the current setup saved), renames, resets to factory (slots)
+ and deletes, with confirmations, and Manage Profiles… opens the full list in a sheet. A
+ failed apply turns the status mark into a warning.
 - **Settings** (`SettingsView`, from the cog): background mode, start at login, connection
  sounds, theme and glass, in a sheet.
 - **Setup**: Input Monitoring and Accessibility in a sheet (`PermissionsView`), opened at
@@ -252,8 +256,8 @@ Refresh (⌘R) and the Settings cog (⌘,) at the trailing edge.
 closing the window quits (`applicationShouldTerminateAfterLastWindowClosed`). On, closing it
 switches the app to `.accessory` (no Dock icon) and leaves `MenuBarItem`: the serpent (Health
 Icons' `animal-snake`, drawn from its SVG path by `SVGPath.swift`; a template image, a bolt while
-charging, dimmed when the mouse is away), no percentage. Its menu is the mouse's status, Open
-Serpentine and Quit Serpentine.
+charging, dimmed when the mouse is away), no percentage. Its menu is the mouse's status,
+Settings… (the window with its settings sheet) and Quit.
 
 - Off on a new install; on for an upgrade from the menu bar version (a battery reading or the
  old login-item flag in the defaults), so nothing it relied on disappears.

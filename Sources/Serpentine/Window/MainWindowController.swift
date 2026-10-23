@@ -67,10 +67,9 @@ final class MainWindowController: NSObject, AppWindowPresenter, NSWindowDelegate
         // The panes' titles and toolbar items go in the window's own title bar.
         hosting.sceneBridgingOptions = [.title, .toolbars]
         let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1240, height: 800),
-                         // Not full-size content: the pages start under the title bar and scroll
-                         // clipped there, rather than sliding beneath it. The glass still covers
-                         // the title bar (`WindowBackdrop`).
-                         styleMask: [.titled, .closable, .miniaturizable, .resizable],
+                         // Full-size content keeps the title and the toolbar items on one row;
+                         // the pages are clipped below the toolbar (`MainWindowView.page`).
+                         styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
                          backing: .buffered, defer: false)
         w.contentViewController = hosting
         w.title = "Serpentine"

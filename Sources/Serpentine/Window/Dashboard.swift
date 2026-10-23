@@ -6,7 +6,8 @@ import RazerProtocol
 
 /// The main window's home: the mouse and its battery across the top, then a tile for each of
 /// its settings, only the ones this mouse has, and the buttons in a column of their own beside
-/// them. The battery history opens from the mouse's tile.
+/// them. The battery history opens from the mouse's tile; the profiles are in the title bar
+/// (`ProfileMenu`).
 ///
 /// It follows the window's width (`Layout`): two columns of tiles and the buttons column when
 /// it's wide, one of each when it's not, and a single column, buttons last, when it's narrow.
@@ -39,12 +40,10 @@ struct Dashboard: View {
     @State private var color: Color = .razerGreen
     @State private var sleepTimeout: Double = 300
     @State private var lowBattery: Double = 33
-    @State private var addingProfile = false
     @State private var pickingColor = false
-    @State private var managingProfiles = false
 
     /// The setting tiles, in reading order.
-    private enum Kind: Hashable { case dpi, polling, lighting, sleep, lowBattery, scroll, profiles }
+    private enum Kind: Hashable { case dpi, polling, lighting, sleep, lowBattery, scroll }
 
     private var kinds: [Kind] {
         var out: [Kind] = [.dpi]
@@ -53,7 +52,6 @@ struct Dashboard: View {
         if controller.supportsSleepTimeout { out.append(.sleep) }
         if controller.lowBatteryThreshold != nil { out.append(.lowBattery) }
         if controller.smartReel != nil || controller.scrollAcceleration != nil { out.append(.scroll) }
-        if controller.supportsProfiles || controller.onboardSlotsUnread { out.append(.profiles) }
         return out
     }
 
@@ -83,17 +81,11 @@ struct Dashboard: View {
         // A failed device write leaves the controller's values unchanged, so no value-driven
         // onChange fires — snap the optimistic slider state back to reality explicitly.
         .onChange(of: controller.lastWriteFailure) { _, _ in sync() }
-        .onChange(of: controller.supportsProfiles) { _, supported in if !supported { addingProfile = false } }
         .sheet(isPresented: $pickingColor) {
             ColorPickerPage(color: $color, onBack: { pickingColor = false }) { rgb in
                 controller.setStaticColor(rgb)
             }
             .frame(width: 320)
-        }
-        .sheet(isPresented: $managingProfiles) {
-            SheetPage(title: "Profiles", onDone: { managingProfiles = false }) {
-                ProfilesView(controller: controller, remapper: remapper)
-            }
         }
     }
 
@@ -154,8 +146,6 @@ struct Dashboard: View {
                 MouseSwitchesSection(controller: controller, inTile: true)
             }
             .disabled(!controller.connected)
-        case .profiles:
-            profilesTile
         }
     }
 
@@ -172,19 +162,6 @@ struct Dashboard: View {
             RemapView(remapper: remapper, controller: controller)
         }
         .disabled(!controller.connected)
-    }
-
-    private var profilesTile: some View {
-        Tile(title: "Profiles", symbol: "person.crop.square.on.square.angled.fill", tint: .purple,
-             value: profileValue) {
-            QuickProfiles(controller: controller, remapper: remapper, isAddingProfile: $addingProfile,
-                          onManage: { managingProfiles = true })
-        }
-    }
-
-    private var profileValue: String? {
-        if controller.usesSlotProfiles { return controller.activeOnboardSlot.map(controller.slotName) }
-        return controller.profiles.first { $0.id == controller.activeProfileID }?.name
     }
 
     private func sync() {
