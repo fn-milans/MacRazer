@@ -146,8 +146,16 @@ Check OpenRazer for that PID and open an issue or PR; we may need to parameteriz
 capability field on the registry row, never a PID check in the code; the fields there are
 listed in [DOCUMENTATION.md §8.1](docs/DOCUMENTATION.md#81-capability-fields).
 
-Include the model, PID, and the probe output in your PR. Add a test to
-`RazerDevicesTests.swift` for anything model-specific you introduce.
+Include the model, PID, and the probe output in your PR. The registry row goes in
+`Sources/RazerProtocol/RazerDevices.swift`, and a mouse that fits the existing fields needs
+nothing else. Add a test to `RazerDevicesTests.swift` for anything model-specific you
+introduce, and to `DeviceCapabilitiesTests.swift` for what the row promises on each link.
+
+## How the code is laid out
+`Sources/RazerProtocol` is the protocol, pure and AppKit-free; `Sources/RazerDeviceKit` talks
+to the hardware; `Sources/SerpentineCLI` is `serpentine-cli`; `Sources/Serpentine` is the app.
+[DOCUMENTATION.md §10](docs/DOCUMENTATION.md#10-file-map) maps the files, and
+[docs/plans](docs/plans) has the refactor and window plans.
 
 ## Other contributions
 Bug fixes, UI polish, and docs are all welcome. Keep new code in the style of the surrounding

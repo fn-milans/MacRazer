@@ -165,7 +165,10 @@ on the Cobra HyperSpeed (Bluetooth PID `0x00DC`, vendor `0x068E`).
 ## 5. The controller, `MouseController.swift`
 
 The orchestrator and single source of UI truth (an `ObservableObject`). All blocking HID IO
-runs on a serial `io` queue; `@Published` state is updated on the main queue via `publish`.
+runs on one serial queue (`DeviceQueue`), in order, with what the user asked for ahead of
+background reads; `@Published` state is updated on the main queue via `publish`. The work is
+split by feature into `MouseController+*.swift`; battery history lives in `BatteryTracker`.
+What a mouse can do on its link is `capabilities` (`DeviceCapabilities`).
 
 Published state: `connected`, `batteryPercent`, `charging`, `dpi`, `pollRate`, `brightness`,
 `timeEstimate`, `statusText`, `deviceName`, `deviceSupported`, `deviceHasBattery`,
@@ -358,8 +361,10 @@ verified for another model:
  OpenRazer's `razermouse_driver.c` switch statements / `daemon/.../mouse.py` METHODS.
 3. Test each control on hardware (use the CLI diagnostics, §9).
 
-If a model uses a different dialect, add a capability field to `RazerDeviceInfo` and read
-it through a `RazerDevices` lookup rather than checking PIDs in the code.
+If a model uses a different dialect, add a capability field to `RazerDeviceInfo` and expose
+it on `DeviceCapabilities`, which is what the app asks, rather than checking PIDs in the code.
+Adding a mouse that fits the existing fields touches `Sources/RazerProtocol/RazerDevices.swift`
+and nothing else; `DeviceCapabilitiesTests` is where to pin what its row promises.
 
 ### 8.1 Capability fields
 
@@ -390,8 +395,8 @@ that set them get them.
 
 ## 9. CLI diagnostics
 
-Run from a terminal (uses the Terminal's permission grant). These were how each feature was
-verified against hardware:
+`serpentine-cli` is its own executable. Run it from a terminal (it uses the Terminal's
+permission grant). These were how each feature was verified against hardware:
 
 ```sh
 swift run serpentine-cli info # list HID interfaces (find the control one)
@@ -400,8 +405,9 @@ swift run serpentine-cli dpi [x] [y] # read / set DPI
 swift run serpentine-cli poll [125|500|1000]
 swift run serpentine-cli rgb static ff0000 # or: spectrum | wave | off
 swift run serpentine-cli brightness [0-100] # sweeps LOGO/SCROLL/ZERO/BACKLIGHT LEDs
+swift run serpentine-cli stages [d1,d2,…] [active] # read / write the DPI stage table
 swift run Serpentine icon out.png [size] [charging] [light] # render the menu bar icon
-swift run Serpentine render-ui [offline|color|zones|…] out.png # popover (dev)
+swift run Serpentine render-ui [offline|color|zones|…] out.png # popover (dev; scenes in PreviewScene)
 swift run Serpentine render-about out.png
 swift run Serpentine render-remap out.png
 ```
@@ -414,30 +420,62 @@ buttons and sliders show as placeholders. Pages that need them drawn go through 
 
 ## 10. File map
 
+The package has four targets. `RazerProtocol` and `RazerDeviceKit` are libraries with no
+AppKit; the app and the command-line tool build on them.
+
+**`Sources/RazerProtocol`**: Razer's protocol, pure functions and values.
+
 | File | Responsibility |
 |---|---|
-| `main.swift` | Entry point: no args to menu bar app; subcommands to CLI diagnostics. |
-| `AppDelegate.swift` | `NSStatusItem`, popover, right-click menu, HIDMonitor wiring, permission request. |
-| `MouseController.swift` | Orchestrator: poll loop, connection logic, writes, battery, published state. |
-| `HIDDevice.swift` | IOKit HID open/enumerate + request/response send. |
-| `HIDMonitor.swift` | IOKit service notifications for plug/unplug. |
-| `RazerTransport.swift` | Transport protocol shared by USB and Bluetooth, plus the shared retry ladder. |
-| `BLEProtocol.swift` | Bluetooth LE framing and `RazerReport` translation. |
-| `BluetoothDevice.swift` | CoreBluetooth connection to Razer's vendor GATT service. |
 | `RazerReport.swift` | 90-byte `razer_report` struct + CRC. |
-| `RazerCommands.swift` | Command-byte builders (battery/DPI/poll/RGB/brightness) + Razer constants. |
-| `RazerDevices.swift` | PID to {name, supported, hasBattery} registry. |
-| `BatteryHistory.swift` | Sample log + learned discharge rate + time estimate. |
-| `PopoverView.swift` | Main popover UI + page navigation. |
-| `AppearanceTheme.swift` | Settings › Appearance: theme, glass, the resolved look, the popover and window backdrops. |
+| `RazerCommands.swift` | Command builders and parsers (battery, DPI, stages, polling, lighting, wheel, power) + Razer constants. |
+| `BLEProtocol.swift` | Bluetooth LE framing and `RazerReport` translation. |
+| `RazerDevices.swift` | The device registry: PID to name, link and capability fields (§8). |
+| `DeviceCapabilities.swift` | What a mouse can do on its link, from the registry and the link. Ask this, not the PID. |
+| `SettingResidency.swift` | Where each setting lives: in the mouse, or only while the app runs. |
+| `OnboardButtons.swift` | The mouse's button function table: blocks, plans, reading back, sync. |
+| `OnboardSlots.swift` | The onboard profile slots' commands. |
+| `ButtonFunctionTable.swift` | The table's read/write surface, which both transports implement. |
+| `ButtonActions.swift` | `RemapAction`, the presets and media keys, HyperShift ids. |
+| `LightingZones.swift`, `LightingEffect.swift` | Zoned lighting and the effects. |
+| `HardwareButtons.swift` | Ids for buttons with no CGEvent number. |
+| `RazerError.swift` | Why a command failed, on any link. |
+
+**`Sources/RazerDeviceKit`**: talking to the hardware.
+
+| File | Responsibility |
+|---|---|
+| `HIDDevice.swift` | IOKit HID open/enumerate + request/response send. |
+| `HIDDeviceSelection.swift` | Which of the dongle's interfaces is the control one. |
+| `HIDMonitor.swift` | IOKit service notifications for plug/unplug. |
+| `HIDInputWatcher.swift` | Notices the mouse moving while it reads offline. |
+| `BluetoothDevice.swift` | CoreBluetooth connection to Razer's vendor GATT service. |
+| `RazerTransport.swift` | Transport protocol shared by USB and Bluetooth, plus the shared retry ladder. |
+| `OnboardSlotTransport.swift` | A transport with every settings command pointed at the active slot. |
+| `DeviceProbe.swift` | The probes `serpentine-cli` runs. |
+
+**`Sources/SerpentineCLI`**: `serpentine-cli`, the hardware diagnostics (§9).
+
+**`Sources/Serpentine`**: the app.
+
+| File | Responsibility |
+|---|---|
+| `main.swift` | Entry point: no arguments launches the app; subcommands are development tools (render-*, icons). |
+| `AppDelegate.swift` | `NSStatusItem`, popover, right-click menu, HIDMonitor wiring, permission request. |
+| `MouseController.swift` | The connected mouse's state, published for the UI. Its work is split by feature into `MouseController+Reads`, `+Writes`, `+Lighting`, `+Slots`, `+OnboardButtons`, `+Profiles`, `+Connection` and `+Preview`. |
+| `DeviceQueue.swift` | The serial device queue, with user commands ahead of background reads. |
+| `BatteryTracker.swift` | Battery history, charge cycles, discharge curve and last readings, per mouse. |
+| `BatteryHistory.swift`, `ChargeCycleHistory.swift`, `DischargeCurveModel.swift` | Sample log, cycles and the learned curve behind the time-left estimate. |
+| `ButtonRemapper.swift` | The remap table; the event tap, HyperShift, the DPI Cycle bridge and persistence are in `ButtonRemapper+*`. |
+| `Preferences.swift`, `DeviceSettings.swift` | Every UserDefaults key, and the per-mouse settings store. |
+| `LegacyPreferences.swift` | What older versions kept, and the move from MacRazer. |
+| `PopoverView.swift` | The popover: pages, collapsible rows, footer. |
+| `Features/` | The cards and controls the popover is built from (and the window will be): device status, battery, DPI, polling, lighting, power, quick profiles. |
+| `Appearance.swift`, `Palette.swift` | Settings › Appearance, the backdrops, and the colours. |
 | `ColorPickerPage.swift` | Inline hue/sat colour wheel page + shared `BackButton`. |
-| `ButtonRemapper.swift` | CGEvent tap, action model, presets, persistence, Accessibility. |
 | `RemapView.swift` | Button-config UI (inline + window), key recorder. |
-| `RemapWindowController.swift` | Standalone window host for the remap UI. |
-| `DeviceProbe.swift` | The probes the CLI diagnostics run. |
-| `MenuBarIcon.swift` | The serpent (menu bar, app icon) and the per-model mouse silhouettes. |
-| `SVGPath.swift` | SVG path data to `CGPath`, so the serpent is drawn natively. |
-| `RazerLogo.swift` | Embedded official Razer logo (vector PDF, base64) for the header. |
+| `MenuBarIcon.swift`, `SVGPath.swift` | The serpent (menu bar, app icon) and the per-model mouse silhouettes. |
+| `PreviewScenes.swift` | The popover's preview states, for `render-ui` and the snapshot tests. |
 
 External: `reference/openrazer/` (cloned driver source, the protocol reference, gitignored)
 and `reference/openrazer-pr-2583.diff` (the Cobra HyperSpeed PR).

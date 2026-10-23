@@ -7,7 +7,28 @@ so every phase ships on its own, keeps the 260 tests green, and leaves the app w
 It is written to support the move to a windowed app ([WINDOWED_APP.md](WINDOWED_APP.md)): the
 phases marked **(W)** are the ones that move first because the window depends on them.
 
-## Where the code is today
+## Status (2026-10-23)
+
+All eight phases have been through once, on the `refactor` branch, one commit each. Where
+the result differs from the plan below, it says so here.
+
+| Phase | Done | Differs from the plan |
+|---|---|---|
+| 0 Hygiene | Razer mark gone from the drawings, stale comments fixed, `Preferences` lists every key | — |
+| 1 `RazerProtocol` | Library with tests; also holds `RemapAction`, the catalog, `RazerError`, `LightingEffect` | `OnboardOwnership` (UserDefaults) stayed in the app |
+| 2 `RazerDeviceKit` | Library with tests; includes the slot transport | — |
+| 3 Capabilities | `DeviceCapabilities`, `DeviceSettings`, `SettingResidency` (in `RazerProtocol`) | `DeviceSettings` covers the custom DPI and Single-mode stages; profiles, slot names and remaps keep their own stores |
+| 4 Split the controller | `DeviceQueue`, `BatteryTracker`, and the rest split by feature into `MouseController+*.swift` | Feature files, not separate service objects: the device, its serial and the slot state are shared by every feature, so separate services would only pass them around. Services can follow once the window decides what each pane needs |
+| 5 Concurrency | `LaunchAtLogin`, `PermissionsModel` on Observation | The serial queue stays (see the phase), and `MouseController`/`ButtonRemapper` stay `ObservableObject` until W2 |
+| 6 UI split | `Features/` views, `Appearance*` renames, `ButtonRemapper+*.swift` | `ButtonRemapper` is split by file rather than into model and engine types, for the same reason as phase 4 |
+| 7 CLI | `serpentine-cli`, `PreviewScene`, snapshot tests | The `render-*` commands stay alongside the tests: they are how a person looks at a change |
+| 8 Docs | File map, contributing, this table | — |
+
+None of it was tried against a mouse: every phase kept `swift test` and the release build
+green, and the popover renders the same, byte for byte, but the hardware paths need a pass on
+a Basilisk V4 Pro and a Cobra HyperSpeed before this is merged.
+
+## Where the code was (before the refactor)
 
 One executable target, `Sources/Serpentine`, 49 files, about 14,000 lines. The tests import it
 with `@testable`.

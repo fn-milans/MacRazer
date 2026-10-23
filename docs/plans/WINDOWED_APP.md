@@ -90,8 +90,8 @@ mode, launch at login, appearance, sounds; Notifications: low battery).
 
 ## The menu bar item (background mode only)
 
-Much smaller than today's popover. Shows the serpent glyph only, no battery percentage. Its menu (a `MenuBarExtra` with `.menu` style, or `.window` style for the compact
-panel below):
+Much smaller than today's popover. Shows the serpent glyph only, no battery percentage.
+Its menu (a `MenuBarExtra` with `.menu` style, or `.window` style for a compact panel):
 
 ```
 Basilisk V4 Pro — 82%  ·  2.4 GHz
