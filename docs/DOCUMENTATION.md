@@ -216,8 +216,8 @@ its own USB product string** (works for any Razer mouse); the registry only adds
 ## 6. The UI
 
 ### 6.1 Menu bar, `AppDelegate.swift` + `MenuBarIcon.swift`
-- `NSStatusItem` with a custom-drawn **outlined mouse icon** (vector, drawn in
- `MenuBarIcon.swift`; a template image that adapts to light/dark and **dims to 60% opacity
+- `NSStatusItem` with the **serpent icon** (Health Icons' `animal-snake`, drawn from its SVG
+ path by `SVGPath.swift` in `MenuBarIcon.swift`; a template image that adapts to light/dark and **dims to 60% opacity
  when disconnected**) + the battery % text (hideable via a setting; hidden entirely for
  battery-less mice).
 - **Left-click** opens the popover; **right-click / control-click** shows an `NSMenu`
@@ -400,7 +400,7 @@ swift run Serpentine dpi [x] [y] # read / set DPI
 swift run Serpentine poll [125|500|1000]
 swift run Serpentine rgb static ff0000 # or: spectrum | wave | off
 swift run Serpentine brightness [0-100] # sweeps LOGO/SCROLL/ZERO/BACKLIGHT LEDs
-swift run Serpentine icon out.png # render the menu bar icon
+swift run Serpentine icon out.png [size] [charging] [light] # render the menu bar icon
 swift run Serpentine render-ui [offline|color|zones|…] out.png # popover (dev)
 swift run Serpentine render-about out.png
 swift run Serpentine render-remap out.png
@@ -435,7 +435,8 @@ buttons and sliders show as placeholders. Pages that need them drawn go through 
 | `RemapView.swift` | Button-config UI (inline + window), key recorder. |
 | `RemapWindowController.swift` | Standalone window host for the remap UI. |
 | `DeviceProbe.swift` | The probes the CLI diagnostics run. |
-| `MenuBarIcon.swift` | Vector-drawn menu bar mouse icon (+ triskelion). |
+| `MenuBarIcon.swift` | The serpent (menu bar, app icon) and the per-model mouse silhouettes. |
+| `SVGPath.swift` | SVG path data to `CGPath`, so the serpent is drawn natively. |
 | `RazerLogo.swift` | Embedded official Razer logo (vector PDF, base64) for the header. |
 
 External: `reference/openrazer/` (cloned driver source, the protocol reference, gitignored)

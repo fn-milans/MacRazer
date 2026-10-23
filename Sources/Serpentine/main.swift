@@ -257,10 +257,7 @@ case "icon":
     // than judged from a downsampled 256px render. Bounded: an unbounded value makes the
     // bitmap allocation fail and the write silently do nothing.
     let size = iconArgs.compactMap { Int($0) }.first { $0 > 0 }.map { CGFloat(min($0, 2048)) } ?? 256
-    // `nologo` matches the menu bar's own call (razerCutout: false) so what's previewed is
-    // what ships there.
-    guard MenuBarIcon.writePreview(to: path, size: size, razerCutout: !iconArgs.contains("nologo"),
-                                   charging: iconArgs.contains("charging"),
+    guard MenuBarIcon.writePreview(to: path, size: size, charging: iconArgs.contains("charging"),
                                    lightMenuBar: iconArgs.contains("light")) else {
         print("Render failed")
         exit(1)
@@ -280,7 +277,7 @@ case "icon-models":
     }
 
 case "appicon":
-    // Render app-icon concepts (original mouse mark, no Razer triskelion).
+    // Render app-icon colour concepts around the serpent.
     let dir = args.dropFirst().first ?? "/tmp"
     let green = NSColor(red: 0x44/255, green: 0xD6/255, blue: 0x2C/255, alpha: 1)
     let greenBright = NSColor(red: 0.42, green: 1.0, blue: 0.25, alpha: 1)

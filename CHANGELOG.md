@@ -16,6 +16,9 @@ expect rough edges until 1.0.
   certificate from an earlier `setup-signing.sh` is now looked for as "Serpentine Self-Signed";
   run the script again to make one.
 
+- **A serpent for the app and menu bar icons.** The snake from Health Icons (MIT), in place of
+  the mouse mark, for now. The bolt still shows while the mouse charges.
+
 - **The popover follows your Mac's light or dark mode.** It used to be dark all the time. On a
   light Mac it is now light glass, with a darker green for text so it stays readable. Settings,
   About and the other windows follow too, with the same glass or solid background. Selected chips now use dark text on the green

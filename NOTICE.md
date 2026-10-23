@@ -23,8 +23,36 @@ It is GPL because it is derived from OpenRazer (see below).
  [#32](https://github.com/SorcRR/MacRazer/pull/32): the service and characteristic ids, the
  frame layout and the command keys. This project confirmed the same service on the Cobra
  HyperSpeed.
-- The app uses its **own original mouse icon/logo**; it does not bundle or display Razer's
- logo or marks.
+- The **app icon and menu bar icon** are the `animal-snake` icon from
+ **[Health Icons](https://github.com/resolvetosavelives/healthicons)**, used under the MIT
+ License (below). The per-model mouse drawings are the project's own. The app does not bundle
+ Razer's logo.
+
+### Health Icons licence
+
+```
+MIT License
+
+Copyright (c) 2021 Resolve to Save Lives
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
 - Hardware findings unique to this project (e.g. brightness living on the LOGO LED, the
  31 ms request/response timing on macOS) were verified on real hardware and are documented
  in [`docs/DOCUMENTATION.md`](docs/DOCUMENTATION.md).

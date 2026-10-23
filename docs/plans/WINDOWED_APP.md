@@ -133,6 +133,11 @@ Quit Serpentine         ⌘Q
 
 ## Icons
 
+**Current (2026-10-23):** the app and menu bar use Health Icons' `animal-snake` (MIT, credited
+in NOTICE.md) as a stand-in, drawn from its SVG path by `SVGPath`; changing it later means
+replacing `MenuBarIcon.serpentPathData` and running `Scripts/make-icon.sh`. The concepts below
+are for the permanent mark.
+
 See [the design page](../design/window-design.html) for renders. Files in [`docs/design/icons`](../design/icons):
 
 - `app-icon-a-coil.svg` (**recommended**): a green serpent forming an S on a graphite squircle.

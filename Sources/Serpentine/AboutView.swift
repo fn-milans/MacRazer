@@ -32,7 +32,7 @@ struct AboutView: View {
         HStack(spacing: 14) {
             ZStack {
                 RoundedRectangle(cornerRadius: 13).fill(Color.razerGreenBright.opacity(0.20))
-                Image(nsImage: MenuBarIcon.mouse(pointSize: 32, razerCutout: true))
+                Image(nsImage: MenuBarIcon.serpent(pointSize: 32))
                     .renderingMode(.template).resizable().scaledToFit()
                     .frame(width: 32, height: 32)
                     .foregroundStyle(Color.razerGreenBright)
@@ -64,8 +64,8 @@ struct AboutView: View {
             // wording and the reason this app may put Razer's marks on screen at all, so it
             // stays as written. Only the semicolon became a full stop.
             sectionNote("“Razer”, “Cobra”, “HyperSpeed”, “Synapse” and “Chroma” are trademarks of "
-                        + "Razer Inc., used here only to describe compatibility. The app's mouse "
-                        + "mark is its own. It does not display Razer's logo.")
+                        + "Razer Inc., used here only to describe compatibility. The serpent icon "
+                        + "is from Health Icons (MIT). The app does not display Razer's logo.")
         }
     }
 

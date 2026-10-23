@@ -61,11 +61,11 @@ final class MenuBarIconTests: XCTestCase {
         // high-contrast ones. Each has to land on the right side, or the bolt is drawn for the
         // wrong background.
         for name in dark {
-            let image = MenuBarIcon.mouse(pointSize: 21, razerCutout: false, charging: true)
+            let image = MenuBarIcon.serpent(pointSize: 21, charging: true)
             XCTAssertEqual(try inks(image, drawnAs: name), [.white, .yellowOnDark], name.rawValue)
         }
         for name in light {
-            let image = MenuBarIcon.mouse(pointSize: 21, razerCutout: false, charging: true)
+            let image = MenuBarIcon.serpent(pointSize: 21, charging: true)
             XCTAssertEqual(try inks(image, drawnAs: name), [.black, .yellowOnLight], name.rawValue)
         }
     }
@@ -74,7 +74,7 @@ final class MenuBarIconTests: XCTestCase {
         // What `AppDelegate` relies on to build the mark once: the same instance, drawn again
         // under another appearance, redraws rather than replaying a cached first render. If
         // this ever stops holding, the fix is not to watch `effectiveAppearance` again.
-        let image = MenuBarIcon.mouse(pointSize: 21, razerCutout: false, charging: true)
+        let image = MenuBarIcon.serpent(pointSize: 21, charging: true)
         XCTAssertEqual(try inks(image, drawnAs: .darkAqua), [.white, .yellowOnDark])
         XCTAssertEqual(try inks(image, drawnAs: .aqua), [.black, .yellowOnLight])
         XCTAssertEqual(try inks(image, drawnAs: .vibrantDark), [.white, .yellowOnDark])
@@ -83,7 +83,7 @@ final class MenuBarIconTests: XCTestCase {
     func testTheIdleMarkStaysATemplate() {
         // macOS recolours a template for light, dark and highlighted menu bars by itself. The
         // charging mark can't be one (a template drops the yellow), so it must not be.
-        XCTAssertTrue(MenuBarIcon.mouse(pointSize: 21, razerCutout: false).isTemplate)
-        XCTAssertFalse(MenuBarIcon.mouse(pointSize: 21, razerCutout: false, charging: true).isTemplate)
+        XCTAssertTrue(MenuBarIcon.serpent(pointSize: 21).isTemplate)
+        XCTAssertFalse(MenuBarIcon.serpent(pointSize: 21, charging: true).isTemplate)
     }
 }

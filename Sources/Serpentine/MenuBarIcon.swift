@@ -3,8 +3,9 @@
 
 import AppKit
 
-/// Draws the app's mouse marks. (The silhouette-per-model mapping lives in
-/// `RazerDevices` — the registry — so adding a mouse doesn't touch drawing code.)
+/// Draws the app's marks: the serpent (menu bar, app icon, About and setup windows) and the
+/// per-model mouse silhouettes (the popover header). The silhouette-per-model mapping lives in
+/// `RazerDevices`, the registry, so adding a mouse doesn't touch drawing code.
 enum MenuBarIcon {
 
     /// Razer yellow-green is the brand's; this is a battery-charging yellow, picked to read
@@ -17,7 +18,7 @@ enum MenuBarIcon {
     /// The charging mark's body and bolt colours. Dynamic, so they resolve against whatever
     /// appearance the image is being drawn for, at the moment it is drawn.
     ///
-    /// This is what lets one charging image serve every menu bar. `drawMouse` returns a
+    /// This is what lets one charging image serve every menu bar. `drawSerpent` returns a
     /// drawing-handler image, and AppKit runs the handler again whenever it is drawn under a
     /// different appearance, so the mark recolours itself when the menu bar flips. (Checked
     /// by forcing a status item's appearance back and forth, and by `MenuBarIconTests`.)
@@ -39,26 +40,81 @@ enum MenuBarIcon {
         appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
     }
 
-    /// A mouse silhouette with a small Razer triskelion cut into the body (even-odd).
+    // MARK: Serpent
+
+    /// The snake from Health Icons (`animal-snake`, MIT, © 2021 Resolve to Save Lives; see
+    /// NOTICE.md), as published, on its 48×48 grid. Filled even-odd: the eyes are holes.
+    /// A stand-in until Serpentine has its own mark; swapping it is a matter of this string
+    /// and `serpentGrid`.
+    static let serpentPathData = """
+        M33.68 17.768c1.169.892 2.372 1.1 4.159-.687c.707-.707 5.293-8.142 3.535-9.899c-1.757-1.757-8.839 2.475-9.9 3.535c-1.788 1.789-1.577 2.993-.682 4.163l-.706.706a3.43 3.43 0 0 0-1.031 2.46c0 .825.279 1.562.563 2.13c.456.913 1.203 1.894 1.823 2.708q.176.23.334.44c.77 1.027 1.277 1.802 1.472 2.429c.086.274.077.42.064.486a.5.5 0 0 1-.092.194c-.2-.075-.534-.249-1.018-.609c-1.165-.865-2.517-2.27-4.058-3.874l-.264-.274c-1.554-1.615-3.318-3.43-4.994-4.55c-.84-.56-1.844-1.08-2.936-1.209a3.97 3.97 0 0 0-3.363 1.169c-.875.875-1.3 1.948-1.31 3.086c-.01 1.062.338 2.06.763 2.91c.837 1.673 2.295 3.39 3.58 4.86l.586.666v.001c1.134 1.288 2.103 2.39 2.725 3.351c.188.292.308.518.384.685a2.6 2.6 0 0 1-.658-.128c-.862-.264-1.925-.86-3.14-1.638a90 90 0 0 1-1.112-.73c-.808-.535-1.645-1.09-2.34-1.48c-.52-.291-1.147-.603-1.785-.752c-.606-.142-1.773-.251-2.693.669c-.81.81-1.078 1.779-1.161 2.573c-.065.625-.026 1.302.003 1.791l.012.217c.052.98-.005 1.424-.198 1.727c-.24.275-.501.623-.79 1.059c-.068.103-.229.312-.443.591c-1.035 1.347-3.327 4.33-2.631 5.026c.84.84 5.597-2.556 6.361-3.32c.67-.67.997-1.18 1.102-1.598c.71-1.374.64-2.805.594-3.695q-.007-.15-.016-.283l-.018-.346c.488.29 1.013.639 1.608 1.034c.412.273.858.57 1.35.884c1.223.785 2.69 1.657 4.126 2.096c1.434.44 3.405.597 4.93-.928c.912-.912 1.128-2.063.954-3.106c-.155-.93-.615-1.799-1.08-2.519c-.798-1.234-2.004-2.603-3.116-3.864l-.543-.617c-1.34-1.53-2.443-2.875-3.013-4.015c-.278-.556-.343-.902-.342-1.083c.001-.104.014-.17.14-.296q.02-.021.023-.027l.004-.005l.006.001q.006.003.031.006c.18.022.561.147 1.183.563c1.246.832 2.7 2.3 4.334 3.997l.354.368c1.442 1.502 3.018 3.143 4.465 4.218c.778.578 1.713 1.145 2.73 1.356c1.152.239 2.39.002 3.37-.977c.686-.687 1.142-1.496 1.32-2.403c.175-.887.057-1.726-.17-2.451c-.429-1.374-1.36-2.661-2.09-3.635q-.223-.298-.425-.563c-.62-.82-1.082-1.429-1.355-1.975c-.012-.024.201-.285.485-.62m.875-5.596a.75.75 0 1 1-1.06-1.06a.75.75 0 0 1 1.06 1.06m1.693 3.197a.75.75 0 1 0 1.06-1.06a.75.75 0 0 0-1.06 1.06
+        """
+    static let serpentGrid: CGFloat = 48
+    /// A `CGPath` is immutable once built, so sharing one across threads is safe; Swift can't
+    /// see that, as CoreGraphics doesn't mark it `Sendable`.
+    nonisolated(unsafe) private static let serpentPath = SVGPath.parse(serpentPathData)
+
+    /// The serpent for the menu bar and the app's own windows.
     ///
     /// The idle mark is a **template** image: macOS recolors it for a light or dark menu bar,
     /// and inverts it while the item is highlighted, all for free.
     ///
-    /// The charging mark cannot be, because a template image throws colour away — the same
-    /// reason `AppDelegate` draws the update dot as a subview instead of baking it in. So the
-    /// bolt's yellow costs us the automatic recolouring, and the colours are dynamic instead;
-    /// see `chargingBody`.
-    static func mouse(pointSize: CGFloat = 16, razerCutout: Bool = true, charging: Bool = false) -> NSImage {
+    /// The charging mark cannot be, because a template image throws colour away. So the bolt's
+    /// yellow costs us the automatic recolouring, and the colours are dynamic instead; see
+    /// `chargingBody`.
+    static func serpent(pointSize: CGFloat = 16, charging: Bool = false) -> NSImage {
         guard charging else {
-            let img = drawMouse(size: pointSize, razerCutout: razerCutout, silhouette: .cobra)
+            let img = drawSerpent(size: pointSize)
             img.isTemplate = true
             return img
         }
-        let img = drawMouse(size: pointSize, razerCutout: razerCutout, silhouette: .cobra,
-                            color: chargingBody, charging: true, boltColor: chargingBolt)
+        let img = drawSerpent(size: pointSize, color: chargingBody, charging: true, boltColor: chargingBolt)
         img.isTemplate = false
         return img
     }
+
+    /// `boltColor` defaults to `color` so every non-menu-bar caller draws a single-colour mark.
+    private static func drawSerpent(size s: CGFloat, color: NSColor = .black, charging: Bool = false,
+                                    boltColor: NSColor? = nil) -> NSImage {
+        // Flipped, so the SVG's y-down coordinates draw as they are.
+        NSImage(size: NSSize(width: s, height: s), flipped: true) { _ in
+            guard let ctx = NSGraphicsContext.current?.cgContext else { return false }
+            let unit = s / serpentGrid
+            ctx.saveGState()
+            ctx.scaleBy(x: unit, y: unit)
+            if charging {
+                // The snake runs corner to corner, tail bottom left, head top right, which
+                // leaves the bottom-right corner free for the bolt. Shrunk a little toward the
+                // top left so the two don't touch: overlapping, they read as neither.
+                ctx.saveGState()
+                ctx.scaleBy(x: 0.86, y: 0.86)
+                ctx.addPath(serpentPath)
+                ctx.setFillColor(color.cgColor)
+                ctx.fillPath(using: .evenOdd)
+                ctx.restoreGState()
+
+                let bolt = CGMutablePath()
+                bolt.move(to: CGPoint(x: 41.5, y: 25))   // top tip
+                bolt.addLine(to: CGPoint(x: 33, y: 38.5)) // down-left to the waist
+                bolt.addLine(to: CGPoint(x: 39, y: 38.5))
+                bolt.addLine(to: CGPoint(x: 37, y: 47))   // bottom tip
+                bolt.addLine(to: CGPoint(x: 46, y: 33.5)) // up-right to the waist
+                bolt.addLine(to: CGPoint(x: 40, y: 33.5))
+                bolt.closeSubpath()
+                ctx.addPath(bolt)
+                ctx.setFillColor((boltColor ?? color).cgColor)
+                ctx.fillPath()
+            } else {
+                ctx.addPath(serpentPath)
+                ctx.setFillColor(color.cgColor)
+                ctx.fillPath(using: .evenOdd)
+            }
+            ctx.restoreGState()
+            return true
+        }
+    }
+
+    // MARK: Mouse silhouettes
 
     /// Same silhouette family, but shaped/detailed to match the specific connected model
     /// (by USB product ID) instead of always drawing the generic Cobra body. Falls back to
@@ -72,11 +128,8 @@ enum MenuBarIcon {
         return img
     }
 
-    /// `boltColor` defaults to `color` so every non-menu-bar caller (previews, the app icon)
-    /// keeps drawing a single-colour mark.
     private static func drawMouse(size s: CGFloat, razerCutout: Bool, silhouette: RazerMouseSilhouette,
-                                  color: NSColor = .black, charging: Bool = false,
-                                  boltColor: NSColor? = nil) -> NSImage {
+                                  color: NSColor = .black) -> NSImage {
         NSImage(size: NSSize(width: s, height: s), flipped: false) { rect in
             guard let ctx = NSGraphicsContext.current?.cgContext else { return false }
             let cx = rect.midX, cy = rect.midY
@@ -114,12 +167,9 @@ enum MenuBarIcon {
                                cornerWidth: wheelW / 2, cornerHeight: wheelW / 2, transform: nil)
             ctx.addPath(wheel)
 
-            // Button-split line below the wheel — replaced by the charging bolt below, so the
-            // body silhouette stays identical and only what's inside it changes.
-            if !charging {
-                ctx.move(to: P(0, 0.13))
-                ctx.addLine(to: P(0, -0.10))
-            }
+            // Button-split line below the wheel.
+            ctx.move(to: P(0, 0.13))
+            ctx.addLine(to: P(0, -0.10))
 
             // Thumb buttons on the left edge: two on Cobra/Cobra Pro, one on the smaller Atheris.
             let bw = s * 0.115, bh = s * 0.072
@@ -130,49 +180,14 @@ enum MenuBarIcon {
             }
 
             // Cobra Pro/HyperSpeed add a visible on-the-fly DPI clutch button behind the wheel.
-            // Suppressed while charging for the same reason as the triskelion below: the
-            // enlarged bolt runs straight through this rect, and two marks overlapping read as
-            // neither. Unreachable today (only `.cobra` ever charges), but the next per-model
-            // charging icon should not have to rediscover it.
-            if silhouette == .cobraPro && !charging {
+            if silhouette == .cobraPro {
                 let dpi = CGRect(x: cx - wheelW * 0.55, y: cy - 0.02 * s, width: wheelW * 1.1, height: s * 0.05)
                 ctx.addPath(CGPath(roundedRect: dpi, cornerWidth: s * 0.025, cornerHeight: s * 0.025, transform: nil))
             }
             ctx.strokePath()
 
-            // Charging bolt, filled rather than stroked: at menu bar size a stroked outline
-            // closes up into a blob, while a solid glyph stays legible. Drawn after
-            // `strokePath` so it isn't caught by the body's stroke.
-            if charging {
-                // Classic 6-point flash, in units of the bolt's own half-width/half-height
-                // so the proportions hold at any icon size.
-                //
-                // Sized to fill the body rather than to replace the button-split line it
-                // stands in for: this mark is read at ~21pt in a menu bar, out of the corner
-                // of the eye, and a detail-sized glyph there is a smudge. It spans from just
-                // under the scroll wheel (0.16) down to just inside the base stroke (-0.46
-                // plus half the line width), keeping a hair of clearance at both ends so the
-                // bolt never merges into the silhouette.
-                let boltHalfW = 0.31, boltHalfH = 0.275, yOff: CGFloat = -0.128
-                func B(_ x: CGFloat, _ y: CGFloat) -> CGPoint { P(x * boltHalfW, y * boltHalfH + yOff) }
-                let bolt = CGMutablePath()
-                bolt.move(to: B(0.35, 1.00))     // top tip
-                bolt.addLine(to: B(-0.55, 0.05)) // down-left to the waist
-                bolt.addLine(to: B(0.00, 0.05))  // jog back to centre
-                bolt.addLine(to: B(-0.35, -1.00))// bottom tip
-                bolt.addLine(to: B(0.55, -0.05)) // up-right to the waist
-                bolt.addLine(to: B(0.00, -0.05)) // jog back to centre
-                bolt.closeSubpath()
-                ctx.addPath(bolt)
-                ctx.setFillColor((boltColor ?? color).cgColor)
-                ctx.fillPath()
-            }
-
-            // Triskelion mark near the base — but not while charging: the bolt now occupies
-            // the body the triskelion sits in, and two marks on top of each other read as
-            // neither. The menu bar passes `razerCutout: false` anyway; this keeps the
-            // charging variant sane for every other caller.
-            if razerCutout && !charging {
+            // Triskelion mark near the base.
+            if razerCutout {
                 let center = P(0, -0.29)
                 let r = s * 0.105
                 for k in 0..<3 {
@@ -194,14 +209,16 @@ enum MenuBarIcon {
         }
     }
 
-    /// An app-icon concept: the mouse mark (no Razer triskelion) on a rounded-square background.
+    // MARK: App icon
+
+    /// The app icon: the serpent on a rounded-square background.
     static func appIcon(size: CGFloat, bg: NSColor, mark: NSColor) -> NSImage {
         NSImage(size: NSSize(width: size, height: size), flipped: false) { rect in
             let radius = size * 0.225
             NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius).addClip()
             bg.setFill(); rect.fill()
-            let m = size * 0.62
-            drawMouse(size: m, razerCutout: false, silhouette: .cobra, color: mark)
+            let m = size * 0.72
+            drawSerpent(size: m, color: mark)
                 .draw(in: NSRect(x: (size - m) / 2, y: (size - m) / 2, width: m, height: m))
             return true
         }
@@ -220,9 +237,12 @@ enum MenuBarIcon {
         try? rep.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: path))
     }
 
-    /// Render a mark to a PNG file (used by the `icon` CLI command for visual verification).
+    // MARK: Previews
+
+    /// Render a mark to a PNG file (used by the `icon` and `icon-models` CLI commands for
+    /// visual verification). No `silhouette` draws the serpent.
     @discardableResult
-    static func writePreview(to path: String, size: CGFloat, silhouette: RazerMouseSilhouette = .cobra,
+    static func writePreview(to path: String, size: CGFloat, silhouette: RazerMouseSilhouette? = nil,
                              razerCutout: Bool = true, charging: Bool = false,
                              lightMenuBar: Bool = false) -> Bool {
         // Charging previews reproduce a real menu-bar pairing — body and bolt colour both
@@ -230,11 +250,14 @@ enum MenuBarIcon {
         // white). They use the shipping dynamic colours, drawn under that menu bar's
         // appearance below, so the preview can't disagree with the menu bar. Non-charging
         // keeps the brand green: it's a shape check, not a colour one.
-        let image = drawMouse(size: size, razerCutout: razerCutout, silhouette: silhouette,
-                              color: charging ? chargingBody
-                                  : NSColor(red: 0x44/255, green: 0xD6/255, blue: 0x2C/255, alpha: 1),
-                              charging: charging,
-                              boltColor: charging ? chargingBolt : nil)
+        let green = NSColor(red: 0x44/255, green: 0xD6/255, blue: 0x2C/255, alpha: 1)
+        let image: NSImage
+        if let silhouette {
+            image = drawMouse(size: size, razerCutout: razerCutout, silhouette: silhouette, color: green)
+        } else {
+            image = drawSerpent(size: size, color: charging ? chargingBody : green, charging: charging,
+                                boltColor: charging ? chargingBolt : nil)
+        }
         let px = Int(size)
         guard let rep = NSBitmapImageRep(
             bitmapDataPlanes: nil, pixelsWide: px, pixelsHigh: px,

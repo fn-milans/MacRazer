@@ -449,8 +449,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate, UNU
     /// So nothing here watches `effectiveAppearance`, on purpose. Setting the image makes
     /// AppKit report that property as changed whether or not it did, and a watcher that sets
     /// the image in response never stops (issue #25).
-    private static let idleIcon = MenuBarIcon.mouse(pointSize: 21, razerCutout: false)
-    private static let chargingIcon = MenuBarIcon.mouse(pointSize: 21, razerCutout: false, charging: true)
+    private static let idleIcon = MenuBarIcon.serpent(pointSize: 21)
+    private static let chargingIcon = MenuBarIcon.serpent(pointSize: 21, charging: true)
 
     private func menuBarIcon(charging: Bool) -> NSImage {
         charging ? Self.chargingIcon : Self.idleIcon

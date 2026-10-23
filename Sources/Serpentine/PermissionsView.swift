@@ -46,7 +46,7 @@ struct PermissionsView: View {
         HStack(spacing: 12) {
             ZStack {
                 RoundedRectangle(cornerRadius: 11).fill(Color.razerGreenBright.opacity(0.20))
-                Image(nsImage: MenuBarIcon.mouse(pointSize: 24, razerCutout: true))
+                Image(nsImage: MenuBarIcon.serpent(pointSize: 24))
                     .renderingMode(.template).resizable().scaledToFit()
                     .frame(width: 24, height: 24)
                     .foregroundStyle(Color.razerGreenBright)
