@@ -3,21 +3,17 @@
 
 import SwiftUI
 
-/// Settings for Serpentine itself, apart from the mouse's, which are in the main window: set
-/// once and rarely revisited, with room to explain themselves (why the login item is
-/// unavailable from a mounted disk image).
+/// Settings for Serpentine itself, the main window's Settings page: set once and rarely
+/// revisited, with room to explain themselves (why the login item is unavailable from a
+/// mounted disk image).
 struct SettingsView: View {
     @ObservedObject var controller: MouseController
     var launchAtLogin: LaunchAtLogin
     @ObservedObject var background: BackgroundMode
-    /// Not optional, for the same reason as `AboutView.onDone`: a defaulted no-op ships a
-    /// Done button that does nothing and compiles fine.
-    var onDone: () -> Void
     @ObservedObject var appearance: AppearanceSettings = .shared
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            header
             titledSection("General") {
                 backgroundRow
                 launchAtLoginRow
@@ -27,33 +23,10 @@ struct SettingsView: View {
                 themeRow
                 glassRow
             }
-            footer
         }
-        .padding(22)
-        .frame(width: 440)
         // The login switch mirrors the system's registration, which the user can change in
-        // System Settings while this window sits open in the background.
+        // System Settings while the window sits open in the background.
         .onAppear { launchAtLogin.refresh() }
-    }
-
-    // MARK: Header
-
-    private var header: some View {
-        HStack(spacing: 12) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 11).fill(Color.razerGreenBright.opacity(0.20))
-                Image(systemName: "gearshape.fill")
-                    .font(.system(size: 21, weight: .medium))
-                    .foregroundStyle(Color.razerGreenBright)
-            }
-            .frame(width: 44, height: 44)
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Serpentine Settings").font(.system(size: 17, weight: .semibold))
-                Text("How the app itself behaves. The mouse's own settings are in the main window.")
-                    .font(.system(size: 12)).foregroundStyle(.secondary)
-            }
-            Spacer(minLength: 0)
-        }
     }
 
     // MARK: Rows
@@ -119,7 +92,7 @@ struct SettingsView: View {
     private var glassRow: some View {
         settingRow(
             title: "Glass effect",
-            detail: "Settings and the other small windows let the desktop show through. Turn it off for a solid "
+            detail: "The window lets the desktop show through. Turn it off for a solid "
                 + "background, which is easier to read over busy windows.",
             isOn: $appearance.glass
         )
@@ -145,14 +118,5 @@ struct SettingsView: View {
             extra()
         }
         .opacity(enabled ? 1 : 0.55)
-    }
-
-    private var footer: some View {
-        HStack {
-            Spacer()
-            Button("Done") { onDone() }
-                .keyboardShortcut(.defaultAction)
-                .buttonStyle(RazerProminentButtonStyle())
-        }
     }
 }

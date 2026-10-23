@@ -5,7 +5,8 @@ memory, so the mouse behaves the same with the app closed, on any link and on an
 open it, set the mouse up, quit. What only software can do (the "driver mode" actions) works
 while it runs, and it can keep running in the background, as a small menu bar item, for them.
 
-A native Mac app with a window: the mouse in the sidebar, each of its settings a pane. Razer does ship a Synapse for Mac now,
+A native Mac app with one window: the mouse's settings one under the other on the glass, its
+buttons on a page of their own, and Serpentine's settings on a third. Razer does ship a Synapse for Mac now,
 but its [supported-device list](https://mysupport.razer.com/app/answers/detail/a_id/14809/~/razer-synapse-for-mac-supported-and-compatible-devices)
 is short and doesn't include the Cobra HyperSpeed or Atheris — this fills that gap. It talks
 to the mouse directly over USB HID (no kernel extension, no driver install), using a protocol
@@ -22,15 +23,15 @@ Razer mice that use the same HID protocol family, but those are untested, so tre
 > anywhere: no usage stats, no update checks, no report uploads. See [Privacy](#privacy).
 > 
 
-<img width="720" alt="The Serpentine window, Overview pane" src="docs/assets/window-overview.png" />
-<img width="720" alt="The Lighting pane, zone by zone" src="docs/assets/window-lighting.png" />
+<img width="420" alt="The Serpentine window, light" src="docs/assets/window-light.png" />
+<img width="420" alt="The Serpentine window, dark" src="docs/assets/window-dark.png" />
 
 
 ## Features
 
-- **A window for the mouse**: the sidebar lists its sections (Overview, Performance, Lighting,
-  Buttons, Profiles, Scroll, Power, Battery), only those it has. Each pane says whether its
-  settings are **saved in the mouse** or **need Serpentine running**.
+- **A window for the mouse**: the mouse, battery, DPI, polling rate, lighting, power, scroll
+  wheel and profiles one under the other, only what this mouse has; the buttons and
+  Serpentine's own settings on pages of their own.
 - **Battery**, charging status, and a learned time-until-empty estimate. History and the
   estimate are kept per physical device (by serial number).
 - **Battery usage**: the current discharge curve, the discharge rate, time since the last full
@@ -47,7 +48,8 @@ Razer mice that use the same HID protocol family, but those are untested, so tre
   (no lighting on the Atheris, no battery UI on wired-only mice).
 - Settings are written to the mouse's **onboard memory** where supported, so they persist when
   the app is not running.
-- **Background mode** (Settings): closing the window leaves a small menu bar item, so remaps
+- **Background mode** (Settings): closing the window leaves a small menu bar item (the mouse's
+  status, Open, Quit), so remaps
   the mouse can't store, low-battery alerts and battery history keep working. Off by default;
   Serpentine asks once when you set up something that needs it. It can then **start at login**,
   in the menu bar with no window.

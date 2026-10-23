@@ -7,18 +7,17 @@ expect rough edges until 1.0.
 ## [Unreleased]
 
 ### Changed
-- **Serpentine is a windowed app.** A normal Mac app with a Dock icon, menus and one window: the
-  mouse in the sidebar, its sections as panes (Overview, Performance, Lighting, Buttons,
-  Profiles, Scroll, Power, Battery), and only the sections it has. Each pane says whether its
-  settings are saved in the mouse or need Serpentine running. The profile switcher and a
-  "saved to the mouse" mark are in the title bar; ⌘1-⌘8 move between panes. Input Monitoring
-  setup is a sheet on the window. The menu bar popover, the Configure Buttons window and the
-  Setup window are gone; their contents are in the panes.
+- **Serpentine is a windowed app.** A normal Mac app with a Dock icon, menus and one window, on
+  the same glass as the popover. The Mouse page has everything the popover had, one card under
+  the other: the mouse, battery, DPI, polling rate, lighting, power, scroll wheel and profiles.
+  Buttons and Serpentine's own settings are pages of their own, switched in the title bar
+  (⌘1-⌘3), next to the profile menu and Refresh. Input Monitoring setup is a sheet on the
+  window. The menu bar popover and the Configure Buttons, Setup and Settings windows are gone.
 
 - **Background mode replaces the menu bar app.** Closing the window quits, unless Settings ›
   Keep running in the background is on: then Serpentine stays as a small menu bar item, the
-  serpent alone with no percentage, whose menu shows the battery, switches the DPI stage and
-  profile, and opens the window. It is off on a new install and on if you are upgrading from
+  serpent alone with no percentage, whose menu shows the mouse's status and opens the window or
+  quits. It is off on a new install and on if you are upgrading from
   the menu bar version. Setting up something only the app can do (a remap the mouse can't store,
   the DPI Cycle action) asks once whether to turn it on. Start at login now needs background
   mode, and starts Serpentine in the menu bar with no window. The "Show battery % in menu bar"

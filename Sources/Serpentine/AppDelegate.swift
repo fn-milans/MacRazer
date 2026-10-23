@@ -23,24 +23,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     private let appearance = AppearanceSettings.shared
     private let background = BackgroundMode()
     private lazy var aboutWindow = AboutWindowController()
-    private lazy var settingsWindow = SettingsWindowController(
-        controller: controller, launchAtLogin: launchAtLogin, background: background)
     private lazy var mainWindow = MainWindowController(controller: controller, remapper: remapper,
-                                                       permissions: permissions, background: background)
+                                                       permissions: permissions, background: background,
+                                                       launchAtLogin: launchAtLogin)
     private lazy var menuBarItem = MenuBarItem(
-        controller: controller, remapper: remapper,
-        openWindow: { [weak self] in self?.showMainWindow() },
-        openSettings: { [weak self] in self.map { $0.present($0.settingsWindow) } })
+        controller: controller, openWindow: { [weak self] in self?.showMainWindow() })
     private lazy var appMenu = AppMenu(actions: .init(
         about: { [weak self] in self.map { $0.present($0.aboutWindow) } },
-        settings: { [weak self] in self.map { $0.present($0.settingsWindow) } },
         showMainWindow: { [weak self] in self?.showMainWindow() },
         refresh: { [weak self] in self?.controller.refreshAll() },
-        go: { [weak self] section in
-            self?.mainWindow.navigation.section = section
+        go: { [weak self] page in
+            self?.mainWindow.navigation.page = page
             self?.showMainWindow()
-        },
-        isAvailable: { [weak self] section in self.map { section.isAvailable(for: $0.controller) } ?? false }))
+        }))
     /// macOS started Serpentine as a login item: it starts in the menu bar, with no window.
     private var launchedAsLoginItem = false
 

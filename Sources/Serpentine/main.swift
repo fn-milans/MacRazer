@@ -140,7 +140,7 @@ case "render-ui":
     if scene.needsHosting { writeHostedPNG(rootView, to: path) } else { writeViewPNG(rootView, to: path) }
 
 case "render-window":
-    // The main window, offscreen, on a given pane: render-window [section] [light] out.png
+    // The main window, offscreen, on a given page: render-window [mouse|buttons|settings] [zones] [light] out.png
     let app = NSApplication.shared
     app.setActivationPolicy(.accessory)
     let path = outputPath(args.dropFirst(), default: "window-preview.png")
@@ -153,18 +153,13 @@ case "render-window":
     // Set up already, unless the setup banner is what's being looked at.
     let previewPermissions = PermissionsModel()
     if !args.contains("setup") { previewPermissions.loadPreviewState() }
-    navigation.section = PaneSection.allCases.first { args.dropFirst().contains($0.rawValue) } ?? .overview
-    let hosting = NSHostingController(rootView: MainWindowView(controller: controller, remapper: remapper,
-                                                               navigation: navigation, permissions: previewPermissions,
-                                                               background: BackgroundMode()))
-    hosting.sceneBridgingOptions = [.title, .toolbars]
-    let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 960, height: 640),
-                          styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
-                          backing: .buffered, defer: false)
-    window.contentViewController = hosting
-    window.toolbarStyle = .unified
+    navigation.page = WindowPage.allCases.first { args.dropFirst().contains($0.rawValue) } ?? .mouse
+    let window = MainWindowController.hostWindow(MainWindowView(
+        controller: controller, remapper: remapper, navigation: navigation, permissions: previewPermissions,
+        background: BackgroundMode(), launchAtLogin: LaunchAtLogin()))
     window.appearance = NSAppearance(named: args.contains("light") ? .aqua : .darkAqua)
-    window.setContentSize(NSSize(width: 960, height: 640))
+    AppearanceSettings.shared.applyToWindows(AppearanceSettings.shared.look(systemIsDark: !args.contains("light")))
+    window.setContentSize(NSSize(width: 600, height: 820))
     // Off screen, but ordered in, so the split view and the toolbar lay out as in the app.
     window.setFrameOrigin(NSPoint(x: -20000, y: -20000))
     window.orderFrontRegardless()
@@ -182,7 +177,8 @@ case "render-settings":
     sc.loadPreviewState()
     let sl = LaunchAtLogin()
     sl.loadPreviewState()
-    writeViewPNG(SettingsView(controller: sc, launchAtLogin: sl, background: BackgroundMode(), onDone: {}), to: settingsPath)
+    writeViewPNG(SettingsView(controller: sc, launchAtLogin: sl, background: BackgroundMode()).padding(16).frame(width: 520),
+                 to: settingsPath)
 
 case "render-about":
     _ = NSApplication.shared

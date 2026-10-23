@@ -5,7 +5,7 @@ import AppKit
 import SwiftUI
 
 /// The main window. One of it: there is one mouse view, so a second window would only show the
-/// same thing twice. Built on first use and kept, so its pane and scroll position survive
+/// same thing twice. Built on first use and kept, so its page and scroll position survive
 /// closing it.
 @MainActor
 final class MainWindowController: NSObject, AppWindowPresenter, NSWindowDelegate {
@@ -14,16 +14,18 @@ final class MainWindowController: NSObject, AppWindowPresenter, NSWindowDelegate
     private let remapper: ButtonRemapper
     private let permissions: PermissionsModel
     private let background: BackgroundMode
+    private let launchAtLogin: LaunchAtLogin
     let navigation = WindowNavigation()
     /// Called after the window closes.
     var onClose: (() -> Void)?
 
     init(controller: MouseController, remapper: ButtonRemapper, permissions: PermissionsModel,
-         background: BackgroundMode) {
+         background: BackgroundMode, launchAtLogin: LaunchAtLogin) {
         self.controller = controller
         self.remapper = remapper
         self.permissions = permissions
         self.background = background
+        self.launchAtLogin = launchAtLogin
     }
 
     var isVisible: Bool { window?.isVisible ?? false }
@@ -39,33 +41,46 @@ final class MainWindowController: NSObject, AppWindowPresenter, NSWindowDelegate
     }
 
     private func makeWindow() -> NSWindow {
-        let hosting = NSHostingController(rootView: MainWindowView(
+        let w = Self.hostWindow(MainWindowView(
             controller: controller, remapper: remapper, navigation: navigation, permissions: permissions,
-            background: background))
-        // The SwiftUI view sets the minimum; the window keeps the size the user gave it.
-        hosting.sizingOptions = [.minSize]
-        // The panes' titles and toolbar items go in the window's own title bar.
-        hosting.sceneBridgingOptions = [.title, .toolbars]
-        let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 960, height: 640),
-                         styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
-                         backing: .buffered, defer: false)
-        w.contentViewController = hosting
-        w.title = "Serpentine"
-        w.toolbarStyle = .unified
+            background: background, launchAtLogin: launchAtLogin))
         w.isReleasedWhenClosed = false
         w.delegate = self
         w.tabbingMode = .disallowed
         // Remembered between launches; the first time, a comfortable size in the middle.
         if !w.setFrameUsingName(Self.frameName) {
-            w.setContentSize(NSSize(width: 960, height: 640))
+            w.setContentSize(NSSize(width: 600, height: 820))
             w.center()
         }
         w.setFrameAutosaveName(Self.frameName)
-        AppearanceSettings.shared.trackAppearance(w)
         return w
     }
 
     private static let frameName = "SerpentineMainWindow"
+
+    /// The window around the main view, shared with `render-window` so a render looks like
+    /// the app.
+    static func hostWindow<V: View>(_ view: V) -> NSWindow {
+        let hosting = NSHostingController(rootView: view)
+        // The SwiftUI view sets the minimum; the window keeps the size the user gave it.
+        hosting.sizingOptions = [.minSize]
+        // The panes' titles and toolbar items go in the window's own title bar.
+        hosting.sceneBridgingOptions = [.title, .toolbars]
+        let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 600, height: 820),
+                         styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
+                         backing: .buffered, defer: false)
+        w.contentViewController = hosting
+        w.title = "Serpentine"
+        // The mouse's card says what it is and how it's connected; the title bar keeps its room
+        // for the page switch, the profile and Refresh.
+        w.titleVisibility = .hidden
+        w.toolbarStyle = .unified
+        // No hairline under the title bar: the cards float on the glass.
+        w.titlebarSeparatorStyle = .none
+        // The popover's glass (or a solid colour), per Settings › Appearance, title bar included.
+        AppearanceSettings.shared.track(w)
+        return w
+    }
 
     func windowWillClose(_ notification: Notification) {
         controller.setLiveChecks(false)

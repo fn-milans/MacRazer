@@ -21,6 +21,9 @@ and the Go menu, screenshots and docs (W5). Differences from the plan below:
 - The menu bar item is an `NSStatusItem` with an `NSMenu` (`MenuBarItem`), not `MenuBarExtra`:
   it keeps the dynamic charging icon, which needed `NSStatusItem` anyway.
 - About stays a small window rather than the standard About panel, for its credits.
+- After trying it, the sidebar of sections became one page of cards, as the popover had
+  them, with Buttons and Settings as pages switched in the title bar, on the popover's glass.
+  The menu bar item's menu is only the status, Open and Quit, and Settings moved into the window.
 - Not tried on a mouse yet, like the refactor.
 
 ## What runs where

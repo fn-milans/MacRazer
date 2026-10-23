@@ -222,50 +222,47 @@ its own USB product string** (works for any Razer mouse); the registry only adds
 
 ### 6.1 The window, `Window/`
 A normal Mac app (Dock icon, menus), one main window (`MainWindowController`, frame
-remembered). `MainWindowView` is a `NavigationSplitView`:
+remembered) on the same glass as the menu bar popover had (`AppearanceSettings.track`). The
+title bar holds the page switch (Mouse, Buttons, Settings; ⌘1-⌘3, Settings also ⌘,) and, on
+the right, a status mark (whether the mouse holds what was set), the profile menu (the mouse's
+slots or the saved profiles) and Refresh (⌘R). The title text is hidden; the mouse's card
+names it.
 
-- **Sidebar**: the mouse (model mark, link, a battery ring), then its sections
- (`PaneSection`): Overview, Performance, Lighting, Buttons, Profiles, Scroll, Power, Battery.
- A section the mouse doesn't have is not listed (`PaneSection.isAvailable`). The selection is
- kept across launches (`mainWindow.section`). ⌘1-⌘8 in the Go menu.
-- **Title bar**: the pane's title, the mouse and its link as the subtitle; a status mark
- (whether the mouse holds what was set), the profile switcher (the mouse's slots or the
- saved profiles) and Refresh (⌘R).
-- **Panes** (`Panes.swift`, `OverviewPane.swift`) are built from the feature views in
- `Features/`: `BatteryCard`, `DPICard`, `PollingRateControls`, `LightingControls` (the colour
- wheel, `ColorPickerPage`, in a sheet), `PowerControls`, `QuickProfiles`, plus `RemapView`,
- `ProfilesView`, `MouseSwitchesSection` (scroll) and `UsageGraphView`. Each pane says where its
- settings live (`ResidencyBadge`: saved in the mouse, or needs Serpentine running), from
- `SettingResidency`.
-- Offline, panes keep the last known values, dimmed, and say why their controls are disabled.
- With no mouse known at all, Overview shows one card that says how to connect.
+- **Mouse** (`MousePage`): one column of cards, the way the popover had them: the mouse
+ (`DeviceHeaderCard`), the battery (`BatteryCard`; its chart button opens the usage history in
+ a sheet), DPI (`DPICard`), then `SettingsCard`s for polling rate, lighting (the colour wheel in
+ a sheet), power, the scroll wheel and profiles ("Manage Profiles…" in a sheet). Cards a mouse
+ can't use are left out; offline they stay, dimmed, with the last known values.
+- **Buttons**: `RemapView`, in a card.
+- **Settings**: `SettingsView`: background mode, start at login, connection sounds, theme and
+ glass.
 - **Setup**: Input Monitoring and Accessibility in a sheet (`PermissionsView`), opened at
  launch when Input Monitoring is missing, with a banner until it is granted.
-- **Menus** (`AppMenu`): Serpentine (About, Settings ⌘,, Hide, Quit), Edit, View (Refresh,
- Full Screen), Go (the panes, greyed when the mouse lacks one), Window, Help.
+- **Menus** (`AppMenu`): Serpentine (About, Settings… ⌘,, Hide, Quit), Edit, View (Refresh, Full
+ Screen), Go (the pages), Window, Help.
 
 ### 6.2 Background mode and the menu bar item
 `BackgroundMode`: Settings › Keep running in the background (`keepRunningInBackground`). Off,
 closing the window quits (`applicationShouldTerminateAfterLastWindowClosed`). On, closing it
 switches the app to `.accessory` (no Dock icon) and leaves `MenuBarItem`: the serpent (Health
-Icons' `animal-snake`, drawn from its SVG path by `SVGPath.swift`; a template image, a bolt
-while charging, dimmed when the mouse is away), no percentage. Its menu shows the mouse and its
-battery, switches the DPI stage and the profile, and opens the window or Settings.
+Icons' `animal-snake`, drawn from its SVG path by `SVGPath.swift`; a template image, a bolt while
+charging, dimmed when the mouse is away), no percentage. Its menu is the mouse's status, Open
+Serpentine and Quit Serpentine.
 
 - Off on a new install; on for an upgrade from the menu bar version (a battery reading or the
  old login-item flag in the defaults), so nothing it relied on disappears.
 - The first time a driver-mode feature is set up (`DriverModeUsage`: a remap only the app can
  do, the DPI Cycle action) the app asks once, listing what needs it (`backgroundModeAsked`).
- While it is off the window lists the same things above its panes.
+ While it is off the window lists the same things above its cards.
 - Start at login needs background mode (turning it off unregisters the login item), and a
  login launch (`keyAELaunchedAsLogInItem`) starts in the menu bar with no window.
 
 ### 6.3 Appearance, `Appearance.swift`
 Settings › Appearance has a **Theme** (System, Dark, Light, Razer Green) and a **Glass effect**
 switch (`appearance.theme`, `appearance.glass`). `AppearanceLook.resolve` turns theme, glass
-and the system's light or dark mode into one of six looks. The main window takes the light or
-dark appearance only (`trackAppearance`), keeping the system's sidebar and title bar. Settings
-and About also take the glass or solid backdrop (`WindowBackdrop`, `BackdropTintView`).
+and the system's light or dark mode into one of six looks, which the main window and About take
+(`WindowBackdrop`: the popover material behind the content and title bar, or a solid colour, and
+`BackdropTintView` for the green).
 Colours (`Palette.swift`): `razerGreen` is the fill; text and icons use `razerGreenText`
 (#23891A on light); anything on a green fill uses `onRazerGreen`, because white on #44D62C is
 only about 1.9:1.
@@ -294,7 +291,7 @@ buttons are handled onboard and never reach macOS.
  captures any combo), **mouse** (middle/double click), **media** (play/next/prev/volume/mute).
 - Mappings persist to UserDefaults. Needs **Accessibility** permission (banner + Open
  Settings / Re-check in the UI).
-- Shown in the Buttons pane, which says whether the remaps are in the mouse or done by the app.
+- Shown on the window's Buttons page.
 
 ### 6.5 Privacy
 Serpentine makes no network requests of its own. There are no usage stats, no update checks
@@ -384,8 +381,8 @@ swift run serpentine-cli rgb static ff0000 # or: spectrum | wave | off
 swift run serpentine-cli brightness [0-100] # sweeps LOGO/SCROLL/ZERO/BACKLIGHT LEDs
 swift run serpentine-cli stages [d1,d2,…] [active] # read / write the DPI stage table
 swift run Serpentine icon out.png [size] [charging] [light] # render the menu bar icon
-swift run Serpentine render-ui [offline|color|zones|…] out.png # a pane (scenes in PreviewScene)
-swift run Serpentine render-window [section] [zones] [light] out.png # the whole window, offscreen
+swift run Serpentine render-ui [offline|color|zones|…] out.png # a page (scenes in PreviewScene)
+swift run Serpentine render-window [mouse|buttons|settings] [zones] [light] out.png # the whole window, offscreen
 swift run Serpentine render-about out.png
 swift run Serpentine render-remap out.png
 ```
@@ -441,20 +438,21 @@ AppKit; the app and the command-line tool build on them.
 | `main.swift` | Entry point: no arguments launches the app; subcommands are development tools (render-*, icons). |
 | `AppDelegate.swift` | App lifecycle: the window, background mode, the menu bar item, HIDMonitor wiring. |
 | `BackgroundMode.swift` | Keep running in the background, and what needs it (`DriverModeUsage`). |
-| `Window/` | The main window (`MainWindowController`, `MainWindowView`, the panes), the menus (`AppMenu`) and the menu bar item (`MenuBarItem`). |
+| `Window/` | The main window (`MainWindowController`, `MainWindowView`, `MousePage`, `WindowPage`), the menus (`AppMenu`) and the menu bar item (`MenuBarItem`). |
 | `MouseController.swift` | The connected mouse's state, published for the UI. Its work is split by feature into `MouseController+Reads`, `+Writes`, `+Lighting`, `+Slots`, `+OnboardButtons`, `+Profiles`, `+Connection` and `+Preview`. |
 | `DeviceQueue.swift` | The serial device queue, with user commands ahead of background reads. |
 | `BatteryTracker.swift` | Battery history, charge cycles, discharge curve and last readings, per mouse. |
 | `BatteryHistory.swift`, `ChargeCycleHistory.swift`, `DischargeCurveModel.swift` | Sample log, cycles and the learned curve behind the time-left estimate. |
 | `ButtonRemapper.swift` | The remap table; the event tap, HyperShift, the DPI Cycle bridge and persistence are in `ButtonRemapper+*`. |
+| `SettingsView.swift` | The window's Settings page. |
 | `Preferences.swift`, `DeviceSettings.swift` | Every UserDefaults key, and the per-mouse settings store. |
 | `LegacyPreferences.swift` | What older versions kept, and the move from MacRazer. |
-| `Features/` | The cards and controls the panes are built from: device status, battery, DPI, polling, lighting, power, quick profiles. |
+| `Features/` | The cards and controls the Mouse page is built from: device status, battery, DPI, polling, lighting, power, quick profiles. |
 | `Appearance.swift`, `Palette.swift` | Settings › Appearance, the backdrops, and the colours. |
 | `ColorPickerPage.swift` | Inline hue/sat colour wheel page + shared `BackButton`. |
 | `RemapView.swift` | Button-config UI (inline + window), key recorder. |
 | `MenuBarIcon.swift`, `SVGPath.swift` | The serpent (menu bar, app icon) and the per-model mouse silhouettes. |
-| `PreviewScenes.swift` | The panes' preview states, for `render-ui` and the snapshot tests. |
+| `PreviewScenes.swift` | The pages' preview states, for `render-ui` and the snapshot tests. |
 
 External: `reference/openrazer/` (cloned driver source, the protocol reference, gitignored)
 and `reference/openrazer-pr-2583.diff` (the Cobra HyperSpeed PR).

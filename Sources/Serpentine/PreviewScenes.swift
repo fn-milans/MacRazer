@@ -3,7 +3,7 @@
 
 import SwiftUI
 
-/// The main window's panes in their preview states, with no mouse needed: what `render-ui`
+/// The main window's pages in their preview states, with no mouse needed: what `render-ui`
 /// draws to a PNG and what the snapshot tests render. One list, so a state the tests cover is
 /// one a person can look at, and the other way round. (`render-window` draws the whole window.)
 enum PreviewScene: String, CaseIterable {
@@ -11,10 +11,10 @@ enum PreviewScene: String, CaseIterable {
     case bluetoothConnected = "bluetooth-connected"
     case dpiStages = "dpi-stages"
     case dpiSingle = "dpi-single"
-    case zones, buttons, usage, profiles, color
+    case zones, buttons, usage, profiles, settings, color
 
     /// Segmented controls only draw when hosted in a view hierarchy.
-    var needsHosting: Bool { [.zones, .dpiStages, .dpiSingle, .bluetoothConnected].contains(self) }
+    var needsHosting: Bool { [.main, .zones, .dpiStages, .dpiSingle, .bluetoothConnected, .settings].contains(self) }
 
     @MainActor
     func makeView() -> AnyView {
@@ -27,27 +27,28 @@ enum PreviewScene: String, CaseIterable {
         case .dpiStages: controller.setPreviewDpiModes(single: false)
         case .dpiSingle: controller.setPreviewDpiModes(single: true)
         case .zones: controller.setPreviewZonedLighting()
-        case .main, .buttons, .usage, .profiles, .color: break
+        case .main, .buttons, .usage, .profiles, .settings, .color: break
         }
         let remapper = ButtonRemapper()
         let view: AnyView
         switch self {
-        case .main, .offline, .bluetooth:
-            view = AnyView(OverviewPane(controller: controller, remapper: remapper, navigation: WindowNavigation()))
-        case .bluetoothConnected, .dpiStages, .dpiSingle:
-            view = AnyView(PerformancePane(controller: controller))
-        case .zones:
-            view = AnyView(LightingPane(controller: controller))
+        case .main, .offline, .bluetooth, .bluetoothConnected, .dpiStages, .dpiSingle, .zones:
+            view = AnyView(MousePage(controller: controller, remapper: remapper, navigation: WindowNavigation()))
         case .buttons:
-            view = AnyView(ButtonsPane(controller: controller, remapper: remapper, keepsRunning: false))
+            view = AnyView(card { RemapView(remapper: remapper, controller: controller) })
         case .usage:
-            view = AnyView(BatteryPane(controller: controller, keepsRunning: true))
+            view = AnyView(UsageGraphView(controller: controller))
         case .profiles:
-            view = AnyView(ProfilesPane(controller: controller, remapper: remapper))
+            view = AnyView(ProfilesView(controller: controller, remapper: remapper))
+        case .settings:
+            let launchAtLogin = LaunchAtLogin()
+            launchAtLogin.loadPreviewState()
+            view = AnyView(SettingsView(controller: controller, launchAtLogin: launchAtLogin,
+                                        background: BackgroundMode(defaults: UserDefaults(suiteName: "SerpentinePreview")!)))
         case .color:
             return AnyView(ColorPickerPage(color: .constant(.blue), onBack: {}, onApply: { _ in }).frame(width: 320))
         }
-        // A pane at the window's reading width.
-        return AnyView(view.padding(24).frame(width: 640, alignment: .topLeading))
+        // A page at the window's reading width.
+        return AnyView(view.padding(16).frame(width: 560, alignment: .topLeading))
     }
 }
