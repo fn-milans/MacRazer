@@ -30,6 +30,11 @@ id in the app's signature, readable by anyone with `codesign -dvv`, and does not
 Gatekeeper on other Macs. Build anything you share with `--adhoc` (`make-dmg.sh --adhoc`,
 or `build-app.sh --adhoc`), which signs ad-hoc and fails if a certificate got in anyway.
 
+The DMG workflow (`.github/workflows/dmg.yml`) does that on GitHub. Each push to master, or
+Run workflow, puts an ad-hoc DMG on the **Latest build** prerelease (tag `latest-build`), at a
+download link that stays the same; the in-app updater never offers prereleases. A pull request
+gets its DMG attached to the run instead.
+
 ## Cutting a release
 
 Use `./Scripts/release.sh <version>` rather than editing by hand. The version is recorded in
