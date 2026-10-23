@@ -32,9 +32,9 @@ Change them with the user, not silently.
 ┌───────────────┐ ┌───────────────┐ ┌──────────────────┐
 │ DPI           │ │ Polling Rate  │ │ Buttons          │   ≥ 1180 pt: two tile columns
 ├───────────────┤ ├───────────────┤ │ (RemapView,      │   + Buttons (400 pt)
-│ Lighting      │ │ Sleep         │ │  unfolded)       │   820-1180: one tile column + Buttons
+│ Lighting      │ │ Scroll Wheel  │ │  unfolded)       │   820-1180: one tile column + Buttons
 ├───────────────┤ ├───────────────┤ │                  │   < 820: one column, Buttons last,
-│ Low Battery   │ │ Scroll Wheel  │ │                  │   battery under the mouse's name
+│ Low Battery   │ │ Sleep         │ │                  │   battery under the mouse's name
 └───────────────┘ └───────────────┘ └──────────────────┘
 ```
 
@@ -43,8 +43,8 @@ Change them with the user, not silently.
   (`memorychip` = saved in the mouse, `macwindow` = needs Serpentine running, explained on
   hover), the value in 26 pt rounded semibold, then the controls. 16 pt padding, 18 pt
   continuous corners, a light fill (`primary` 5.5 %) and a hairline (`primary` 7 %).
-- **Tile order and colours**: DPI (green), Polling Rate (blue), Lighting (orange), Sleep
-  (indigo), Low Battery (red), Scroll Wheel (teal); Buttons (pink). Only the tiles the mouse
+- **Tile order and colours**: DPI (green), Polling Rate (blue), Lighting (orange), Scroll
+  Wheel (teal), Low Battery (red), Sleep (indigo); Buttons (pink). Only the tiles the mouse
   has. An odd last tile spans the row.
 - **Offline**: tiles stay, dimmed (55 %) and disabled, showing the last known values. No mouse
   at all: the no-mouse card under the mouse tile, no tiles.

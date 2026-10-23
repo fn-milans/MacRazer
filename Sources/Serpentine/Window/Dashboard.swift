@@ -43,15 +43,15 @@ struct Dashboard: View {
     @State private var pickingColor = false
 
     /// The setting tiles, in reading order.
-    private enum Kind: Hashable { case dpi, polling, lighting, sleep, lowBattery, scroll }
+    private enum Kind: Hashable { case dpi, polling, lighting, scroll, lowBattery, sleep }
 
     private var kinds: [Kind] {
         var out: [Kind] = [.dpi]
         if controller.supportsPollRate { out.append(.polling) }
         if controller.deviceHasLighting { out.append(.lighting) }
-        if controller.supportsSleepTimeout { out.append(.sleep) }
-        if controller.lowBatteryThreshold != nil { out.append(.lowBattery) }
         if controller.smartReel != nil || controller.scrollAcceleration != nil { out.append(.scroll) }
+        if controller.lowBatteryThreshold != nil { out.append(.lowBattery) }
+        if controller.supportsSleepTimeout { out.append(.sleep) }
         return out
     }
 

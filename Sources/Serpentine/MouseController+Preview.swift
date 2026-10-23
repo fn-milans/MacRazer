@@ -22,6 +22,12 @@ extension MouseController {
             .scrollWheel: ZoneLighting(effect: .breathing, color: RGB(r: 0xFF, g: 0, b: 0), brightness: 33),
             .underglow: ZoneLighting(effect: .spectrum, color: green, brightness: 33),
         ])
+        // The power and wheel settings too, so the dashboard shows every tile it has.
+        sleepTimeout = 300
+        lowBatteryThreshold = 15
+        smartReel = true
+        smartReelSensitivity = 2
+        scrollAcceleration = false
     }
 
     func loadPreviewState() {

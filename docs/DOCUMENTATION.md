@@ -229,7 +229,7 @@ Refresh (⌘R) and the Settings cog (⌘,) at the trailing edge.
 
 - **Dashboard** (`Dashboard.swift`): the mouse across the top (`DeviceTile`: the model, its
  link, the battery as a ring, the time left and Battery History), then a tile per setting the
- mouse has (DPI, polling rate, lighting, sleep, low battery, scroll wheel) and the
+ mouse has (DPI, polling rate, lighting, scroll wheel, low battery, sleep) and the
  **Buttons** column (`RemapView`, unfolded). A `Tile` has a coloured symbol, the name, where
  the setting lives (`ResidencyMark`), the value large, and the controls (the feature views in
  `Features/`). Offline the tiles stay, dimmed, with the last known values.
