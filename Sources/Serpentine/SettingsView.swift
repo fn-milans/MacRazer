@@ -11,7 +11,7 @@ import SwiftUI
 /// past five cards was the wrong shape for both.
 struct SettingsView: View {
     @ObservedObject var controller: MouseController
-    @ObservedObject var launchAtLogin: LaunchAtLogin
+    var launchAtLogin: LaunchAtLogin
     /// Not optional, for the same reason as `AboutView.onDone`: a defaulted no-op ships a
     /// Done button that does nothing and compiles fine.
     var onDone: () -> Void

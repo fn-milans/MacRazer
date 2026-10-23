@@ -8,7 +8,7 @@ import RazerProtocol
 /// shows their live status, and grants them with the native prompts. Reachable any time from
 /// the menu bar's "Setup & Permissions…".
 struct PermissionsView: View {
-    @ObservedObject var model: PermissionsModel
+    var model: PermissionsModel
     @ObservedObject var controller: MouseController
     var onDone: (() -> Void)?
 

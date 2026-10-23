@@ -124,6 +124,21 @@ Replace the `io` queue with `DeviceSession`, `publish` with `@MainActor` service
 `@unchecked Sendable`. Turn on complete strict concurrency checking, which Swift 6 mode
 already implies, and fix what it reports. `RazerRetry` becomes `async` with `Task.sleep`.
 
+**Outcome (2026-10-23).** Done in part, on purpose:
+- The device queue stays a serial `DispatchQueue` (`DeviceQueue`). An actor would lose the
+  one guarantee the mouse needs: commands run in the order they were sent. Jobs on an actor
+  are not run first-in first-out, and the transports block (a Bluetooth request waits on a
+  semaphore), which an actor on the shared thread pool must not do. A custom serial executor
+  would fix the second problem but not the first.
+- `LaunchAtLogin` and `PermissionsModel` are `@Observable` and `@MainActor`.
+- `MouseController`, `ButtonRemapper` and `AppearanceSettings` stay `ObservableObject`: about
+  ten Combine pipelines (debounces, `combineLatest`) drive the onboard remap sync and the
+  DPI Cycle bridge off `@Published`'s timing, and Observation has no publishers to replace
+  them with. Moving them is worth doing with the window work (W2), where those views are
+  rebuilt anyway, and with a mouse on the desk to check the bridge.
+- Swift 6 language mode already checks concurrency completely; the remaining
+  `@unchecked Sendable` types are the ones guarded by a queue or a lock.
+
 ### Phase 6: UI split (L) **(W)**
 Break `PopoverView` into one view per feature (`BatteryView`, `DPIView`, `LightingView`, …)
 that take a service, not the controller. These are the panes of the window. Rename

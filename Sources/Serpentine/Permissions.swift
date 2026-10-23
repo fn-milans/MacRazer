@@ -28,20 +28,21 @@ enum SystemSettingsPanes {
 ///   / lighting. macOS gates this because the device enumerates as a keyboard/mouse.
 /// - **Accessibility** — required *only* for the button-remapping `CGEvent` tap.
 @MainActor
-final class PermissionsModel: ObservableObject {
+@Observable
+final class PermissionsModel {
     /// Input Monitoring granted (the blocking permission — nothing reads from the mouse without it).
-    @Published private(set) var inputMonitoring = false
+    private(set) var inputMonitoring = false
     /// Accessibility granted (optional — only the remap feature needs it).
-    @Published private(set) var accessibility = false
+    private(set) var accessibility = false
     /// Input Monitoring is granted at the API level, but the *running* process still can't open
     /// the device — the grant only takes effect after a relaunch. The classic macOS TCC gotcha.
-    @Published private(set) var needsRelaunch = false
+    private(set) var needsRelaunch = false
     /// The automatic relaunch failed (translocated run from the DMG, no bundle under
     /// `swift run`) — tell the user to quit and reopen manually instead of doing nothing.
-    @Published private(set) var relaunchFailed = false
+    private(set) var relaunchFailed = false
 
-    private weak var remapper: ButtonRemapper?
-    private weak var controller: MouseController?
+    @ObservationIgnored private weak var remapper: ButtonRemapper?
+    @ObservationIgnored private weak var controller: MouseController?
 
     init(remapper: ButtonRemapper? = nil, controller: MouseController? = nil) {
         self.remapper = remapper
@@ -49,7 +50,7 @@ final class PermissionsModel: ObservableObject {
     }
 
     /// A mouse Serpentine controls over Bluetooth is connected. It needs no Input Monitoring.
-    @Published private(set) var bluetoothControllable = false
+    private(set) var bluetoothControllable = false
 
     /// Both required permissions satisfied (Accessibility is optional, so it doesn't gate this).
     /// A Bluetooth-controlled mouse needs neither.

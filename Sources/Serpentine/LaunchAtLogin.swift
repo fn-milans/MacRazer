@@ -14,22 +14,23 @@ import ServiceManagement
 /// real installed location. After that the user's choice is the record: turning it off here,
 /// or in System Settings, is never undone by a later launch.
 @MainActor
-final class LaunchAtLogin: ObservableObject {
+@Observable
+final class LaunchAtLogin {
     /// Mirrors the *system's* registration rather than a preference of our own, and is re-read
     /// on demand: the user can flip this in System Settings without going through the app, and
     /// a switch that disagrees with Login Items is worse than no switch.
-    @Published private(set) var isEnabled = false
+    private(set) var isEnabled = false
     /// The item is registered but macOS wants the user to approve it before honouring it.
     /// Shown as on — that is what the app asked for — with a pointer to where to finish it.
-    @Published private(set) var needsApproval = false
+    private(set) var needsApproval = false
     /// A failed register/unregister, so the switch explains itself instead of just springing
     /// back to where it was.
-    @Published private(set) var lastError: String?
+    private(set) var lastError: String?
 
     /// False under `swift run`, and when the app is running from a mounted DMG or a
     /// translocated copy: a login item recorded there points at a path that won't be Serpentine
     /// (or won't exist) at the next boot. See `AppLocation`.
-    @Published private(set) var isSupported: Bool
+    private(set) var isSupported: Bool
 
     private static let appliedDefaultKey = Preferences.launchAtLoginDefaultApplied
 

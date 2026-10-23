@@ -43,7 +43,7 @@ extension Color {
 struct PopoverView: View {
     @ObservedObject var controller: MouseController
     @ObservedObject var remapper: ButtonRemapper
-    @ObservedObject var launchAtLogin: LaunchAtLogin
+    var launchAtLogin: LaunchAtLogin
     /// Settings › Appearance; only the Razer Green glass edge is drawn here. The rest is the
     /// popover's appearance and backdrop, which the app delegate sets.
     @ObservedObject var appearance: AppearanceSettings
