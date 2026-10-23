@@ -6,6 +6,8 @@ expect rough edges until 1.0.
 
 ## [Unreleased]
 
+## [0.1.0] — 2026-10-24
+
 ### Changed
 - **Serpentine is a windowed app.** A normal Mac app with a Dock icon, menus and one window on
   the same glass as the popover. Its dashboard has the mouse and its battery across the top,

@@ -1,8 +1,7 @@
 # Status
 
-As of 2026-10-23, `main` at the commit that added this file. Version 0.0.0 in
-`Packaging/Info.plist` (versioning restarted for Serpentine); everything below is in CHANGELOG's Unreleased section and has not been
-released.
+As of 2026-10-24: Serpentine 0.1.0 is released, its first version (versioning restarted
+after MacRazer 0.5.0). Everything below shipped in it, under CHANGELOG's 0.1.0 section.
 
 ## Done in this round
 
@@ -55,5 +54,5 @@ dongle and over Bluetooth:
 - **Preview data**: `render-window zones` shows "Couldn't read the profiles" because the V4 Pro
   preview has no slots loaded. Give `setPreviewZonedLighting` slots if that matters.
 - **About** is still the small glass window; it could become the standard About panel.
-- **Release**: when it's time, `./Scripts/release.sh 0.1.0`, review, commit, then run the
+- **Release**: the next one is `./Scripts/release.sh 0.2.0`, review, commit, then run the
   Release workflow (Actions → Release). See [workflows.md](workflows.md).
