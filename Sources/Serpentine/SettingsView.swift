@@ -3,7 +3,7 @@
 
 import SwiftUI
 
-/// Settings for Serpentine itself, the main window's Settings page: set once and rarely
+/// Settings for Serpentine itself, the sheet behind the main window's cog: set once and rarely
 /// revisited, with room to explain themselves (why the login item is unavailable from a
 /// mounted disk image).
 struct SettingsView: View {

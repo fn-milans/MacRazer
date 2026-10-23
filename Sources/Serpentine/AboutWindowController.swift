@@ -4,7 +4,7 @@
 import AppKit
 import SwiftUI
 
-/// Hosts About Serpentine in a normal window, reached from the menu bar's right-click menu.
+/// Hosts About Serpentine in a small window, from Serpentine › About Serpentine.
 @MainActor
 final class AboutWindowController: AppWindowPresenter {
     private var window: NSWindow?

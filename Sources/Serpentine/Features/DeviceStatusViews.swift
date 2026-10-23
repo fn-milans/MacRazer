@@ -19,105 +19,6 @@ extension MouseController {
     }
 }
 
-/// The mouse's name, link and connection state.
-struct DeviceHeaderCard: View {
-    @ObservedObject var controller: MouseController
-
-    var body: some View { headerCard }
-
-    var headerCard: some View {
-        card {
-            HStack(spacing: 10) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 9).fill(Color.razerGreenBright.opacity(0.20))
-                    Image(nsImage: MenuBarIcon.mouseModel(pid: controller.deviceID, pointSize: 20))
-                        .renderingMode(.template)
-                        .resizable().scaledToFit()
-                        .frame(width: 19, height: 19)
-                        .foregroundStyle(Color.razerGreenBright)
-                }
-                .frame(width: 34, height: 34)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(controller.deviceName ?? controller.bluetoothMouse?.name
-                         ?? controller.lastBatterySnapshot?.deviceName ?? "No mouse connected")
-                        .font(.system(size: 13, weight: .semibold))
-                        .lineLimit(1)
-                    HStack(spacing: 5) {
-                        Text(headerSubtitle)
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
-                        if let ct = connectionType { connectionChip(ct) }
-                    }
-                }
-                Spacer()
-                Circle()
-                    .fill(controller.connected ? Color.green : Color.secondary)
-                    .frame(width: 8, height: 8)
-                    .accessibilityLabel(controller.connected ? "Connected" : "Not connected")
-            }
-        }
-    }
-
-    var headerSubtitle: String {
-        switch controller.bluetoothRecoveryState {
-        case .reconnecting where !controller.connected: return "Reconnecting…"
-        default: break
-        }
-        if controller.connected { return controller.deviceSupported ? "Connected" : "Connected · limited support" }
-        if controller.bluetoothMouse != nil { return "On Bluetooth" }
-        if controller.deviceName != nil { return "Offline" }
-        return "Connect a Razer mouse"
-    }
-
-    /// The active control transport, shown as a small chip beside "Connected". Resolved from
-    /// the registry — the PID identifies the link (wireless models enumerate under a
-    /// different PID when cabled). The old `charging ⇒ wired` heuristic mislabeled every
-    /// wired-only mouse as "2.4 GHz", since a wired mouse never reports charging.
-    /// Bluetooth only reads "Connected" for models with Bluetooth control; any other Razer
-    /// mouse on Bluetooth is surfaced separately (`bluetoothNotice`).
-    var connectionType: ConnectionChip? {
-        guard controller.connected else { return nil }
-        switch RazerDevices.connection(pid: controller.deviceID) {
-        case .bluetooth:
-            // Blue, the colour macOS and the mouse itself use for Bluetooth, so the link
-            // reads at a glance as different from the green USB ones. A stronger fill than
-            // theirs, or the blue is hard to read on the dark background.
-            return ConnectionChip(symbol: "dot.radiowaves.left.and.right", label: "Bluetooth",
-                                  tint: .bluetoothBlue, fillOpacity: 0.3)
-        case .wired:
-            return ConnectionChip(symbol: "cable.connector", label: "Wired")
-        case .wirelessDongle:
-            // `charging` implies a USB-C cable is attached, even though control still
-            // flows through the dongle's PID.
-            return controller.charging
-                ? ConnectionChip(symbol: "cable.connector", label: "Wired")
-                : ConnectionChip(symbol: "antenna.radiowaves.left.and.right", label: "2.4 GHz")
-        case nil:
-            // Unknown model: "USB" is true for both a cable and a dongle.
-            return ConnectionChip(symbol: "cable.connector", label: "USB")
-        }
-    }
-
-    /// How a link's chip looks: green for the USB links, blue for Bluetooth.
-    struct ConnectionChip {
-        let symbol: String
-        let label: String
-        var tint: Color = .razerGreenText
-        var fillOpacity: Double = 0.15
-    }
-
-    func connectionChip(_ ct: ConnectionChip) -> some View {
-        HStack(spacing: 3) {
-            Image(systemName: ct.symbol).font(.system(size: 8.5, weight: .bold))
-            Text(ct.label).font(.system(size: 9.5, weight: .semibold))
-        }
-        .foregroundStyle(ct.tint)
-        .padding(.horizontal, 5).padding(.vertical, 1.5)
-        .background(ct.tint.opacity(ct.fillOpacity), in: Capsule())
-    }
-
-}
-
 /// Shown when a Razer mouse is on Bluetooth but not under control: either a model with no
 /// Bluetooth control (switch modes), or a supported one Serpentine can't reach right now.
 struct BluetoothNoticeCard: View {
@@ -125,8 +26,7 @@ struct BluetoothNoticeCard: View {
 
     var body: some View { bluetoothNotice }
 
-    /// Shown when a Razer mouse is on Bluetooth but not under control: either a model with no
-    /// Bluetooth control (switch modes), or a supported one Serpentine can't reach right now.
+    /// The notice, by why the mouse isn't under control.
     var bluetoothNoticeText: String {
         switch controller.bluetoothMouse {
         case .accessDenied(let name):
@@ -210,4 +110,32 @@ struct NoMouseCard: View {
         }
     }
 
+}
+
+extension MouseController {
+    /// The battery's state in a line: time left, charging, or the last reading while away.
+    @MainActor var batteryStatusLine: String {
+        if !connected {
+            if let snapshot = lastBatterySnapshot {
+                let age = LastBatterySnapshot.relativeAgeFormatter.localizedString(for: snapshot.observedAt, relativeTo: Date())
+                if snapshot.wasCharging { return "Last reading: \(snapshot.percent)% · charging · \(age)" }
+                if let estimate = snapshot.shortEstimateText {
+                    return "\(estimate) · \(age)"
+                }
+                return "Last reading: \(snapshot.percent)% · \(age) · no estimate yet"
+            }
+            switch bluetoothMouse {
+            case .needsModeSwitch: return "On Bluetooth. Use 2.4 GHz or USB-C"
+            case .connecting: return "On Bluetooth. Connecting…"
+            case .accessDenied: return "On Bluetooth. Needs Bluetooth access"
+            case nil: break
+            }
+            if needsInputMonitoring { return "Needs Input Monitoring permission" }
+            return "Disconnected. Wake the mouse and refresh"
+        }
+        if charging { return "Charging" }
+        if let est = timeEstimate { return est }
+        if batteryPercent != nil { return "Estimating time remaining…" }
+        return "Reading battery…"
+    }
 }

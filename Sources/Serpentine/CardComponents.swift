@@ -119,7 +119,7 @@ func sectionLabel(_ text: String, _ symbol: String) -> some View {
 }
 
 /// The battery-percentage bands, in one place so every consumer agrees: this file's colour
-/// helper, the percent readout in `BatteryCard`, the usage chart's curve bands, and the
+/// helper, the battery ring on the dashboard, the usage chart's curve bands, and the
 /// low-battery alert.
 enum Battery {
     /// Below this the battery reads as "low" — red gauge/readout/curve, and the one
